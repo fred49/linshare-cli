@@ -271,7 +271,7 @@ class DefaultCommand(object):
 			passwd=self.password)
 
 		handlers = [poster.streaminghttp.StreamingHTTPSHandler(debuglevel=debuglevel),
-		#	auth_handler,
+			auth_handler,
 			urllib2.HTTPSHandler(debuglevel=debuglevel),
 			urllib2.HTTPHandler(debuglevel=debuglevel),
 			poster.streaminghttp.StreamingHTTPHandler(debuglevel=debuglevel),
@@ -587,19 +587,19 @@ parser_tmp.set_defaults(__func__=TestCommand())
 if __name__ == "__main__" :
 	# parse cli arguments
 	args = parser.parse_args()
-	# reloading configuration with optional arguments 
+	# reloading configuration with optional arguments
 	config.reload(args)
 	# using values stored in config file to filled in undefined args.
 	config.push(args)
-	
+
 	if getattr(args, 'debug'):
 		log.setLevel(logging.DEBUG)
 		streamHandler.setFormatter(myDebugFormat)
 		print config
 		#print args
 		print "----------- processing ----------------"
-			
-	
+
+
 		# run command
 		args.__func__(args)
 	else:
@@ -608,5 +608,5 @@ if __name__ == "__main__" :
 			args.__func__(args)
 		except Exception as a :
 			log.error("unexcepted error : " + str(a))
-	
+
 sys.exit(0)
