@@ -216,7 +216,7 @@ streamHandler.setFormatter(myFormat)
 log.addHandler(streamHandler)
 # debug mode
 # if you need debug during class construction, file config loading, ...,  you need to modify the logger level here.
-if True : 
+if False :
 	log.setLevel(logging.DEBUG)
 	streamHandler.setFormatter(myDebugFormat)
 
@@ -352,6 +352,32 @@ class TestCommand(DefaultCommand):
 class ConfigGenerationCommand(object):
 	def __call__(self, args):
 		config.write_default_config_file()
+
+# ---------------------------------------------------------------------------------------------------------------------
+class ConfigAutoCompteCommand(object):
+	def __call__(self, args):
+		print """
+This program is comptible with the python autocomplete program called argcomplete.\n
+You can either install this program using :
+- sudo apt-get install python-argcomplete
+or
+- sudo apt-get install python-pip
+- sudo pip install argcomplete
+
+Once this program is installed, you have two configuration options :
+
+1. Global configuration
+	All programs compliant with argcomplete will be detected automatically with bash >= 4.2.
+	This won't work with Debian Squeeze for example.
+	- sudo activate-global-python-argcomplete
+
+2. Specific configuration
+	Manually include the following command ind your ~/.bashrc :
+	- eval "$(register-python-argcomplete linshare-cli-user.py)"
+
+
+
+"""
 
 # ---------------------------------------------------------------------------------------------------------------------
 class UploadFileCommand(DefaultCommand):
@@ -646,13 +672,16 @@ def add_config_parser(subparsers, name, desc):
 	parser_tmp2 = subparsers2.add_parser('generate', help="generate the default pref file")
 	parser_tmp2.set_defaults(__func__=ConfigGenerationCommand())
 
+	parser_tmp2 = subparsers2.add_parser('autocomplete', help="Print help to install and configure autocompletion module")
+	parser_tmp2.set_defaults(__func__=ConfigAutoCompteCommand())
+
 ####################################################################################
 ### Adding config parsers
 ####################################################################################
 
 add_download_parser(subparsers, "document", "document management")
 add_share_parser(subparsers, "share", "share management")
-add_config_parser(subparsers, "config",  "config part")
+add_config_parser(subparsers, "config",  "config tools like autocomplete configuration or pref-file generation.")
 
 parser_tmp = subparsers.add_parser('test', add_help=False)
 parser_tmp.set_defaults(__func__=TestCommand())
@@ -662,11 +691,19 @@ parser_tmp.set_defaults(__func__=TestCommand())
 ####################################################################################
 
 if __name__ == "__main__" :
+	# integration with argcomplete python module (bash completion)
+	try:
+		import argcomplete
+		argcomplete.autocomplete(parser)
+	except ImportError as e :
+		pass
+
 	# parse cli arguments
 	args = parser.parse_args()
 	# reloading configuration with optional arguments
 	config.reload(args)
 	# using values stored in config file to filled in undefined args.
+	# undefind args will be filled in with default values stored into the pref file.
 	config.push(args)
 
 	if getattr(args, 'debug'):
