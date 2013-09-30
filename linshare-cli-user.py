@@ -275,7 +275,6 @@ class file_with_callback(file):
 
 # ---------------------------------------------------------------------------------------------------------------------
 class DefaultCommand(object):
-	fragment_auth = "/rest/authentication/authorized"
 
         def __init__(self):
 		self.log = logging.getLogger('linshare-cli' + "." + str(self.__class__.__name__.lower()))
@@ -339,6 +338,30 @@ class DefaultCommand(object):
 
 		# Setting handlers
 		urllib2.install_opener(urllib2.build_opener(*handlers))
+		self.auth()
+
+
+	def auth(self):
+		url = self.root_url + "authentication/authorized"
+
+		# Building request
+		request = urllib2.Request(url)
+
+		# doRequest
+		try:
+			resultq = urllib2.urlopen(request)
+
+			code=resultq.getcode()
+			if code == 200 :
+				log.debug("auth url : ok")
+
+		except urllib2.HTTPError as e :
+			if e.code == 401 :
+				log.error(e.msg + " (" + str(e.code) + ")")
+			else:
+				log.error(e.msg + " (" + str(e.code) + ")")
+			sys.exit(1)
+
 
 
 
