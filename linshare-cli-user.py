@@ -20,6 +20,7 @@ import poster
 import time
 from datetime import datetime
 from progressbar import *
+import getpass
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -295,11 +296,18 @@ class DefaultCommand(object):
 		if not args.user:
 			raise ValueError("invalid user : " + str(args.user))
 
+		if args.ask_password :
+			try:
+				password = getpass.getpass("Please, enter your password : ")
+			except KeyboardInterrupt as e:
+				print "\nKeyboardInterrupt exception was caught. Program terminated."
+				sys.exit(1)
+
 		if not password:
-			raise ValueError("invalid password : " + str(password))
+			raise ValueError("invalid password : password is not set ! ")
 
 		if not args.host:
-			raise ValueError("invalid host : " + str(args.host))
+			raise ValueError("invalid host : host url is not set !")
 
 		if not args.realm:
 			args.realm = "Name Of Your LinShare Realm"
@@ -388,17 +396,20 @@ class UploadFileCommand(DefaultCommand):
 		for f in args.files : 
 			self.uploadFile(f)
 
-	def uploadFile(self, file_name):
+	def uploadFile(self, file_path):
 		""" upload a file to LinShare using its rest api. return the uploaded document uuid  """
 		url = self.root_url + "documents.json"
 		self.log.debug("upload url : "+ url)
 
 		# Generating datas and headers
-		file_size = os.path.getsize(file_name)
+		file_size = os.path.getsize(file_path)
+		file_name = file_path.split("/")[-1]
+		self.log.debug("file_name is : " + file_name)
+
 
 		widgets = [FileTransferSpeed(),' <<<', Bar(), '>>> ', Percentage(),' ', ETA()]
 	        pbar = ProgressBar(widgets=widgets, maxval=file_size)
-		stream = file_with_callback(file_name, 'rb', pbar.update, file_size, file_name)
+		stream = file_with_callback(file_path, 'rb', pbar.update, file_size, file_path)
 		
 		p = poster.encode.MultipartParam("file", filename=file_name, fileobj=stream)
 
@@ -600,7 +611,8 @@ parser.add_argument('-c', '--config', action="store", help="other configuration 
 parser.add_argument('-s', dest='server_section', action="store", help="This option let you select the server section in the ini file you want to load (server section is always load first as default configuration). You just need to specify a number like '4' for section 'server-4'.")
 parser.add_argument('-u', '--user', action="store", dest="user")
 #, required=True)
-parser.add_argument('-p', '--password', action="store")
+parser.add_argument('-P', '--password', action="store")
+parser.add_argument('-p', action="store_true", default=False, dest="ask_password")
 parser.add_argument('-H', '--host', action="store")
 parser.add_argument('-a', '--appname', action="store", dest="application_name")
 parser.add_argument('-r', '--realm', action="store", help=argparse.SUPPRESS)
@@ -718,8 +730,14 @@ if __name__ == "__main__" :
 		try:
 			# run command
 			args.__func__(args)
+		except ValueError as a :
+			log.error("ValueError : " + str(a))
+			sys.exit(1)
+		except KeyboardInterrupt as a :
+			log.warn("Keyboard interruption detected.")
+			sys.exit(1)
 		except Exception as a :
 			log.error("unexcepted error : " + str(a))
 			sys.exit(1)
-
+# urllib2.HTTPError: HTTP Error 401: basic auth failed
 sys.exit(0)
