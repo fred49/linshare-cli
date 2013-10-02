@@ -404,7 +404,7 @@ Once this program is installed, you have two configuration options :
 
 2. Specific configuration
 	Manually include the following command ind your ~/.bashrc :
-	- eval "$(register-python-argcomplete linshare-cli-user.py)"
+	- eval "$(register-python-argcomplete linshare_cli_user.py)"
 
 
 
