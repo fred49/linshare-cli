@@ -463,20 +463,16 @@ class UploadFileCommand(DefaultCommand):
 
 
 # ---------------------------------------------------------------------------------------------------------------------
-class DownloadFileCommand(DefaultCommand):
+class DownloadCommand(DefaultCommand):
 
 	def __call__(self, args):
-		super(DownloadFileCommand, self).__call__(args)
+		super(DownloadCommand, self).__call__(args)
+		pass
 
-		for f in args.files : 
-			pass
-			self.downloadFile(f)
-
-	def downloadFile(self, file_uuid):
-		""" download a file from LinShare using its rest api. """
-		url = self.root_url + "documents/%s/download" % file_uuid
+	def download(self, uuid, url):
+		""" download a file from LinShare using its rest api.
+This method could throw exceptions like urllib2.HTTPError."""
 		self.log.debug("download url : "+ url)
-
 		
 		# Building request
 		request = urllib2.Request(url)
@@ -485,15 +481,10 @@ class DownloadFileCommand(DefaultCommand):
 		starttime =datetime.now()
 
 		# doRequest
-		try:
-			resultq = urllib2.urlopen(request)
-		except urllib2.HTTPError as e :
-			print "Error : "
-			print e
-			return
+		resultq = urllib2.urlopen(request)
 
 		code=resultq.getcode()
-		file_name = file_uuid
+		file_name = uuid
 		self.log.debug("ret code : '" + str(code) + "'")
 		if code == 200 :
 			content_lenth = resultq.info().getheader('Content-Length')
@@ -538,7 +529,51 @@ class DownloadFileCommand(DefaultCommand):
 		# request end
 		endtime = datetime.now()
 		req_time = str(endtime - starttime)
-		self.log.info("The file '" + file_name  + "' was downloaded. (" + req_time + "s)")
+		return (file_name, req_time)
+
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+class DownloadFileCommand(DownloadCommand):
+
+	def __call__(self, args):
+		super(DownloadFileCommand, self).__call__(args)
+
+		for f in args.files :
+			self.downloadFile(f)
+
+	def downloadFile(self, uuid):
+		url = self.root_url + "documents/%s/download" % uuid
+
+		try:
+			file_name, req_time =  self.download(uuid, url)
+			self.log.info("The file '" + file_name  + "' was downloaded. (" + req_time + "s)")
+		except urllib2.HTTPError as e :
+			print "Error : "
+			print e
+			return
+
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+class DownloadShareCommand(DownloadCommand):
+
+	def __call__(self, args):
+		super(DownloadShareCommand, self).__call__(args)
+
+		for f in args.files :
+			self.downloadShare(f)
+
+	def downloadShare(self, uuid):
+		url = self.root_url + "shares/download/%s" % uuid
+		try:
+			file_name, req_time =  self.download(uuid, url)
+			self.log.info("The share '" + file_name  + "' was downloaded. (" + req_time + "s)")
+		except urllib2.HTTPError as e :
+			print "Error : "
+			print e
+			return
+
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -683,7 +718,7 @@ def add_share_parser(subparsers, name, desc):
 ####################################################################################
 ### received shares
 ####################################################################################
-def add_share_parser(subparsers, name, desc):
+def add_received_share_parser(subparsers, name, desc):
 	parser_tmp = subparsers.add_parser(name, help=desc)
 
 	subparsers2 = parser_tmp.add_subparsers()
@@ -691,6 +726,16 @@ def add_share_parser(subparsers, name, desc):
 	#parser_tmp2 = subparsers2.add_parser('create', help="upload files to linshare")
 	#parser_tmp2.set_defaults(__func__=UploadFileCommand())
 	#parser_tmp2.add_argument('-f', '--file', action="append", dest="files", required=True)
+
+
+	parser_tmp2 = subparsers2.add_parser('download', help="download shares from linshare")
+	parser_tmp2.set_defaults(__func__=DownloadShareCommand())
+	parser_tmp2.add_argument('-f', '--file', action="append", dest="files", required=True)
+
+	#group = parser_tmp2.add_mutually_exclusive_group()
+	#group.add_argument('-f', '--file', action="append", dest="files)
+
+
 
 	parser_tmp2 = subparsers2.add_parser('list', help="list received shares from linshare")
 	parser_tmp2.set_defaults(__func__=ListReceivedShareCommand())
@@ -714,8 +759,8 @@ def add_config_parser(subparsers, name, desc):
 ### Adding config parsers
 ####################################################################################
 
-add_download_parser(subparsers, "document", "document management")
-add_share_parser(subparsers, "share", "share management")
+add_download_parser(subparsers, "document", "documents management")
+add_received_share_parser(subparsers, "share", "received shares management")
 add_config_parser(subparsers, "config",  "config tools like autocomplete configuration or pref-file generation.")
 
 parser_tmp = subparsers.add_parser('test', add_help=False)
