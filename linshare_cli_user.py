@@ -446,8 +446,21 @@ class UploadFileCommand(DefaultCommand):
 	        pbar.start()
 		starttime =datetime.now()
 
-		# doRequest
-		resultq = urllib2.urlopen(request)
+		try:
+			# doRequest
+		        resultq = urllib2.urlopen(request)
+		except urllib2.HTTPError as e :
+		        print e
+		        print e.code
+
+		        # request end
+		        endtime = datetime.now()
+		        pbar.finish()
+
+		        req_time = str(endtime - starttime)
+		        self.log.error("The file '" + file_name + "' was uploaded (" + req_time + "s) but the proxy cut the connexion. No server acquitment was received.")
+		        return None
+
 
 		# request end
 		endtime = datetime.now()
@@ -604,11 +617,11 @@ class ListDocumentCommand(DefaultCommand):
 		endtime = datetime.now()
 		result = resultq.read()
 
-		self.log.debug("the result is : " + str(result))
 		jObj = json.loads(result)
+		self.log.debug("the result is : ")
+		self.log.debug(json.dumps(jObj, sort_keys = True, indent = 2))
 
 		req_time = str(endtime - starttime)
-	#	self.log.info("The file '" + jObj.get('name') + "' ("+ jObj.get('uuid') + ") was uploaded. (" + req_time + "s)")
 		print "File names : "
 		print "------------"
 		for f in jObj:
