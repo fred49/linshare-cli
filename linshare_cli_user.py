@@ -688,6 +688,9 @@ class ShareCommand(DefaultCommand):
 		# Building request
 		request = urllib2.Request(url)
 
+		# request start
+		starttime =datetime.now()
+
 		try:
 			# doRequest
 		        resultq = urllib2.urlopen(request)
@@ -698,16 +701,19 @@ class ShareCommand(DefaultCommand):
 
 		        return None
 
+		# request end
+		endtime = datetime.now()
 
 		code = resultq.getcode()
 		msg = resultq.msg
 
 		self.log.debug("the result is : " + str(code) + " : " + msg)
+		req_time = str(endtime - starttime)
 		if code == 204 : 
-			log.info("The document '" + uuid + "' was successfully shared with " + mail)
+			self.log.info("The document '" + uuid + "' was successfully shared with " + mail + " ( "+ req_time + "s)")
 		else :
-			log.warn("Trying to share document '" + uuid + "' with " + mail)
-			log.error("Unexpected return code : " + str(code) + " : " + msg)
+			self.log.warn("Trying to share document '" + uuid + "' with " + mail)
+			self.log.error("Unexpected return code : " + str(code) + " : " + msg)
 
 
 
