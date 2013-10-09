@@ -411,10 +411,10 @@ Once this program is installed, you have two configuration options :
 """
 
 # ---------------------------------------------------------------------------------------------------------------------
-class UploadFileCommand(DefaultCommand):
+class DocumentUploadCommand(DefaultCommand):
 
 	def __call__(self, args):
-		super(UploadFileCommand, self).__call__(args)
+		super(DocumentUploadCommand, self).__call__(args)
 
 		for f in args.files : 
 			self.uploadFile(f)
@@ -467,8 +467,9 @@ class UploadFileCommand(DefaultCommand):
 	        pbar.finish()
 		result = resultq.read()
 
-		self.log.debug("the result is : " + str(result))
 		jObj = json.loads(result)
+		self.log.debug("the result is : ")
+		self.log.debug(json.dumps(jObj, sort_keys = True, indent = 2))
 
 		req_time = str(endtime - starttime)
 		self.log.info("The file '" + jObj.get('name') + "' ("+ jObj.get('uuid') + ") was uploaded. (" + req_time + "s)")
@@ -547,13 +548,13 @@ This method could throw exceptions like urllib2.HTTPError."""
 
 
 # ---------------------------------------------------------------------------------------------------------------------
-class DownloadFileCommand(DownloadCommand):
+class DocumentDownloadCommand(DownloadCommand):
 
 	def __call__(self, args):
-		super(DownloadFileCommand, self).__call__(args)
+		super(DocumentDownloadCommand, self).__call__(args)
 
-		for f in args.files :
-			self.downloadFile(f)
+		for u in args.uuids:
+			self.downloadFile(u)
 
 	def downloadFile(self, uuid):
 		url = self.root_url + "documents/%s/download" % uuid
@@ -569,10 +570,10 @@ class DownloadFileCommand(DownloadCommand):
 
 
 # ---------------------------------------------------------------------------------------------------------------------
-class DownloadShareCommand(DownloadCommand):
+class ShareDownloadCommand(DownloadCommand):
 
 	def __call__(self, args):
-		super(DownloadShareCommand, self).__call__(args)
+		super(ShareDownloadCommand, self).__call__(args)
 
 		for f in args.files :
 			self.downloadShare(f)
@@ -590,10 +591,10 @@ class DownloadShareCommand(DownloadCommand):
 
 
 # ---------------------------------------------------------------------------------------------------------------------
-class ListDocumentCommand(DefaultCommand):
+class DocumentListCommand(DefaultCommand):
 
 	def __call__(self, args):
-		super(ListDocumentCommand, self).__call__(args)
+		super(DocumentListCommand, self).__call__(args)
 		#self.log.debug(str(self.__class__))
 
 		self.listFile()
@@ -655,8 +656,9 @@ class ListReceivedShareCommand(DefaultCommand):
 		endtime = datetime.now()
 		result = resultq.read()
 
-		self.log.debug("the result is : " + str(result))
 		jObj = json.loads(result)
+		self.log.debug("the result is : ")
+		self.log.debug(json.dumps(jObj, sort_keys = True, indent = 2))
 
 		req_time = str(endtime - starttime)
 	#	self.log.info("The file '" + jObj.get('name') + "' ("+ jObj.get('uuid') + ") was uploaded. (" + req_time + "s)")
@@ -665,6 +667,48 @@ class ListReceivedShareCommand(DefaultCommand):
 		for f in jObj:
 			print "%(name)-60s\t %(uuid)s" % f
 			#print "File names : %(name)-60s\t %(uuid)s" % f
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+class ShareCommand(DefaultCommand): 
+
+	def __call__(self, args):
+		super(ShareCommand, self).__call__(args)
+
+		for uuid in args.uuids :
+			for mail in args.mails :
+				self.shareOneDoc(uuid , mail)
+
+
+	def shareOneDoc(self, uuid , mail):
+
+		url = self.root_url + "shares/sharedocument/%s/%s"  % ( mail , uuid  )
+		self.log.debug("upload url : "+ url)
+
+		# Building request
+		request = urllib2.Request(url)
+
+		try:
+			# doRequest
+		        resultq = urllib2.urlopen(request)
+		except urllib2.HTTPError as e :
+		        print e
+		        print e.code
+			print url
+
+		        return None
+
+
+		code = resultq.getcode()
+		msg = resultq.msg
+
+		self.log.debug("the result is : " + str(code) + " : " + msg)
+		if code == 204 : 
+			log.info("The document '" + uuid + "' was successfully shared with " + mail)
+		else :
+			log.warn("Trying to share document '" + uuid + "' with " + mail)
+			log.error("Unexpected return code : " + str(code) + " : " + msg)
+
 
 
 
@@ -695,22 +739,23 @@ subparsers = parser.add_subparsers()
 ####################################################################################
 ### documents
 ####################################################################################
-def add_download_parser(subparsers, name, desc):
+def add_document_parser(subparsers, name, desc):
 	parser_tmp = subparsers.add_parser(name, help=desc)
 
 	subparsers2 = parser_tmp.add_subparsers()
 
 	parser_tmp2 = subparsers2.add_parser('upload', help="upload documents to linshare")
-	parser_tmp2.set_defaults(__func__=UploadFileCommand())
-	parser_tmp2.add_argument('-f', '--file', action="append", dest="files", required=True)
+	parser_tmp2.set_defaults(__func__=DocumentUploadCommand())
+	parser_tmp2.add_argument('files', nargs='+')
+	#parser_tmp2.add_argument('-f', '--file', action="append", dest="files", required=True)
 
 
 	parser_tmp2 = subparsers2.add_parser('download', help="download documents from linshare")
-	parser_tmp2.set_defaults(__func__=DownloadFileCommand())
-	parser_tmp2.add_argument('-f', '--file', action="append", dest="files", required=True)
+	parser_tmp2.set_defaults(__func__=DocumentDownloadCommand())
+	parser_tmp2.add_argument('-u', '--uuid', action="append", dest="uuids", required=True)
 
 	parser_tmp2 = subparsers2.add_parser('list', help="list documents from linshare")
-	parser_tmp2.set_defaults(__func__=ListDocumentCommand())
+	parser_tmp2.set_defaults(__func__=DocumentListCommand())
 
 ####################################################################################
 ### shares
@@ -718,11 +763,13 @@ def add_download_parser(subparsers, name, desc):
 def add_share_parser(subparsers, name, desc):
 	parser_tmp = subparsers.add_parser(name, help=desc)
 
-#	subparsers2 = parser_tmp.add_subparsers()
-#
-#	parser_tmp2 = subparsers2.add_parser('create', help="upload files to linshare")
-#	parser_tmp2.set_defaults(__func__=UploadFileCommand())
-#	parser_tmp2.add_argument('-f', '--file', action="append", dest="files", required=True)
+	subparsers2 = parser_tmp.add_subparsers()
+
+	parser_tmp2 = subparsers2.add_parser('create', help="share files into linshare")
+	parser_tmp2.set_defaults(__func__=ShareCommand())
+	parser_tmp2.add_argument('-u', '--uuid', action="append", dest="uuids", required=True, help="Uuids of documents you want to share.")
+	parser_tmp2.add_argument('-m', '--mail', action="append", dest="mails", required=True, help="Recipient mails.")
+	
 #
 #	parser_tmp2 = subparsers2.add_parser('list', help="list files from linshare")
 #	parser_tmp2.set_defaults(__func__=ListShareCommand())
@@ -736,13 +783,8 @@ def add_received_share_parser(subparsers, name, desc):
 
 	subparsers2 = parser_tmp.add_subparsers()
 
-	#parser_tmp2 = subparsers2.add_parser('create', help="upload files to linshare")
-	#parser_tmp2.set_defaults(__func__=UploadFileCommand())
-	#parser_tmp2.add_argument('-f', '--file', action="append", dest="files", required=True)
-
-
 	parser_tmp2 = subparsers2.add_parser('download', help="download shares from linshare")
-	parser_tmp2.set_defaults(__func__=DownloadShareCommand())
+	parser_tmp2.set_defaults(__func__=ShareDownloadCommand())
 	parser_tmp2.add_argument('-f', '--file', action="append", dest="files", required=True)
 
 	#group = parser_tmp2.add_mutually_exclusive_group()
@@ -772,9 +814,11 @@ def add_config_parser(subparsers, name, desc):
 ### Adding config parsers
 ####################################################################################
 
-add_download_parser(subparsers, "document", "documents management")
-add_received_share_parser(subparsers, "share", "received shares management")
-add_config_parser(subparsers, "config",  "config tools like autocomplete configuration or pref-file generation.")
+add_document_parser(subparsers, "documents", "Documents management")
+add_share_parser(subparsers, "shares", "Created shares management")
+add_received_share_parser(subparsers, "received_shares", "Received shares management")
+add_received_share_parser(subparsers, "rshares", "Alias of received_share command")
+add_config_parser(subparsers, "config",  "Config tools like autocomplete configuration or pref-file generation.")
 
 parser_tmp = subparsers.add_parser('test', add_help=False)
 parser_tmp.set_defaults(__func__=TestCommand())
