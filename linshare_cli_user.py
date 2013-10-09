@@ -317,22 +317,33 @@ class DefaultCommand(object):
 		self.password = password
 		self.root_url = args.host + "/" + args.application_name + "/" + "webservice/rest/"
 
-		# We declare all the handlers useful here.
-		debuglevel = 0
+		self.debuglevel = 0
+		# 0 : debug off
+		# 1 : debug on
+		# 2 : debug on, request result is printed (pretty json)
+		# 3 : debug on, urllib debug on,  http headers and request are printed
+		httpdebuglevel = 0
 		if self.debug :
-			debuglevel = 1
+			try:
+				self.debuglevel = int(self.debug)
+			except ValueError as e :
+				self.debuglevel = 1
 
+			if self.debuglevel >= 3 :
+				httpdebuglevel = 1
+
+		# We declare all the handlers useful here.
 		auth_handler = urllib2.HTTPBasicAuthHandler()
 		auth_handler.add_password(realm=args.realm,
 			uri=args.host,
 			user=self.user,
 			passwd=self.password)
 
-		handlers = [poster.streaminghttp.StreamingHTTPSHandler(debuglevel=debuglevel),
+		handlers = [poster.streaminghttp.StreamingHTTPSHandler(debuglevel=httpdebuglevel),
 			auth_handler,
-			urllib2.HTTPSHandler(debuglevel=debuglevel),
-			urllib2.HTTPHandler(debuglevel=debuglevel),
-			poster.streaminghttp.StreamingHTTPHandler(debuglevel=debuglevel),
+			urllib2.HTTPSHandler(debuglevel=httpdebuglevel),
+			urllib2.HTTPHandler(debuglevel=httpdebuglevel),
+			poster.streaminghttp.StreamingHTTPHandler(debuglevel=httpdebuglevel),
 			poster.streaminghttp.StreamingHTTPRedirectHandler(),
 			urllib2.HTTPCookieProcessor(cookielib.CookieJar())]
 
@@ -619,8 +630,9 @@ class DocumentListCommand(DefaultCommand):
 		result = resultq.read()
 
 		jObj = json.loads(result)
-		self.log.debug("the result is : ")
-		self.log.debug(json.dumps(jObj, sort_keys = True, indent = 2))
+		if self.debuglevel >= 2 : 
+			self.log.debug("the result is : ")
+			self.log.debug(json.dumps(jObj, sort_keys = True, indent = 2))
 
 		req_time = str(endtime - starttime)
 		print "File names : "
@@ -722,20 +734,26 @@ class ShareCommand(DefaultCommand):
 ####################################################################################
 config = Config()
 
-
 # create the top-level parser
-parser = argparse.ArgumentParser(description="""An user cli for LinShare, using its REST API.""")
+parser = argparse.ArgumentParser( prog = "linshare_cli_user" , description="""An user cli for LinShare, using its REST API.""" )
+parser = argparse.ArgumentParser( prog = "linshare_cli_user" , description="""An user cli for LinShare, using its REST API.""", formatter_class=argparse.RawTextHelpFormatter)
 
 parser.add_argument('-V', '--verbose', action="store_true", default=False)
-parser.add_argument('-D', '--debug', action="store_true", default=False, help=argparse.SUPPRESS)
-parser.add_argument('-c', '--config', action="store", help="other configuration file.")
+#parser.add_argument('-D', '--debug', action="count", dest="debug", default=0, help=argparse.SUPPRESS)
+parser.add_argument('-D', '--debug', action="count", dest="debug", default=0, help="""(default: %(default)s)
+# 0 : debug off
+# 1 : debug on
+# 2 : debug on and request result is printed (pretty json)
+# 3 : debug on and urllib debug on and http headers and request are printed
+""")
+parser.add_argument('-c', '--config', action="store", help="Other configuration file.")
 parser.add_argument('-s', dest='server_section', action="store", help="This option let you select the server section in the ini file you want to load (server section is always load first as default configuration). You just need to specify a number like '4' for section 'server-4'.")
 parser.add_argument('-u', '--user', action="store", dest="user")
 #, required=True)
 parser.add_argument('-P', '--password', action="store")
-parser.add_argument('-p', action="store_true", default=False, dest="ask_password", help="if set, the program will ask you your password.")
+parser.add_argument('-p', action="store_true", default=False, dest="ask_password", help="If set, the program will ask you your password.")
 parser.add_argument('-H', '--host', action="store")
-parser.add_argument('-a', '--appname', action="store", dest="application_name")
+parser.add_argument('-a', '--appname', action="store", dest="application_name", help="Default value is 'linshare' (extracted from http:/x.x.x.x/linshare)")
 parser.add_argument('-r', '--realm', action="store", help=argparse.SUPPRESS)
 
 ####################################################################################
