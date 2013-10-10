@@ -30,7 +30,7 @@ if False :
 log = logging.getLogger('linshare-cli')
 
 
-from linshare_cli.core import Config
+from linshare_cli.common import Config
 from linshare_cli.user import *
 
 
