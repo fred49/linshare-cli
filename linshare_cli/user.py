@@ -62,7 +62,7 @@ class DocumentsUploadCommand(DefaultCommand):
 	def __call__(self, args):
 		super(DocumentsUploadCommand, self).__call__(args)
 
-		for file_path in args.files : 
+		for file_path in args.files :
 			jObj = self.ls.uploadFile(file_path)
 			self.log.info("The file '" + jObj.get('name') + "' ("+ jObj.get('uuid') + ") was uploaded. (" + self.ls.last_req_time + "s)")
 
@@ -81,6 +81,26 @@ class DocumentsDownloadCommand(DefaultCommand):
 				print "Error : "
 				print e
 				return
+
+# ---------------------------------------------------------------------------------------------------------------------
+class DocumentsUploadAndSharingCommand(DefaultCommand):
+
+	def __call__(self, args):
+		super(DocumentsUploadAndSharingCommand, self).__call__(args)
+
+		for file_path in args.files :
+			jObj = self.ls.uploadFile(file_path)
+			uuid = jObj.get('uuid')
+			self.log.info("The file '" + jObj.get('name') + "' ("+ uuid + ") was uploaded. (" + self.ls.last_req_time + "s)")
+
+			for mail in args.mails :
+				code, msg , req_time = self.ls.shareOneDoc(uuid , mail)
+
+				if code == 204 :
+					self.log.info("The document '" + uuid + "' was successfully shared with " + mail + " ( "+ req_time + "s)")
+				else :
+					self.log.warn("Trying to share document '" + uuid + "' with " + mail)
+					self.log.error("Unexpected return code : " + str(code) + " : " + msg)
 
 # ----------------- Received Shares ------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
@@ -116,16 +136,16 @@ class ReceivedSharesDownloadCommand(DefaultCommand):
 
 # -------------------------- Shares ------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
-class ShareCommand(DefaultCommand): 
+class SharesCommand(DefaultCommand):
 
 	def __call__(self, args):
-		super(ShareCommand, self).__call__(args)
+		super(SharesCommand, self).__call__(args)
 
 		for uuid in args.uuids :
 			for mail in args.mails :
 				code, msg , req_time = self.ls.shareOneDoc(uuid , mail)
 
-				if code == 204 : 
+				if code == 204 :
 					self.log.info("The document '" + uuid + "' was successfully shared with " + mail + " ( "+ req_time + "s)")
 				else :
 					self.log.warn("Trying to share document '" + uuid + "' with " + mail)

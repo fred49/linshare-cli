@@ -83,8 +83,11 @@ def add_document_parser(subparsers, name, desc):
 	parser_tmp2 = subparsers2.add_parser('upload', help="upload documents to linshare")
 	parser_tmp2.set_defaults(__func__=DocumentsUploadCommand())
 	parser_tmp2.add_argument('files', nargs='+')
-	#parser_tmp2.add_argument('-f', '--file', action="append", dest="files", required=True)
 
+	parser_tmp2 = subparsers2.add_parser('upshare', help="upload and share documents")
+	parser_tmp2.set_defaults(__func__=DocumentsUploadAndSharingCommand())
+	parser_tmp2.add_argument('files', nargs='+')
+	parser_tmp2.add_argument('-m', '--mail', action="append", dest="mails", required=True, help="Recipient mails.")
 
 	parser_tmp2 = subparsers2.add_parser('download', help="download documents from linshare")
 	parser_tmp2.set_defaults(__func__=DocumentsDownloadCommand())
@@ -102,14 +105,10 @@ def add_share_parser(subparsers, name, desc):
 	subparsers2 = parser_tmp.add_subparsers()
 
 	parser_tmp2 = subparsers2.add_parser('create', help="share files into linshare")
-	parser_tmp2.set_defaults(__func__=ShareCommand())
+	parser_tmp2.set_defaults(__func__=SharesCommand())
 	parser_tmp2.add_argument('-u', '--uuid', action="append", dest="uuids", required=True, help="Uuids of documents you want to share.")
 	parser_tmp2.add_argument('-m', '--mail', action="append", dest="mails", required=True, help="Recipient mails.")
 	
-#
-#	parser_tmp2 = subparsers2.add_parser('list', help="list files from linshare")
-#	parser_tmp2.set_defaults(__func__=ListShareCommand())
-
 
 ####################################################################################
 ### received shares
