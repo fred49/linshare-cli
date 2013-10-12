@@ -66,15 +66,16 @@ class file_with_callback(file):
 		data = file.write(self, data)
 
 # ---------------------------------------------------------------------------------------------------------------------
-class LinShareCli(object):
+class CoreCli(object):
 
-        def __init__(self, host, user, password, verbose=False, debug=0, realm="Name Of Your LinShare Realm", application_name="linshare"):
+        def __init__(self, host, user, password, verbose, debug, realm, application_name):
 		self.log = logging.getLogger('linshare-cli' + "." + str(self.__class__.__name__.lower()))
                 self.verbose	= verbose
                 self.debug	= debug
 		self.password	= password
 		self.user	= user
 		self.last_req_time	= None
+
 
 		if not host:
 			raise ValueError("invalid host : host url is not set !")
@@ -299,38 +300,46 @@ This method could throw exceptions like urllib2.HTTPError."""
 		self.log.debug("list url : " + url + " : request time : " + self.last_req_time)
 		return (file_name, self.last_req_time)
 
-
-# ---------------------------------------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
 
-	def listDocument(self):
+# ---------------------------------------------------------------------------------------------------------------------
+class Documents(object):
+        def __init__(self, corecli):
+		self.core = corecli
+
+	def list(self):
 		""" List all documents store into LinShare."""
-		return self._list("documents.json")
+		return self.core._list("documents.json")
 
-	def uploadFile(self, file_path):
+	def upload(self, file_path):
 		""" Upload a file to LinShare using its rest api. return the uploaded document uuid  """
-		return self._upload(file_path , "documents.json" )
+		return self.core._upload(file_path , "documents.json" )
 
-	def downloadDocument(self, uuid):
+	def download(self, uuid):
 		url = "documents/%s/download" % uuid
-		return self._download(uuid, url)
+		return self.core._download(uuid, url)
 
 # ---------------------------------------------------------------------------------------------------------------------
+class ReceivedShares(object):
+        def __init__(self, corecli):
+		self.core = corecli
 
-	def listReceivedShares(self):
-		return self._list("shares.json")
+	def list(self):
+		return self.core._list("shares.json")
 
-	def downloadReceivedShares(self, uuid):
+	def download(self, uuid):
 		url = "shares/download/%s" % uuid
-		return self._download(uuid, url)
-
-
+		return self.core._download(uuid, url)
 
 # ---------------------------------------------------------------------------------------------------------------------
+class Shares(object):
+        def __init__(self, corecli):
+		self.core = corecli
+		self.log = logging.getLogger('linshare-cli' + "." + str(self.__class__.__name__.lower()))
 
-	def shareOneDoc(self, uuid , mail):
+	def share(self, uuid , mail):
 
-		url = self.root_url + "shares/sharedocument/%s/%s"  % ( mail , uuid  )
+		url = self.core.root_url + "shares/sharedocument/%s/%s"  % ( mail , uuid  )
 		self.log.debug("share url : "+ url)
 
 		# Building request
@@ -353,9 +362,19 @@ This method could throw exceptions like urllib2.HTTPError."""
 		code = resultq.getcode()
 		msg = resultq.msg
 
-		self.last_req_time = str(endtime - starttime)
-		self.log.debug("share url : " + url + " : request time : " + self.last_req_time)
+		self.core.last_req_time = str(endtime - starttime)
+		self.log.debug("share url : " + url + " : request time : " + self.core.last_req_time)
 		self.log.debug("the result is : " + str(code) + " : " + msg)
-		return ( code, msg , self.last_req_time )
+		return ( code, msg , self.core.last_req_time )
+
 # ---------------------------------------------------------------------------------------------------------------------
+
+class UserCli(CoreCli):
+        def __init__(self, host, user, password, verbose=False, debug=0, realm="Name Of Your LinShare Realm", application_name="linshare"):
+		super(UserCli, self).__init__(host, user, password, verbose, debug, realm, application_name)
+		self.documents = Documents(self)
+		self.rshares = ReceivedShares(self)
+		self.shares = Shares(self)
+
+
 

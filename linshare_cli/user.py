@@ -48,7 +48,7 @@ class DocumentsListCommand(DefaultCommand):
 	def __call__(self, args):
 		super(DocumentsListCommand, self).__call__(args)
 
-		jObj = self.ls.listDocument()
+		jObj = self.ls.documents.list()
 		print "File names : "
 		print "------------"
 		for f in jObj:
@@ -63,7 +63,7 @@ class DocumentsUploadCommand(DefaultCommand):
 		super(DocumentsUploadCommand, self).__call__(args)
 
 		for file_path in args.files :
-			jObj = self.ls.uploadFile(file_path)
+			jObj = self.ls.documents.upload(file_path)
 			self.log.info("The file '" + jObj.get('name') + "' ("+ jObj.get('uuid') + ") was uploaded. (" + self.ls.last_req_time + "s)")
 
 
@@ -75,7 +75,7 @@ class DocumentsDownloadCommand(DefaultCommand):
 
 		for uuid in args.uuids:
 			try:
-				file_name, req_time = self.ls.downloadDocument(uuid)
+				file_name, req_time = self.ls.documents.download(uuid)
 				self.log.info("The file '" + file_name  + "' was downloaded. (" + req_time + "s)")
 			except urllib2.HTTPError as e :
 				print "Error : "
@@ -89,12 +89,12 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
 		super(DocumentsUploadAndSharingCommand, self).__call__(args)
 
 		for file_path in args.files :
-			jObj = self.ls.uploadFile(file_path)
+			jObj = self.ls.documents.upload(file_path)
 			uuid = jObj.get('uuid')
 			self.log.info("The file '" + jObj.get('name') + "' ("+ uuid + ") was uploaded. (" + self.ls.last_req_time + "s)")
 
 			for mail in args.mails :
-				code, msg , req_time = self.ls.shareOneDoc(uuid , mail)
+				code, msg , req_time = self.ls.shares.share(uuid , mail)
 
 				if code == 204 :
 					self.log.info("The document '" + uuid + "' was successfully shared with " + mail + " ( "+ req_time + "s)")
@@ -108,7 +108,7 @@ class ReceivedSharesListCommand(DefaultCommand):
 
 	def __call__(self, args):
 		super(ReceivedSharesListCommand, self).__call__(args)
-		jObj = self.ls.listReceivedShares()
+		jObj = self.ls.rshares.list()
 
 		print "Received Shares: "
 		print "------------"
@@ -125,7 +125,7 @@ class ReceivedSharesDownloadCommand(DefaultCommand):
 
 		for uuid in args.uuids:
 			try:
-				file_name, req_time =  self.ls.downloadReceivedShares(uuid)
+				file_name, req_time =  self.ls.rshares.download(uuid)
 				self.log.info("The share '" + file_name  + "' was downloaded. (" + req_time + "s)")
 			except urllib2.HTTPError as e :
 				print "Error : "
@@ -143,7 +143,7 @@ class SharesCommand(DefaultCommand):
 
 		for uuid in args.uuids :
 			for mail in args.mails :
-				code, msg , req_time = self.ls.shareOneDoc(uuid , mail)
+				code, msg , req_time = self.ls.shares.share(uuid , mail)
 
 				if code == 204 :
 					self.log.info("The document '" + uuid + "' was successfully shared with " + mail + " ( "+ req_time + "s)")

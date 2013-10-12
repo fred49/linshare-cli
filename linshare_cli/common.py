@@ -6,7 +6,7 @@ import os
 import logging
 import getpass
 import base64
-from core import LinShareCli
+from core import UserCli
 from tool import *
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -93,7 +93,7 @@ class DefaultCommand(object):
 		self.log = logging.getLogger('linshare-cli' + "." + str(self.__class__.__name__.lower()))
 
         def __call__(self, args):
-		self.ls = LinShareCli(args.host , args.user , args.password , args.verbose, args.debug)
+		self.ls = UserCli(args.host , args.user , args.password , args.verbose, args.debug)
                 self.verbose = args.verbose
                 self.debug = args.debug
 
