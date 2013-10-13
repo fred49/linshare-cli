@@ -188,6 +188,10 @@ class ThreadsListCommand(DefaultCommand):
 			print "%(name)-60s\t %(uuid)s" % f
 		print ""
 
+	def complete(self, prefix):
+		jObj = self.ls.threads.list()
+		return (v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
+
 class ThreadsListAutoCompleteCommand(DefaultCommand):
 	""" List all threads store into LinShare."""
 
@@ -196,6 +200,7 @@ class ThreadsListAutoCompleteCommand(DefaultCommand):
 
 		jObj = self.ls.threads.list()
 		return (v.get('uuid') for v in jObj)
+
 
 # ---------------------------------------------------------------------------------------------------------------------
 class ThreadMembersListCommand(DefaultCommand):
@@ -215,4 +220,50 @@ class ThreadMembersListCommand(DefaultCommand):
 
 
 
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# -------------------------------- User API completer fro arg complete ------------------------------------------------
+
+class DefaultCompleter(object):
+	def __init__(self , config):
+		self.config = config
+
+	def __call__(self, prefix, **kwargs):
+		import argcomplete
+		from argcomplete import debug
+		from argcomplete import warn
+		try:
+			debug("\ncoucou fred")
+			debug(str(kwargs))
+			for i , j in kwargs.items() :
+				debug(i)
+				debug("\t" + str(j))
+
+			args = kwargs.get('parsed_args')
+
+			# reloading configuration with optional arguments
+			self.config.reload(args)
+			# using values stored in config file to filled in undefined args.
+			# undefind args will be filled in with default values stored into the pref file.
+			self.config.push(args)
+
+			a=self.getCommand()
+			a(args)
+			return a.complete(prefix)
+		except Exception as e:
+			debug("\nERROR:An exception was caught :" + str(e) + "\n")
+
+	def getCommand(self):
+		raise NotImplemented("You need to implement this method")
+
+
+class ThreadUidCompleter(DefaultCompleter):
+	def getCommand(self):
+		return ThreadsListCommand()
+
+
+class DocumentUidCompleter(DefaultCompleter):
+	def getCommand(self):
+		return DocumentsListCommand()
 

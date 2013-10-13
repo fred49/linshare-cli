@@ -92,7 +92,7 @@ def add_document_parser(subparsers, name, desc):
 
 	parser_tmp2 = subparsers2.add_parser('download', help="download documents from linshare")
 	parser_tmp2.set_defaults(__func__=DocumentsDownloadCommand())
-	parser_tmp2.add_argument('-u', '--uuid', action="append", dest="uuids", required=True)
+	parser_tmp2.add_argument('-u', '--uuid', action="append", dest="uuids", required=True).completer = DocumentUidCompleter(config)
 
 	parser_tmp2 = subparsers2.add_parser('list', help="list documents from linshare")
 	parser_tmp2.set_defaults(__func__=DocumentsListCommand())
@@ -143,7 +143,7 @@ def add_threads_parser(subparsers, name, desc):
 	parser_tmp2.set_defaults(__func__=ThreadsListCommand())
 
 	parser_tmp2 = subparsers2.add_parser('listmembers', help="list thread members.")
-	parser_tmp2.add_argument('-u', '--uuid', action="store", dest="uuid", required=True)
+	parser_tmp2.add_argument('-u', '--uuid', action="store", dest="uuid", required=True).completer = ThreadUidCompleter(config)
 	parser_tmp2.set_defaults(__func__=ThreadMembersListCommand())
 
 
