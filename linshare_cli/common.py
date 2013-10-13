@@ -4,8 +4,11 @@
 
 import os
 import logging
+import json
 import getpass
 import base64
+import copy
+import datetime
 from core import UserCli
 from tool import *
 
@@ -89,36 +92,56 @@ class Config(object):
 # ---------------------------------------------------------------------------------------------------------------------
 class DefaultCommand(object):
 
-        def __init__(self):
+	def __init__(self):
 		self.log = logging.getLogger('linshare-cli' + "." + str(self.__class__.__name__.lower()))
 
-        def __call__(self, args):
-		self.ls = UserCli(args.host , args.user , args.password , args.verbose, args.debug)
-                self.verbose = args.verbose
-                self.debug = args.debug
+	def __call__(self, args):
+		self.verbose = args.verbose
+		self.debug = args.debug
 
-                # suppress __func__ object ang password just for display
-                dict_tmp=args
-                delattr(dict_tmp,"__func__")
-                delattr(dict_tmp,"password")
-                self.log.debug(str(dict_tmp))
+		# suppress __func__ object ang password just for display
+
+		dict_tmp=copy.copy(args)
+		delattr(dict_tmp,"__func__")
+		delattr(dict_tmp,"password")
+		self.log.debug(str(dict_tmp))
 
 		if args.ask_password :
 			try:
-				self.ls.password = getpass.getpass("Please, enter your password : ")
+				args.password = getpass.getpass("Please, enter your password : ")
 			except KeyboardInterrupt as e:
 				print "\nKeyboardInterrupt exception was caught. Program terminated."
 				sys.exit(1)
 
-		if not self.ls.password:
+		if not args.password:
 			raise ValueError("invalid password : password is not set ! ")
-		if not args.realm:
-			self.ls.realm = args.realm
-		if args.application_name:
-			self.ls.application_name=args.application_name
 
+		self.ls = self._getCliObject(args)
 		if not self.ls.auth():
 			sys.exit(1)
+
+	def _getCliObject(self, args):
+		raise NotImplementedError("You must implement the _getCliObject method and return a object instance of CoreCli or its children in your Command class.")
+
+
+	def printPrettyJson(self, obj):
+			print json.dumps(obj, sort_keys = True, indent = 2)
+
+
+	def addLegend(self, data):
+		legend = dict()
+		for i in data[0] :
+			legend[i]=i.upper()
+		data.insert(0, legend)
+
+	def addDateObject(self, data, attr):
+		for f in data:
+			f[attr + "D"] = datetime.datetime.fromtimestamp(f.get(attr) /1000)
+
+	def formatDate(self, data, attr, dformat="%Y-%m-%d %H:%M:%S"):
+		for f in data:
+			a = "{da:" + dformat + "}"
+			f[attr + "D"] = a.format(da=datetime.datetime.fromtimestamp(f.get(attr) /1000))
 
 
 

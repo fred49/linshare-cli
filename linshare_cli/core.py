@@ -13,6 +13,7 @@ import urllib2 , cookielib
 import json
 import poster
 import time
+import copy
 from datetime import datetime
 from progressbar import *
 import getpass
@@ -68,7 +69,7 @@ class file_with_callback(file):
 # ---------------------------------------------------------------------------------------------------------------------
 class CoreCli(object):
 
-        def __init__(self, host, user, password, verbose, debug, realm, application_name):
+        def __init__(self, host, user, password, verbose=False, debug=0, realm="Name Of Your LinShare Realm", application_name="linshare"):
 		self.log = logging.getLogger('linshare-cli' + "." + str(self.__class__.__name__.lower()))
                 self.verbose	= verbose
                 self.debug	= debug
@@ -76,13 +77,17 @@ class CoreCli(object):
 		self.user	= user
 		self.last_req_time	= None
 
-
 		if not host:
 			raise ValueError("invalid host : host url is not set !")
 		if not user:
 			raise ValueError("invalid user : " + str(user))
 		if not password:
 			raise ValueError("invalid password : password is not set ! ")
+
+		if not application_name :
+			application_name="linshare"
+		if not realm :
+			realm="Name Of Your LinShare Realm"
 
 		self.root_url = host + "/" + application_name + "/" + "webservice/rest/"
 
@@ -123,6 +128,7 @@ class CoreCli(object):
 
 	def auth(self):
 		url = self.root_url + "authentication/authorized"
+		self.log.debug("list url : "+ url)
 
 		# Building request
 		request = urllib2.Request(url)
@@ -301,7 +307,7 @@ This method could throw exceptions like urllib2.HTTPError."""
 		return (file_name, self.last_req_time)
 
 # ---------------------------------------------------------------------------------------------------------------------
-
+# USER API
 # ---------------------------------------------------------------------------------------------------------------------
 class Documents(object):
         def __init__(self, corecli):
@@ -367,14 +373,51 @@ class Shares(object):
 		self.log.debug("the result is : " + str(code) + " : " + msg)
 		return ( code, msg , self.core.last_req_time )
 
-# ---------------------------------------------------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------------------------------------------------
+class Threads(object):
+        def __init__(self, corecli):
+		self.core = corecli
+
+	def list(self):
+		return self.core._list("threads.json")
+
+# ---------------------------------------------------------------------------------------------------------------------
+class ThreadsMembers(object):
+        def __init__(self, corecli):
+		self.core = corecli
+
+	def list(self, threadUuid):
+		url = "thread_members/%s.json" % threadUuid
+		return self.core._list(url)
+
+# ---------------------------------------------------------------------------------------------------------------------
 class UserCli(CoreCli):
-        def __init__(self, host, user, password, verbose=False, debug=0, realm="Name Of Your LinShare Realm", application_name="linshare"):
-		super(UserCli, self).__init__(host, user, password, verbose, debug, realm, application_name)
+        def __init__(self, *args , **kwargs):
+		super(UserCli, self).__init__(*args , **kwargs)
 		self.documents = Documents(self)
 		self.rshares = ReceivedShares(self)
 		self.shares = Shares(self)
+		self.threads = Threads(self)
+		self.thread_members = ThreadsMembers(self)
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# ADMIN API
+# ---------------------------------------------------------------------------------------------------------------------
+
+class ThreadsAdmin(object):
+        def __init__(self, corecli):
+		self.core = corecli
+
+	def list(self):
+		return self.core._list("threads.json")
+
+# ---------------------------------------------------------------------------------------------------------------------
+class AdminCli(CoreCli):
+        def __init__(self, *args , **kwargs):
+		super(AdminCli, self).__init__(*args , **kwargs)
+		self.threads = Threads(self)
 
 
 

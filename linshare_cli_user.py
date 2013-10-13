@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# PYTHON_ARGCOMPLETE_OK
 
 
 import os , re , sys
@@ -130,6 +131,22 @@ def add_received_share_parser(subparsers, name, desc):
 	parser_tmp2 = subparsers2.add_parser('list', help="list received shares from linshare")
 	parser_tmp2.set_defaults(__func__=ReceivedSharesListCommand())
 
+
+####################################################################################
+###  threads
+####################################################################################
+def add_threads_parser(subparsers, name, desc):
+	parser_tmp = subparsers.add_parser(name, help=desc)
+
+	subparsers2 = parser_tmp.add_subparsers()
+	parser_tmp2 = subparsers2.add_parser('list', help="list threads from linshare")
+	parser_tmp2.set_defaults(__func__=ThreadsListCommand())
+
+	parser_tmp2 = subparsers2.add_parser('listmembers', help="list thread members.")
+	parser_tmp2.add_argument('-u', '--uuid', action="store", dest="uuid", required=True)
+	parser_tmp2.set_defaults(__func__=ThreadMembersListCommand())
+
+
 ####################################################################################
 ### config 
 ####################################################################################
@@ -150,6 +167,7 @@ def add_config_parser(subparsers, name, desc):
 ####################################################################################
 
 add_document_parser(subparsers, "documents", "Documents management")
+add_threads_parser(subparsers, "threads", "threads management")
 add_share_parser(subparsers, "shares", "Created shares management")
 add_received_share_parser(subparsers, "received_shares", "Received shares management")
 add_received_share_parser(subparsers, "rshares", "Alias of received_share command")

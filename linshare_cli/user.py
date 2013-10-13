@@ -6,8 +6,14 @@ import sys
 import logging
 import urllib2
 import getpass
-from common import DefaultCommand
 
+import common
+from core import UserCli
+
+class DefaultCommand(common.DefaultCommand):
+
+	def _getCliObject(self, args):
+		return UserCli(args.host , args.user , args.password , args.verbose, args.debug, args.realm, args.application_name)
 
 # ---------------------------------------------------------------------------------------------------------------------
 class ConfigGenerationCommand(object):
@@ -51,9 +57,22 @@ class DocumentsListCommand(DefaultCommand):
 		jObj = self.ls.documents.list()
 		print "File names : "
 		print "------------"
+		self.formatDate(jObj, 'creationDate')
+		#self.addDateObject(jObj, 'creationDate')
+		self.addLegend(jObj)
+		firstLine = True
 		for f in jObj:
-			print "%(name)-60s\t %(uuid)s" % f
-			#print "File names : %(name)-60s\t %(uuid)s" % f
+			if firstLine:
+				firstLine=False
+				print "{0[name]:60s}{0[creationDate]:30s}{0[uuid]:30s}".format(f)
+			else:
+				print "{name:60s}{creationDateD:30s}{uuid:30s}".format(**f)
+
+	def complete(self, prefix):
+		jObj = self.ls.documents.list()
+		return (v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
+
+
 
 # ---------------------------------------------------------------------------------------------------------------------
 class DocumentsUploadCommand(DefaultCommand):
@@ -112,9 +131,9 @@ class ReceivedSharesListCommand(DefaultCommand):
 
 		print "Received Shares: "
 		print "------------"
+		self.addLegend(jObj)
 		for f in jObj:
 			print "%(name)-60s\t %(uuid)s" % f
-			#print "File names : %(name)-60s\t %(uuid)s" % f
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -150,5 +169,50 @@ class SharesCommand(DefaultCommand):
 				else :
 					self.log.warn("Trying to share document '" + uuid + "' with " + mail)
 					self.log.error("Unexpected return code : " + str(code) + " : " + msg)
+
+
+# -------------------------- Threads ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
+class ThreadsListCommand(DefaultCommand):
+	""" List all threads store into LinShare."""
+
+	def __call__(self, args):
+		super(ThreadsListCommand, self).__call__(args)
+
+		jObj = self.ls.threads.list()
+		#self.printPrettyJson(jObj)
+		print "\nThread names : "
+		print "--------------"
+		self.addLegend(jObj)
+		for f in jObj:
+			print "%(name)-60s\t %(uuid)s" % f
+		print ""
+
+class ThreadsListAutoCompleteCommand(DefaultCommand):
+	""" List all threads store into LinShare."""
+
+	def __call__(self, args):
+		super(ThreadsListAutoCompleteCommand, self).__call__(args)
+
+		jObj = self.ls.threads.list()
+		return (v.get('uuid') for v in jObj)
+
+# ---------------------------------------------------------------------------------------------------------------------
+class ThreadMembersListCommand(DefaultCommand):
+	""" List all thread members store from a thread."""
+
+	def __call__(self, args):
+		super(ThreadMembersListCommand, self).__call__(args)
+
+		jObj = self.ls.thread_members.list(args.uuid)
+		#self.printPrettyJson(jObj)
+		print "\nThread members : "
+		print "------------------"
+		self.addLegend(jObj)
+		for f in jObj:
+			print "%(firstName)-10s %(lastName)-10s\t %(admin)-10s\t %(readonly)-10s\t %(id)s" % f
+		print ""
+
+
 
 
