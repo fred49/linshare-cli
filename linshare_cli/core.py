@@ -334,7 +334,7 @@ class ReceivedShares(object):
 		return self.core._list("shares.json")
 
 	def download(self, uuid):
-		url = "shares/download/%s" % uuid
+		url = "shares/%s/download" % uuid
 		return self.core._download(uuid, url)
 
 # ---------------------------------------------------------------------------------------------------------------------
