@@ -101,6 +101,13 @@ class DocumentsDownloadCommand(DefaultCommand):
 				print e
 				return
 
+	def complete(self, args,  prefix):
+		super(DocumentsDownloadCommand, self).__call__(args)
+
+		jObj = self.ls.documents.list()
+		return (v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
+
+
 # ---------------------------------------------------------------------------------------------------------------------
 class DocumentsUploadAndSharingCommand(DefaultCommand):
 
@@ -188,19 +195,6 @@ class ThreadsListCommand(DefaultCommand):
 			print "%(name)-60s\t %(uuid)s" % f
 		print ""
 
-	def complete(self, prefix):
-		jObj = self.ls.threads.list()
-		return (v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
-
-class ThreadsListAutoCompleteCommand(DefaultCommand):
-	""" List all threads store into LinShare."""
-
-	def __call__(self, args):
-		super(ThreadsListAutoCompleteCommand, self).__call__(args)
-
-		jObj = self.ls.threads.list()
-		return (v.get('uuid') for v in jObj)
-
 
 # ---------------------------------------------------------------------------------------------------------------------
 class ThreadMembersListCommand(DefaultCommand):
@@ -218,7 +212,11 @@ class ThreadMembersListCommand(DefaultCommand):
 			print "%(firstName)-10s %(lastName)-10s\t %(admin)-10s\t %(readonly)-10s\t %(id)s" % f
 		print ""
 
+	def complete(self, args,  prefix):
+		super(ThreadMembersListCommand, self).__call__(args)
 
+		jObj = self.ls.threads.list()
+		return (v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
 
 
 
@@ -247,23 +245,11 @@ class DefaultCompleter(object):
 			# using values stored in config file to filled in undefined args.
 			# undefind args will be filled in with default values stored into the pref file.
 			self.config.push(args)
-
-			a=self.getCommand()
-			a(args)
-			return a.complete(prefix)
+			# getting form args the current Command. This Command should have another method than __call__ called complete.
+			a=args.__func__
+			return a.complete(args, prefix)
 		except Exception as e:
 			debug("\nERROR:An exception was caught :" + str(e) + "\n")
 
-	def getCommand(self):
-		raise NotImplemented("You need to implement this method")
 
-
-class ThreadUidCompleter(DefaultCompleter):
-	def getCommand(self):
-		return ThreadsListCommand()
-
-
-class DocumentUidCompleter(DefaultCompleter):
-	def getCommand(self):
-		return DocumentsListCommand()
 
