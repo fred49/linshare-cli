@@ -68,11 +68,6 @@ class DocumentsListCommand(DefaultCommand):
 			else:
 				print "{name:60s}{creationDateD:30s}{uuid:30s}".format(**f)
 
-	def complete(self, prefix):
-		jObj = self.ls.documents.list()
-		return (v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
-
-
 
 # ---------------------------------------------------------------------------------------------------------------------
 class DocumentsUploadCommand(DefaultCommand):

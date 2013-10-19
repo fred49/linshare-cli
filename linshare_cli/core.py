@@ -15,8 +15,10 @@ import poster
 import time
 import copy
 from datetime import datetime
+from time import time
 from progressbar import *
 import getpass
+import hashlib
 
 
 
@@ -66,6 +68,77 @@ class file_with_callback(file):
 			self._callback(self._seen)
 		data = file.write(self, data)
 
+
+def cli_get_cache(user_function):
+	cache = {}
+	cachedir="~/.linshare-cache"
+	cachedir = os.path.expanduser(cachedir)
+	if not os.path.isdir(cachedir) :
+		os.makedirs(cachedir)
+
+	log = logging.getLogger('linshare-cli.cli_get_cache')
+
+	def log_exec_time(fn, *args):
+		start = time.time()
+		res = fn(*args)
+		end = time.time()
+		log.debug("function time : " + str (end - start))
+		return res
+
+	def get_data(fn, cachefile,  *args):
+		res = log_exec_time(fn, *args)
+		with open(cachefile , 'wb') as f :
+			json.dump(res , f)
+		return res
+
+	def _load_data(cachefile):
+		if os.path.isfile(cachefile) :
+			with open(cachefile , 'rb') as f :
+				res = json.load(f)
+			return res
+		else:
+			raise ValueError("no file found.")
+
+	def load_data(cachefile):
+		return log_exec_time(_load_data, cachefile)
+
+
+	def decorating_function(*args):
+		cli = args[0]
+		url = cli.getFullUrl(args[1])
+		cli.log.debug("cache url : "+ url)
+		key = hashlib.sha256(url + "|" + cli.user).hexdigest()
+		cli.log.debug("key: "+ key)
+		cachefile = cachedir + "/" + key
+
+		cache_time = cli.cache_time
+		nocache = cli.nocache
+
+		res = None
+		if nocache :
+			log.debug("cache disabled.")
+			return log_exec_time(user_function, *args)
+
+		if os.path.isfile(cachefile) :
+			file_time = os.stat(cachefile).st_mtime
+			a = "{da:%Y-%m-%d %H:%M:%S}"
+			log.debug("cached data : "  + str(a.format(da=datetime.fromtimestamp(file_time))))
+
+			if time.time() - cache_time > file_time:
+				log.debug("refreshing cached data.")
+				res = get_data(user_function, cachefile, *args)
+			if not res :
+				try:
+					res = load_data(cachefile)
+				except ValueError as e :
+					log.debug("error : " + str(e))
+		if not res :
+			res = get_data(user_function, cachefile, *args)
+		return res
+
+	return decorating_function
+
+
 # ---------------------------------------------------------------------------------------------------------------------
 class CoreCli(object):
 
@@ -76,6 +149,8 @@ class CoreCli(object):
 		self.password	= password
 		self.user	= user
 		self.last_req_time	= None
+		self.cache_time = 60
+		self.nocache = False
 
 		if not host:
 			raise ValueError("invalid host : host url is not set !")
@@ -125,9 +200,11 @@ class CoreCli(object):
 		# Setting handlers
 		urllib2.install_opener(urllib2.build_opener(*handlers))
 
+	def getFullUrl(self, url_frament):
+		return self.root_url + url_frament
 
 	def auth(self):
-		url = self.root_url + "authentication/authorized"
+		url = self.getFullUrl("authentication/authorized")
 		self.log.debug("list url : "+ url)
 
 		# Building request
@@ -156,6 +233,7 @@ class CoreCli(object):
 		#request.add_header("Cookie", "JSESSIONID=")
 
 
+	@cli_get_cache
 	def _list(self , url):
 		""" List all documents store into LinShare."""
 		self.last_req_time = None

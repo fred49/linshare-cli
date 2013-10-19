@@ -68,6 +68,7 @@ parser.add_argument('-p', action="store_true", default=False, dest="ask_password
 parser.add_argument('-H', '--host', action="store")
 parser.add_argument('-a', '--appname', action="store", dest="application_name", help="Default value is 'linshare' (extracted from http:/x.x.x.x/linshare)")
 parser.add_argument('-r', '--realm', action="store", help=argparse.SUPPRESS)
+parser.add_argument('--nocache', action="store_true", help=argparse.SUPPRESS)
 
 ####################################################################################
 subparsers = parser.add_subparsers()

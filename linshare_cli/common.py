@@ -19,7 +19,7 @@ class Config(object):
 	filepath="~/.linshare.ini"
 	def __init__(self):
 		# Ldap parameters
-		self.fields = ['host', 'realm', 'user', 'password', 'application_name', 'config', 'server_section', 'debug' ] 
+		self.fields = ['host', 'realm', 'user', 'password', 'application_name', 'config', 'server_section', 'debug' , 'nocache' ] 
 		myPref = MyPref(self.filepath, self.section, expanduser=True, prefix = "\t", mandatory = False)
 		self.linshare = myPref(self.fields)
 		self.decode_password()
@@ -117,6 +117,8 @@ class DefaultCommand(object):
 			raise ValueError("invalid password : password is not set ! ")
 
 		self.ls = self._getCliObject(args)
+		if args.nocache:
+			self.ls.nocache = True
 		if not self.ls.auth():
 			sys.exit(1)
 
