@@ -149,6 +149,16 @@ def add_threads_parser(subparsers, name, desc):
 
 
 ####################################################################################
+###  users
+####################################################################################
+def add_users_parser(subparsers, name, desc):
+	parser_tmp = subparsers.add_parser(name, help=desc)
+
+	subparsers2 = parser_tmp.add_subparsers()
+	parser_tmp2 = subparsers2.add_parser('list', help="list users from linshare")
+	parser_tmp2.set_defaults(__func__=UsersListCommand())
+
+####################################################################################
 ### config 
 ####################################################################################
 
@@ -173,6 +183,7 @@ add_share_parser(subparsers, "shares", "Created shares management")
 add_received_share_parser(subparsers, "received_shares", "Received shares management")
 add_received_share_parser(subparsers, "rshares", "Alias of received_share command")
 add_config_parser(subparsers, "config",  "Config tools like autocomplete configuration or pref-file generation.")
+add_users_parser(subparsers, "users",  "users")
 
 parser_tmp = subparsers.add_parser('test', add_help=False)
 parser_tmp.set_defaults(__func__=TestCommand())

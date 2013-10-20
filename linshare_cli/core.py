@@ -470,6 +470,14 @@ class ThreadsMembers(object):
 		return self.core._list(url)
 
 # ---------------------------------------------------------------------------------------------------------------------
+class Users(object):
+        def __init__(self, corecli):
+		self.core = corecli
+
+	def list(self):
+		return self.core._list("users.json")
+
+# ---------------------------------------------------------------------------------------------------------------------
 class UserCli(CoreCli):
         def __init__(self, *args , **kwargs):
 		super(UserCli, self).__init__(*args , **kwargs)
@@ -478,6 +486,7 @@ class UserCli(CoreCli):
 		self.shares = Shares(self)
 		self.threads = Threads(self)
 		self.thread_members = ThreadsMembers(self)
+		self.users = Users(self)
 
 
 # ---------------------------------------------------------------------------------------------------------------------

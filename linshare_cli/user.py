@@ -190,8 +190,11 @@ class SharesCommand(DefaultCommand):
 		return (v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
 
 	def complete_mail(self, args,  prefix):
-		#return ("plop", "undefined")
-		pass
+		super(SharesCommand, self).__call__(args)
+
+		if len(prefix) >= 3: 
+			jObj = self.ls.users.list()
+			return (v.get('mail') for v in jObj if v.get('mail').startswith(prefix))
 
 # -------------------------- Threads ------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
@@ -232,6 +235,26 @@ class ThreadMembersListCommand(DefaultCommand):
 
 		jObj = self.ls.threads.list()
 		return (v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
+
+
+
+# -------------------------- Threads ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
+class UsersListCommand(DefaultCommand):
+	""" List all users store into LinShare."""
+
+	def __call__(self, args):
+		super(UsersListCommand, self).__call__(args)
+
+		jObj = self.ls.users.list()
+		#self.printPrettyJson(jObj)
+		print "\nUser names : "
+		print "--------------"
+		self.addLegend(jObj)
+		for f in jObj:
+			print "%(firstName)-10s %(lastName)-10s\t %(domain)s %(mail)s" % f
+		print ""
+
 
 
 
