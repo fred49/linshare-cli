@@ -88,12 +88,12 @@ def add_document_parser(subparsers, name, desc):
 
 	parser_tmp2 = subparsers2.add_parser('upshare', help="upload and share documents")
 	parser_tmp2.set_defaults(__func__=DocumentsUploadAndSharingCommand())
-	parser_tmp2.add_argument('files', nargs='+')
+	parser_tmp2.add_argument('files', nargs='+').completer = DefaultCompleter(config)
 	parser_tmp2.add_argument('-m', '--mail', action="append", dest="mails", required=True, help="Recipient mails.")
 
 	parser_tmp2 = subparsers2.add_parser('download', help="download documents from linshare")
 	parser_tmp2.set_defaults(__func__=DocumentsDownloadCommand())
-	parser_tmp2.add_argument('-u', '--uuid', action="append", dest="uuids", required=True).completer = DefaultCompleter(config)
+	parser_tmp2.add_argument('uuids', nargs='+').completer = DefaultCompleter(config)
 
 	parser_tmp2 = subparsers2.add_parser('list', help="list documents from linshare")
 	parser_tmp2.set_defaults(__func__=DocumentsListCommand())
@@ -108,8 +108,8 @@ def add_share_parser(subparsers, name, desc):
 
 	parser_tmp2 = subparsers2.add_parser('create', help="share files into linshare")
 	parser_tmp2.set_defaults(__func__=SharesCommand())
-	parser_tmp2.add_argument('-u', '--uuid', action="append", dest="uuids", required=True, help="Uuids of documents you want to share.")
-	parser_tmp2.add_argument('-m', '--mail', action="append", dest="mails", required=True, help="Recipient mails.")
+	parser_tmp2.add_argument('uuids', nargs='+', help="document's uuids you want to share.").completer = DefaultCompleter(config)
+	parser_tmp2.add_argument('-m', '--mail', action="append", dest="mails", required=True, help="Recipient mails.").completer = DefaultCompleter(config, "complete_mail")
 	
 
 ####################################################################################
@@ -122,7 +122,7 @@ def add_received_share_parser(subparsers, name, desc):
 
 	parser_tmp2 = subparsers2.add_parser('download', help="download received shares from linshare")
 	parser_tmp2.set_defaults(__func__=ReceivedSharesDownloadCommand())
-	parser_tmp2.add_argument('-u', '--uuid', action="append", dest="uuids", required=True)
+	parser_tmp2.add_argument('uuids', nargs='+', help="share's uuids you want to download.").completer = DefaultCompleter(config)
 
 	#group = parser_tmp2.add_mutually_exclusive_group()
 	#group.add_argument('-f', '--file', action="append", dest="files)

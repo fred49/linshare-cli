@@ -123,6 +123,12 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
 					self.log.warn("Trying to share document '" + uuid + "' with " + mail)
 					self.log.error("Unexpected return code : " + str(code) + " : " + msg)
 
+	def complete(self, args,  prefix):
+		super(DocumentsUploadAndSharingCommand, self).__call__(args)
+
+		jObj = self.ls.documents.list()
+		return (v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
+
 # ----------------- Received Shares ------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
 class ReceivedSharesListCommand(DefaultCommand):
@@ -154,6 +160,11 @@ class ReceivedSharesDownloadCommand(DefaultCommand):
 				return
 
 
+	def complete(self, args,  prefix):
+		super(ReceivedSharesDownloadCommand, self).__call__(args)
+
+		jObj = self.ls.rshares.list()
+		return (v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
 
 # -------------------------- Shares ------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
@@ -172,6 +183,15 @@ class SharesCommand(DefaultCommand):
 					self.log.warn("Trying to share document '" + uuid + "' with " + mail)
 					self.log.error("Unexpected return code : " + str(code) + " : " + msg)
 
+	def complete(self, args,  prefix):
+		super(SharesCommand, self).__call__(args)
+
+		jObj = self.ls.documents.list()
+		return (v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
+
+	def complete_mail(self, args,  prefix):
+		#return ("plop", "undefined")
+		pass
 
 # -------------------------- Threads ------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
@@ -219,8 +239,9 @@ class ThreadMembersListCommand(DefaultCommand):
 # -------------------------------- User API completer fro arg complete ------------------------------------------------
 
 class DefaultCompleter(object):
-	def __init__(self , config):
+	def __init__(self , config, func_name = "complete"):
 		self.config = config
+		self.func_name = func_name
 
 	def __call__(self, prefix, **kwargs):
 		import argcomplete
@@ -240,9 +261,12 @@ class DefaultCompleter(object):
 			# using values stored in config file to filled in undefined args.
 			# undefind args will be filled in with default values stored into the pref file.
 			self.config.push(args)
-			# getting form args the current Command. This Command should have another method than __call__ called complete.
-			a=args.__func__
-			return a.complete(args, prefix)
+			# getting form args the current Command and looking for a method called by default 'complete'. 
+			# The method name is specified  by func_name
+			fn = getattr(args.__func__, self.func_name, None)
+			if fn:
+				return fn(args, prefix)
+
 		except Exception as e:
 			debug("\nERROR:An exception was caught :" + str(e) + "\n")
 
