@@ -272,6 +272,9 @@ class CoreCli(object):
 		file_name = file_path.split("/")[-1]
 		self.log.debug("file_name is : " + file_name)
 
+		if file_size <= 0 :
+			self.log.error("The file '" + file_name + "' can not be uploaded because its size less or equal to zero.")
+			return None
 
 		widgets = [FileTransferSpeed(),' <<<', Bar(), '>>> ', Percentage(),' ', ETA()]
 	        pbar = ProgressBar(widgets=widgets, maxval=file_size)

@@ -55,19 +55,9 @@ class DocumentsListCommand(DefaultCommand):
 		super(DocumentsListCommand, self).__call__(args)
 
 		jObj = self.ls.documents.list()
-		print "Documents file names : (" + str(len(jObj)) + ")"
-		print "------------"
+		d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
 		self.formatDate(jObj, 'creationDate')
-		#self.addDateObject(jObj, 'creationDate')
-		self.addLegend(jObj)
-		firstLine = True
-		for f in jObj:
-			if firstLine:
-				firstLine=False
-				print "{0[name]:60s}{0[creationDate]:30s}{0[uuid]:30s}".format(f)
-			else:
-				print "{name:60s}{creationDateD:30s}{uuid:30s}".format(**f)
-
+		self.printList(jObj, d_format, "Documents")
 
 # ---------------------------------------------------------------------------------------------------------------------
 class DocumentsUploadCommand(DefaultCommand):
@@ -135,14 +125,11 @@ class ReceivedSharesListCommand(DefaultCommand):
 
 	def __call__(self, args):
 		super(ReceivedSharesListCommand, self).__call__(args)
+
 		jObj = self.ls.rshares.list()
-
-		print "Received Shares: "
-		print "------------"
-		self.addLegend(jObj)
-		for f in jObj:
-			print "%(name)-60s\t %(uuid)s" % f
-
+		d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
+		self.formatDate(jObj, 'creationDate')
+		self.printList(jObj, d_format, "Received Shares")
 
 # ---------------------------------------------------------------------------------------------------------------------
 class ReceivedSharesDownloadCommand(DefaultCommand):
@@ -205,14 +192,10 @@ class ThreadsListCommand(DefaultCommand):
 		super(ThreadsListCommand, self).__call__(args)
 
 		jObj = self.ls.threads.list()
+		d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
 		#self.printPrettyJson(jObj)
-		print "\nThread names : "
-		print "--------------"
-		self.addLegend(jObj)
-		for f in jObj:
-			print "%(name)-60s\t %(uuid)s" % f
-		print ""
-
+		self.formatDate(jObj, 'creationDate')
+		self.printList(jObj, d_format, "Threads")
 
 # ---------------------------------------------------------------------------------------------------------------------
 class ThreadMembersListCommand(DefaultCommand):
@@ -222,13 +205,12 @@ class ThreadMembersListCommand(DefaultCommand):
 		super(ThreadMembersListCommand, self).__call__(args)
 
 		jObj = self.ls.thread_members.list(args.uuid)
+
+		d_format = "{firstName:11s}{lastName:10s}{admin:<7}{readonly:<9}{id}"
+		# print "%(firstName)-10s %(lastName)-10s\t %(admin)-10s\t %(readonly)-10s\t %(id)s"
+
 		#self.printPrettyJson(jObj)
-		print "\nThread members : "
-		print "------------------"
-		self.addLegend(jObj)
-		for f in jObj:
-			print "%(firstName)-10s %(lastName)-10s\t %(admin)-10s\t %(readonly)-10s\t %(id)s" % f
-		print ""
+		self.printList(jObj, d_format, "Thread members")
 
 	def complete(self, args,  prefix):
 		super(ThreadMembersListCommand, self).__call__(args)
@@ -247,13 +229,10 @@ class UsersListCommand(DefaultCommand):
 		super(UsersListCommand, self).__call__(args)
 
 		jObj = self.ls.users.list()
+		d_format = "{firstName:11s}{lastName:10s}{domain:<20}{mail}"
+		#print "%(firstName)-10s %(lastName)-10s\t %(domain)s %(mail)s" % f
 		#self.printPrettyJson(jObj)
-		print "\nUser names : "
-		print "--------------"
-		self.addLegend(jObj)
-		for f in jObj:
-			print "%(firstName)-10s %(lastName)-10s\t %(domain)s %(mail)s" % f
-		print ""
+		self.printList(jObj, d_format, "Users")
 
 
 

@@ -129,22 +129,47 @@ class DefaultCommand(object):
 	def printPrettyJson(self, obj):
 			print json.dumps(obj, sort_keys = True, indent = 2)
 
-
-	def addLegend(self, data):
+	def getLegend(self, data):
 		legend = dict()
 		for i in data[0] :
 			legend[i]=i.upper()
-		data.insert(0, legend)
+		return legend
 
-	def addDateObject(self, data, attr):
-		for f in data:
-			f[attr + "D"] = datetime.datetime.fromtimestamp(f.get(attr) /1000)
+	def addLegend(self, data):
+		data.insert(0, self.getLegend(data))
 
 	def formatDate(self, data, attr, dformat="%Y-%m-%d %H:%M:%S"):
+		"""The current fied is replaced by a formatted date. The previous field is saved to a new field called 'field_orig'.
+		"""
+
 		for f in data:
 			a = "{da:" + dformat + "}"
-			f[attr + "D"] = a.format(da=datetime.datetime.fromtimestamp(f.get(attr) /1000))
+			f[attr + "_orig"] = f[attr]
+			f[attr] = a.format(da=datetime.datetime.fromtimestamp(f.get(attr) /1000))
 
 
+	def getUnderline(self, title):
+		sub = ""
+		for i in xrange(0, len(title)):
+			sub += "-"
+		return sub
 
+	def printTitle(self, data, title):
+		_title = title.strip() + " : (" + str(len(data)) + ")"
+		print "\n" + _title
+		print self.getUnderline(_title)
+
+	def printList(self, data, d_format, title = None, t_format = None):
+		"""The input list is printed out using the d_format parametter. A Legend is built using field names.
+		"""
+
+		if not t_format :
+			t_format = d_format
+		if title : 
+			self.printTitle(data, title)
+		legend = self.getLegend(data)
+		print t_format.format(**legend)
+		for f in data:
+			print d_format.format(**f)
+		print ""
 
