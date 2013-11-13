@@ -55,7 +55,7 @@ class DocumentsListCommand(DefaultCommand):
 		super(DocumentsListCommand, self).__call__(args)
 
 		jObj = self.ls.documents.list()
-		print "File names : "
+		print "Documents file names : (" + str(len(jObj)) + ")"
 		print "------------"
 		self.formatDate(jObj, 'creationDate')
 		#self.addDateObject(jObj, 'creationDate')
