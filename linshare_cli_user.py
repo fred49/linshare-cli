@@ -51,9 +51,8 @@ config = Config()
 parser = argparse.ArgumentParser( prog = "linshare_cli_user" , description="""An user cli for LinShare, using its REST API.""" )
 parser = argparse.ArgumentParser( prog = "linshare_cli_user" , description="""An user cli for LinShare, using its REST API.""", formatter_class=argparse.RawTextHelpFormatter)
 
-parser.add_argument('-V', '--verbose', action="store_true", default=False)
-#parser.add_argument('-D', '--debug', action="count", dest="debug", default=0, help=argparse.SUPPRESS)
-parser.add_argument('-D', '--debug', action="count", dest="debug", default=0, help="""(default: %(default)s)
+parser.add_argument('-v', '--verbose', action="store_true", default=False)
+parser.add_argument('-d', action="count", dest="debug", default=0, help="""(default: %(default)s)
 # 0 : debug off
 # 1 : debug on
 # 2 : debug on and request result is printed (pretty json)
