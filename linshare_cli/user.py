@@ -242,7 +242,7 @@ class ThreadMembersListCommand(DefaultCommand):
 		jObj = self.ls.threads.list()
 		return (v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
 
-# -------------------------- Threads ------------------------------------------------------------------------------------
+# -------------------------- Users ------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
 class UsersListCommand(DefaultCommand):
 	""" List all users store into LinShare."""
@@ -255,44 +255,3 @@ class UsersListCommand(DefaultCommand):
 		#print "%(firstName)-10s %(lastName)-10s\t %(domain)s %(mail)s" % f
 		#self.printPrettyJson(jObj)
 		self.printList(jObj, d_format, "Users")
-
-
-
-
-# ---------------------------------------------------------------------------------------------------------------------
-# -------------------------------- User API completer fro arg complete ------------------------------------------------
-
-class DefaultCompleter(object):
-	def __init__(self , config, func_name = "complete"):
-		self.config = config
-		self.func_name = func_name
-
-	def __call__(self, prefix, **kwargs):
-		import argcomplete
-		from argcomplete import debug
-		from argcomplete import warn
-		try:
-			debug("\ncoucou fred")
-			debug(str(kwargs))
-			for i , j in kwargs.items() :
-				debug(i)
-				debug("\t" + str(j))
-
-			args = kwargs.get('parsed_args')
-
-			# reloading configuration with optional arguments
-			self.config.reload(args)
-			# using values stored in config file to filled in undefined args.
-			# undefind args will be filled in with default values stored into the pref file.
-			self.config.push(args)
-			# getting form args the current Command and looking for a method called by default 'complete'. 
-			# The method name is specified  by func_name
-			fn = getattr(args.__func__, self.func_name, None)
-			if fn:
-				return fn(args, prefix)
-
-		except Exception as e:
-			debug("\nERROR:An exception was caught :" + str(e) + "\n")
-
-
-
