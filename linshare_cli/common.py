@@ -127,7 +127,10 @@ class DefaultCommand(object):
 		dict_tmp=copy.copy(args)
 		delattr(dict_tmp,"__func__")
 		delattr(dict_tmp,"password")
-		self.log.debug(str(dict_tmp))
+		self.log.debug("Namespace : begin :")
+		for i in dict_tmp.__dict__:
+			self.log.debug(i + " : " + str(getattr(args, i)))
+		self.log.debug("Namespace : end.")
 
 		if args.ask_password :
 			try:
@@ -195,4 +198,13 @@ class DefaultCommand(object):
 		for f in data:
 			print d_format.format(**f)
 		print ""
+
+	def printTest(self, data):
+		# test
+		# compute max lengh by column.
+		a = {}
+		for i in data:
+			for j in i:
+				a[j]=max([ len(str(i.get((j)))), a.get(j, 0)])
+		print a
 

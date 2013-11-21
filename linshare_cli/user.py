@@ -220,6 +220,8 @@ class ThreadsListCommand(DefaultCommand):
 		self.formatDate(jObj, 'creationDate')
 		self.printList(jObj, d_format, "Threads")
 
+		#self.printTest(jObj)
+
 # ---------------------------------------------------------------------------------------------------------------------
 class ThreadMembersListCommand(DefaultCommand):
 	""" List all thread members store from a thread."""
@@ -231,7 +233,6 @@ class ThreadMembersListCommand(DefaultCommand):
 
 		d_format = "{firstName:11s}{lastName:10s}{admin:<7}{readonly:<9}{id}"
 		# print "%(firstName)-10s %(lastName)-10s\t %(admin)-10s\t %(readonly)-10s\t %(id)s"
-
 		#self.printPrettyJson(jObj)
 		self.printList(jObj, d_format, "Thread members")
 
@@ -240,8 +241,6 @@ class ThreadMembersListCommand(DefaultCommand):
 
 		jObj = self.ls.threads.list()
 		return (v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
-
-
 
 # -------------------------- Threads ------------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------------------------------------------
