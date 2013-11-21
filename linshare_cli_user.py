@@ -55,8 +55,23 @@ if False :
 log = logging.getLogger('linshare-cli')
 
 
-from linshare_cli.common import Config
 from linshare_cli.user import *
+from fmatoolbox import Base64DataHook , Config , Element , Section , myDebugFormat , streamHandler , DefaultCompleter
+
+config = Config("linshare-cli-user" , desc="""An user cli for LinShare, using its REST API.""")
+section_server = config.add_section(Section("server"))
+section_server.add_element(Element('host', default = 'http://localhost:8080/linshare'))
+section_server.add_element(Element('realm', desc=argparse.SUPPRESS))
+section_server.add_element(Element('user'))
+section_server.add_element(Element('password', hidden = True, desc = "user password to linshare" , hooks = [ Base64DataHook(),] ))
+section_server.add_element(Element('application_name' , desc="Default value is 'linshare' (extracted from http:/x.x.x.x/linshare)"))
+section_server.add_element(Element('server_section'))
+section_server.add_element(Element('nocache' , e_type=bool, default=False , desc=argparse.SUPPRESS))
+section_server.add_element(Element('debug' , e_type=int, default=0))
+section_server.add_element(Element('verbose'))
+
+config.load()
+
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -69,12 +84,8 @@ class TestCommand(DefaultCommand):
 
 # ---------------------------------------------------------------------------------------------------------------------
 ####################################################################################
-config = Config()
-
 # create the top-level parser
-parser = argparse.ArgumentParser( prog = "linshare_cli_user" , description="""An user cli for LinShare, using its REST API.""" )
-parser = argparse.ArgumentParser( prog = "linshare_cli_user" , description="""An user cli for LinShare, using its REST API.""", formatter_class=argparse.RawTextHelpFormatter)
-
+parser = config.get_parser(formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-v', '--verbose', action="store_true", default=False)
 parser.add_argument('-d', action="count", dest="debug", default=0, help="""(default: %(default)s)
 # 0 : debug off
@@ -82,16 +93,23 @@ parser.add_argument('-d', action="count", dest="debug", default=0, help="""(defa
 # 2 : debug on and request result is printed (pretty json)
 # 3 : debug on and urllib debug on and http headers and request are printed
 """)
-parser.add_argument('-c', '--config', action="store", help="Other configuration file.")
+parser.add_argument('-c', '--config-file', action="store", help="Other configuration file.")
+
+# reloading configuration with optional arguments
+args , argv = parser.parse_known_args()
+config.reload(args)
+
 parser.add_argument('-s', dest='server_section', action="store", help="This option let you select the server section in the ini file you want to load (server section is always load first as default configuration). You just need to specify a number like '4' for section 'server-4'.")
-parser.add_argument('-u', '--user', action="store", dest="user")
-#, required=True)
-parser.add_argument('-P', '--password', action="store")
+
+
+parser.add_argument('-u', '--user',	action="store",		**config.server.user.get_arg_parse_arguments())
+parser.add_argument('-P', '--password',	action="store",		**config.server.password.get_arg_parse_arguments())
+parser.add_argument('-H', '--host',	action="store",		**config.server.host.get_arg_parse_arguments())
+parser.add_argument('-r', '--realm',	action="store",		**config.server.realm.get_arg_parse_arguments())
+parser.add_argument('--nocache',	action="store_true",	**config.server.nocache.get_arg_parse_arguments())
+parser.add_argument('-a', '--appname',	action="store",		**config.server.application_name.get_arg_parse_arguments())
+
 parser.add_argument('-p', action="store_true", default=False, dest="ask_password", help="If set, the program will ask you your password.")
-parser.add_argument('-H', '--host', action="store")
-parser.add_argument('-a', '--appname', action="store", dest="application_name", help="Default value is 'linshare' (extracted from http:/x.x.x.x/linshare)")
-parser.add_argument('-r', '--realm', action="store", help=argparse.SUPPRESS)
-parser.add_argument('--nocache', action="store_true", help=argparse.SUPPRESS)
 
 ####################################################################################
 subparsers = parser.add_subparsers()
@@ -225,15 +243,14 @@ if __name__ == "__main__" :
 
 	# parse cli arguments
 	args = parser.parse_args()
-	# reloading configuration with optional arguments
-	config.reload(args)
 	# using values stored in config file to filled in undefined args.
 	# undefind args will be filled in with default values stored into the pref file.
-	config.push(args)
+	#config.push(args)
 
 	if getattr(args, 'debug'):
 		log.setLevel(logging.DEBUG)
 		streamHandler.setFormatter(myDebugFormat)
+		print "------------- config ------------------"
 		print config
 		print "----------- processing ----------------"
 
