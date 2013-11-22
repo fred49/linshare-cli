@@ -257,9 +257,6 @@ class UsersListCommand(DefaultCommand):
 		#self.printPrettyJson(jObj)
 		self.printList(jObj, d_format, "Users")
 
-
-
-
 ####################################################################################
 ### documents
 ####################################################################################
@@ -310,14 +307,8 @@ def add_received_share_parser(subparsers, name, desc):
 	parser_tmp2.set_defaults(__func__=ReceivedSharesDownloadCommand())
 	parser_tmp2.add_argument('uuids', nargs='+', help="share's uuids you want to download.").completer = DefaultCompleter()
 
-	#group = parser_tmp2.add_mutually_exclusive_group()
-	#group.add_argument('-f', '--file', action="append", dest="files)
-
-
-
 	parser_tmp2 = subparsers2.add_parser('list', help="list received shares from linshare")
 	parser_tmp2.set_defaults(__func__=ReceivedSharesListCommand())
-
 
 ####################################################################################
 ###  threads
@@ -333,7 +324,6 @@ def add_threads_parser(subparsers, name, desc):
 	parser_tmp2.add_argument('-u', '--uuid', action="store", dest="uuid", required=True).completer = DefaultCompleter()
 	parser_tmp2.set_defaults(__func__=ThreadMembersListCommand())
 
-
 ####################################################################################
 ###  users
 ####################################################################################
@@ -347,7 +337,6 @@ def add_users_parser(subparsers, name, desc):
 ####################################################################################
 ### config
 ####################################################################################
-
 def add_config_parser(subparsers, name, desc):
 	parser_tmp = subparsers.add_parser(name, help=desc)
 

@@ -61,8 +61,13 @@ section_server.add_element(Element('password', hidden = True, desc = "user passw
 section_server.add_element(Element('application_name' , desc="Default value is 'linshare' (extracted from http:/x.x.x.x/linshare)"))
 section_server.add_element(Element('server_section'))
 section_server.add_element(Element('nocache' , e_type=bool, default=False , desc=argparse.SUPPRESS))
-section_server.add_element(Element('debug' , e_type=int, default=0))
 section_server.add_element(Element('verbose'))
+section_server.add_element(Element('debug' , e_type=int, default=0 , desc="""(default: 0)
+# 0 : debug off
+# 1 : debug on
+# 2 : debug on and request result is printed (pretty json)
+# 3 : debug on and urllib debug on and http headers and request are printed
+"""))
 
 config.load()
 
@@ -80,14 +85,9 @@ class TestCommand(DefaultCommand):
 ####################################################################################
 # create the top-level parser
 parser = config.get_parser(formatter_class=argparse.RawTextHelpFormatter)
-parser.add_argument('-v', '--verbose', action="store_true", default=False)
-parser.add_argument('-d', action="count", dest="debug", default=0, help="""(default: %(default)s)
-# 0 : debug off
-# 1 : debug on
-# 2 : debug on and request result is printed (pretty json)
-# 3 : debug on and urllib debug on and http headers and request are printed
-""")
-parser.add_argument('-c', '--config-file', action="store", help="Other configuration file.")
+parser.add_argument('-d',			action="count",		**config.server.debug.get_arg_parse_arguments())
+parser.add_argument('-v', '--verbose',		action="store_true", default=False)
+parser.add_argument('-c', '--config-file',	action="store", help="Other configuration file.")
 
 # reloading configuration with optional arguments
 args , argv = parser.parse_known_args()
@@ -95,24 +95,20 @@ config.reload(args)
 
 parser.add_argument('-s', dest='server_section', action="store", help="This option let you select the server section in the ini file you want to load (server section is always load first as default configuration). You just need to specify a number like '4' for section 'server-4'.")
 
-
-parser.add_argument('-u', '--user',	action="store",		**config.server.user.get_arg_parse_arguments())
-parser.add_argument('-P', '--password',	action="store",		**config.server.password.get_arg_parse_arguments())
-parser.add_argument('-H', '--host',	action="store",		**config.server.host.get_arg_parse_arguments())
-parser.add_argument('-r', '--realm',	action="store",		**config.server.realm.get_arg_parse_arguments())
-parser.add_argument('--nocache',	action="store_true",	**config.server.nocache.get_arg_parse_arguments())
-parser.add_argument('-a', '--appname',	action="store",		**config.server.application_name.get_arg_parse_arguments())
-
+parser.add_argument('-u', '--user',		action="store",		**config.server.user.get_arg_parse_arguments())
+parser.add_argument('-P', '--password',		action="store",		**config.server.password.get_arg_parse_arguments())
+parser.add_argument('-H', '--host',		action="store",		**config.server.host.get_arg_parse_arguments())
+parser.add_argument('-r', '--realm',		action="store",		**config.server.realm.get_arg_parse_arguments())
+parser.add_argument('--nocache',		action="store_true",	**config.server.nocache.get_arg_parse_arguments())
+parser.add_argument('-a', '--appname',		action="store",		**config.server.application_name.get_arg_parse_arguments())
 parser.add_argument('-p', action="store_true", default=False, dest="ask_password", help="If set, the program will ask you your password.")
 
 ####################################################################################
 subparsers = parser.add_subparsers()
 
-
 ####################################################################################
 ### Adding config parsers
 ####################################################################################
-
 add_document_parser(subparsers, "documents", "Documents management")
 add_threads_parser(subparsers, "threads", "threads management")
 add_share_parser(subparsers, "shares", "Created shares management")
