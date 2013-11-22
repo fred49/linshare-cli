@@ -33,7 +33,6 @@ import base64
 import copy
 import datetime
 from core import UserCli
-from tool import *
 
 # ---------------------------------------------------------------------------------------------------------------------
 class DefaultCommand(object):

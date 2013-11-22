@@ -24,16 +24,14 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-
-
-
 import os , re , sys
 import argparse
 import logging
 import logging.handlers
 
-
-
+from linshare_cli.user import DefaultCommand
+from fmatoolbox import Base64DataHook , Config , Element , Section , myDebugFormat , streamHandler , DefaultCompleter
+from linshare_cli.user import add_document_parser , add_share_parser , add_received_share_parser , add_threads_parser , add_users_parser , add_config_parser
 
 # ---------------------------------------------------------------------------------------------------------------------
 log = logging.getLogger()
@@ -54,12 +52,8 @@ if False :
 # global logger variable
 log = logging.getLogger('linshare-cli')
 
-
-from linshare_cli.user import *
-from fmatoolbox import Base64DataHook , Config , Element , Section , myDebugFormat , streamHandler , DefaultCompleter
-
 config = Config("linshare-cli-user" , desc="""An user cli for LinShare, using its REST API.""")
-section_server = config.add_section(Section("server"))
+section_server = config.add_section(Section("server" , suffix="1"))
 section_server.add_element(Element('host', default = 'http://localhost:8080/linshare'))
 section_server.add_element(Element('realm', desc=argparse.SUPPRESS))
 section_server.add_element(Element('user'))
@@ -114,105 +108,6 @@ parser.add_argument('-p', action="store_true", default=False, dest="ask_password
 ####################################################################################
 subparsers = parser.add_subparsers()
 
-
-####################################################################################
-### documents
-####################################################################################
-def add_document_parser(subparsers, name, desc):
-	parser_tmp = subparsers.add_parser(name, help=desc)
-
-	subparsers2 = parser_tmp.add_subparsers()
-
-	parser_tmp2 = subparsers2.add_parser('upload', help="upload documents to linshare")
-	parser_tmp2.set_defaults(__func__=DocumentsUploadCommand())
-	parser_tmp2.add_argument('files', nargs='+')
-
-	parser_tmp2 = subparsers2.add_parser('upshare', help="upload and share documents")
-	parser_tmp2.set_defaults(__func__=DocumentsUploadAndSharingCommand())
-	parser_tmp2.add_argument('files', nargs='+').completer = DefaultCompleter()
-	parser_tmp2.add_argument('-m', '--mail', action="append", dest="mails", required=True, help="Recipient mails.")
-
-	parser_tmp2 = subparsers2.add_parser('download', help="download documents from linshare")
-	parser_tmp2.set_defaults(__func__=DocumentsDownloadCommand())
-	parser_tmp2.add_argument('uuids', nargs='+').completer = DefaultCompleter()
-
-	parser_tmp2 = subparsers2.add_parser('list', help="list documents from linshare")
-	parser_tmp2.set_defaults(__func__=DocumentsListCommand())
-
-####################################################################################
-### shares
-####################################################################################
-def add_share_parser(subparsers, name, desc):
-	parser_tmp = subparsers.add_parser(name, help=desc)
-
-	subparsers2 = parser_tmp.add_subparsers()
-
-	parser_tmp2 = subparsers2.add_parser('create', help="share files into linshare")
-	parser_tmp2.set_defaults(__func__=SharesCommand())
-	parser_tmp2.add_argument('uuids', nargs='+', help="document's uuids you want to share.").completer = DefaultCompleter()
-	parser_tmp2.add_argument('-m', '--mail', action="append", dest="mails", required=True, help="Recipient mails.").completer = DefaultCompleter("complete_mail")
-	
-
-####################################################################################
-### received shares
-####################################################################################
-def add_received_share_parser(subparsers, name, desc):
-	parser_tmp = subparsers.add_parser(name, help=desc)
-
-	subparsers2 = parser_tmp.add_subparsers()
-
-	parser_tmp2 = subparsers2.add_parser('download', help="download received shares from linshare")
-	parser_tmp2.set_defaults(__func__=ReceivedSharesDownloadCommand())
-	parser_tmp2.add_argument('uuids', nargs='+', help="share's uuids you want to download.").completer = DefaultCompleter()
-
-	#group = parser_tmp2.add_mutually_exclusive_group()
-	#group.add_argument('-f', '--file', action="append", dest="files)
-
-
-
-	parser_tmp2 = subparsers2.add_parser('list', help="list received shares from linshare")
-	parser_tmp2.set_defaults(__func__=ReceivedSharesListCommand())
-
-
-####################################################################################
-###  threads
-####################################################################################
-def add_threads_parser(subparsers, name, desc):
-	parser_tmp = subparsers.add_parser(name, help=desc)
-
-	subparsers2 = parser_tmp.add_subparsers()
-	parser_tmp2 = subparsers2.add_parser('list', help="list threads from linshare")
-	parser_tmp2.set_defaults(__func__=ThreadsListCommand())
-
-	parser_tmp2 = subparsers2.add_parser('listmembers', help="list thread members.")
-	parser_tmp2.add_argument('-u', '--uuid', action="store", dest="uuid", required=True).completer = DefaultCompleter()
-	parser_tmp2.set_defaults(__func__=ThreadMembersListCommand())
-
-
-####################################################################################
-###  users
-####################################################################################
-def add_users_parser(subparsers, name, desc):
-	parser_tmp = subparsers.add_parser(name, help=desc)
-
-	subparsers2 = parser_tmp.add_subparsers()
-	parser_tmp2 = subparsers2.add_parser('list', help="list users from linshare")
-	parser_tmp2.set_defaults(__func__=UsersListCommand())
-
-####################################################################################
-### config 
-####################################################################################
-
-def add_config_parser(subparsers, name, desc):
-	parser_tmp = subparsers.add_parser(name, help=desc)
-
-	subparsers2 = parser_tmp.add_subparsers()
-
-	parser_tmp2 = subparsers2.add_parser('generate', help="generate the default pref file")
-	parser_tmp2.set_defaults(__func__=ConfigGenerationCommand())
-
-	parser_tmp2 = subparsers2.add_parser('autocomplete', help="Print help to install and configure autocompletion module")
-	parser_tmp2.set_defaults(__func__=ConfigAutoCompteCommand())
 
 ####################################################################################
 ### Adding config parsers

@@ -32,6 +32,7 @@ import getpass
 
 import common
 from core import UserCli
+from fmatoolbox import DefaultCompleter
 
 class DefaultCommand(common.DefaultCommand):
 
@@ -255,3 +256,105 @@ class UsersListCommand(DefaultCommand):
 		#print "%(firstName)-10s %(lastName)-10s\t %(domain)s %(mail)s" % f
 		#self.printPrettyJson(jObj)
 		self.printList(jObj, d_format, "Users")
+
+
+
+
+####################################################################################
+### documents
+####################################################################################
+def add_document_parser(subparsers, name, desc):
+	parser_tmp = subparsers.add_parser(name, help=desc)
+
+	subparsers2 = parser_tmp.add_subparsers()
+
+	parser_tmp2 = subparsers2.add_parser('upload', help="upload documents to linshare")
+	parser_tmp2.set_defaults(__func__=DocumentsUploadCommand())
+	parser_tmp2.add_argument('files', nargs='+')
+
+	parser_tmp2 = subparsers2.add_parser('upshare', help="upload and share documents")
+	parser_tmp2.set_defaults(__func__=DocumentsUploadAndSharingCommand())
+	parser_tmp2.add_argument('files', nargs='+').completer = DefaultCompleter()
+	parser_tmp2.add_argument('-m', '--mail', action="append", dest="mails", required=True, help="Recipient mails.")
+
+	parser_tmp2 = subparsers2.add_parser('download', help="download documents from linshare")
+	parser_tmp2.set_defaults(__func__=DocumentsDownloadCommand())
+	parser_tmp2.add_argument('uuids', nargs='+').completer = DefaultCompleter()
+
+	parser_tmp2 = subparsers2.add_parser('list', help="list documents from linshare")
+	parser_tmp2.set_defaults(__func__=DocumentsListCommand())
+
+####################################################################################
+### shares
+####################################################################################
+def add_share_parser(subparsers, name, desc):
+	parser_tmp = subparsers.add_parser(name, help=desc)
+
+	subparsers2 = parser_tmp.add_subparsers()
+
+	parser_tmp2 = subparsers2.add_parser('create', help="share files into linshare")
+	parser_tmp2.set_defaults(__func__=SharesCommand())
+	parser_tmp2.add_argument('uuids', nargs='+', help="document's uuids you want to share.").completer = DefaultCompleter()
+	parser_tmp2.add_argument('-m', '--mail', action="append", dest="mails", required=True, help="Recipient mails.").completer = DefaultCompleter("complete_mail")
+
+
+####################################################################################
+### received shares
+####################################################################################
+def add_received_share_parser(subparsers, name, desc):
+	parser_tmp = subparsers.add_parser(name, help=desc)
+
+	subparsers2 = parser_tmp.add_subparsers()
+
+	parser_tmp2 = subparsers2.add_parser('download', help="download received shares from linshare")
+	parser_tmp2.set_defaults(__func__=ReceivedSharesDownloadCommand())
+	parser_tmp2.add_argument('uuids', nargs='+', help="share's uuids you want to download.").completer = DefaultCompleter()
+
+	#group = parser_tmp2.add_mutually_exclusive_group()
+	#group.add_argument('-f', '--file', action="append", dest="files)
+
+
+
+	parser_tmp2 = subparsers2.add_parser('list', help="list received shares from linshare")
+	parser_tmp2.set_defaults(__func__=ReceivedSharesListCommand())
+
+
+####################################################################################
+###  threads
+####################################################################################
+def add_threads_parser(subparsers, name, desc):
+	parser_tmp = subparsers.add_parser(name, help=desc)
+
+	subparsers2 = parser_tmp.add_subparsers()
+	parser_tmp2 = subparsers2.add_parser('list', help="list threads from linshare")
+	parser_tmp2.set_defaults(__func__=ThreadsListCommand())
+
+	parser_tmp2 = subparsers2.add_parser('listmembers', help="list thread members.")
+	parser_tmp2.add_argument('-u', '--uuid', action="store", dest="uuid", required=True).completer = DefaultCompleter()
+	parser_tmp2.set_defaults(__func__=ThreadMembersListCommand())
+
+
+####################################################################################
+###  users
+####################################################################################
+def add_users_parser(subparsers, name, desc):
+	parser_tmp = subparsers.add_parser(name, help=desc)
+
+	subparsers2 = parser_tmp.add_subparsers()
+	parser_tmp2 = subparsers2.add_parser('list', help="list users from linshare")
+	parser_tmp2.set_defaults(__func__=UsersListCommand())
+
+####################################################################################
+### config
+####################################################################################
+
+def add_config_parser(subparsers, name, desc):
+	parser_tmp = subparsers.add_parser(name, help=desc)
+
+	subparsers2 = parser_tmp.add_subparsers()
+
+	parser_tmp2 = subparsers2.add_parser('generate', help="generate the default pref file")
+	parser_tmp2.set_defaults(__func__=ConfigGenerationCommand())
+
+	parser_tmp2 = subparsers2.add_parser('autocomplete', help="Print help to install and configure autocompletion module")
+	parser_tmp2.set_defaults(__func__=ConfigAutoCompteCommand())
