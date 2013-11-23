@@ -24,23 +24,21 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------------------------------------------------
 import os , re , sys
 import argparse
 import logging
 import logging.handlers
 
-from linshare_cli.user import DefaultCommand
-from fmatoolbox import Base64DataHook , Config , Element , Section , myDebugFormat , streamHandler , DefaultCompleter
-from linshare_cli.user import add_document_parser , add_share_parser , add_received_share_parser , add_threads_parser , add_users_parser , add_config_parser
+from fmatoolbox import Base64DataHook , Config , Element , Section , myDebugFormat , streamHandler 
+from linshare_cli.user import add_document_parser , add_share_parser , add_received_share_parser , add_threads_parser
+from linshare_cli.user import add_users_parser , add_config_parser , add_test_parser
 
 # ---------------------------------------------------------------------------------------------------------------------
-class TestCommand(DefaultCommand):
-
-	def __call__(self, args):
-		super(TestCommand, self).__call__(args)
-		self.verbose = args.verbose
-		self.debug = args.debug
-
+# logs
 # ---------------------------------------------------------------------------------------------------------------------
 log = logging.getLogger()
 log.setLevel(logging.INFO)
@@ -61,6 +59,8 @@ if False :
 log = logging.getLogger('linshare-cli')
 
 # ---------------------------------------------------------------------------------------------------------------------
+# create global configuration
+# ---------------------------------------------------------------------------------------------------------------------
 config = Config("linshare-cli-user" , desc="""An user cli for LinShare, using its REST API.""")
 section_server = config.add_section(Section("server"))
 section_server.add_element(Element('host', default = 'http://localhost:8080/linshare'))
@@ -79,16 +79,14 @@ section_server.add_element(Element('debug' , e_type=int, default=0 , desc="""(de
 
 config.load()
 
-
-
-####################################################################################
-# create the top-level parser
+# ---------------------------------------------------------------------------------------------------------------------
+# arguments parser
+# ---------------------------------------------------------------------------------------------------------------------
 parser = config.get_parser(formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-d',			action="count",		**config.server.debug.get_arg_parse_arguments())
 parser.add_argument('-v', '--verbose',		action="store_true", default=False)
 parser.add_argument('-s', dest='server_section', action="store", help="This option let you select the server section in the ini file you want to load (server section is always load first as default configuration). You just need to specify a number like '4' for section 'server-4'.")
 parser.add_argument('-p', 			action="store_true", default=False, dest="ask_password", help="If set, the program will ask you your password.")
-
 
 # reloading configuration with optional arguments
 args , argv = parser.parse_known_args()
@@ -105,12 +103,7 @@ parser.add_argument('-r', '--realm',		action="store",		**config.server.realm.get
 parser.add_argument('--nocache',		action="store_true",	**config.server.nocache.get_arg_parse_arguments())
 parser.add_argument('-a', '--appname',		action="store",		**config.server.application_name.get_arg_parse_arguments())
 
-####################################################################################
 subparsers = parser.add_subparsers()
-
-####################################################################################
-### Adding config parsers
-####################################################################################
 add_document_parser(subparsers, "documents", "Documents management")
 add_threads_parser(subparsers, "threads", "threads management")
 add_share_parser(subparsers, "shares", "Created shares management")
@@ -118,45 +111,14 @@ add_received_share_parser(subparsers, "received_shares", "Received shares manage
 add_received_share_parser(subparsers, "rshares", "Alias of received_share command")
 add_config_parser(subparsers, "config",  "Config tools like autocomplete configuration or pref-file generation.")
 add_users_parser(subparsers, "users",  "users")
+add_test_parser(subparsers)
 
-parser_tmp = subparsers.add_parser('test', add_help=False)
-parser_tmp.set_defaults(__func__=TestCommand())
 
-####################################################################################
-### MAIN
-####################################################################################
-
+# ---------------------------------------------------------------------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__" :
-	# integration with argcomplete python module (bash completion)
-	try:
-		import argcomplete
-		argcomplete.autocomplete(parser)
-	except ImportError as e :
-		pass
-
-	# parse cli arguments
-	args = parser.parse_args()
-
-	if getattr(args, 'debug'):
-		log.setLevel(logging.DEBUG)
-		streamHandler.setFormatter(myDebugFormat)
-		print "------------- config ------------------"
-		print config
-		print "----------- processing ----------------"
-
-		# run command
-		args.__func__(args)
-	else:
-		try:
-			# run command
-			args.__func__(args)
-		except ValueError as a :
-			log.error("ValueError : " + str(a))
-			sys.exit(1)
-		except KeyboardInterrupt as a :
-			log.warn("Keyboard interruption detected.")
-			sys.exit(1)
-		except Exception as a :
-			log.error("unexcepted error : " + str(a))
-			sys.exit(1)
-sys.exit(0)
+	if config.start() :
+		sys.exit(0)
+	else :
+		sys.exit(1)

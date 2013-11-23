@@ -34,10 +34,20 @@ import common
 from core import UserCli
 from fmatoolbox import DefaultCompleter
 
+# ---------------------------------------------------------------------------------------------------------------------
 class DefaultCommand(common.DefaultCommand):
 
 	def _getCliObject(self, args):
 		return UserCli(args.host , args.user , args.password , args.verbose, args.debug, args.realm, args.application_name)
+
+# ---------------------------------------------------------------------------------------------------------------------
+class TestCommand(DefaultCommand):
+
+	def __call__(self, args):
+		super(TestCommand, self).__call__(args)
+		self.verbose = args.verbose
+		self.debug = args.debug
+		print "Test"
 
 # ---------------------------------------------------------------------------------------------------------------------
 class ConfigGenerationCommand(object):
@@ -347,3 +357,10 @@ def add_config_parser(subparsers, name, desc):
 
 	parser_tmp2 = subparsers2.add_parser('autocomplete', help="Print help to install and configure autocompletion module")
 	parser_tmp2.set_defaults(__func__=ConfigAutoCompteCommand())
+
+####################################################################################
+### test
+####################################################################################
+def add_test_parser(subparsers):
+	parser_tmp = subparsers.add_parser('test', add_help=False)
+	parser_tmp.set_defaults(__func__=TestCommand())
