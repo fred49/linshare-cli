@@ -79,19 +79,28 @@ config.load()
 # arguments parser
 # ---------------------------------------------------------------------------------------------------------------------
 parser = config.get_parser(formatter_class=argparse.RawTextHelpFormatter)
+parser = config.get_parser(add_help = False, formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-d',			action="count",		**config.server.debug.get_arg_parse_arguments())
 parser.add_argument('-v', '--verbose',		action="store_true", default=False)
+parser.add_argument('--version',		action="version", version="%(prog)s 0.1")
 parser.add_argument('-s', dest='server_section', action="store", help="This option let you select the server section in the ini file you want to load (server section is always load first as default configuration). You just need to specify a number like '4' for section 'server-4'.")
 parser.add_argument('-p', 			action="store_true", default=False, dest="ask_password", help="If set, the program will ask you your password.")
 
-# reloading configuration with optional arguments
+# Parsing the command line looking for the previous options like configuration file name or server section. Extra arguments will be store into argv.
 args , argv = parser.parse_known_args()
+
 # if section_server is defined, we need no modify the suffix attribute of server Section object. 
-# And then reload the configuration.
+# And reload the configuration.
 if args.server_section :
 	config.server.suffix = args.server_section
+
+# reloading configuration with optional arguments
 config.reload(args)
 
+# After the first argument parsing, for configuration reloading, we can add the help action.
+parser.add_argument('-h', '--help',		action='help', 		default=argparse.SUPPRESS, help='show this help message and exit')
+
+# Adding all others aptions.
 parser.add_argument('-u', '--user',		action="store", 	**config.server.user.get_arg_parse_arguments())
 parser.add_argument('-P', '--password',		action="store",		**config.server.password.get_arg_parse_arguments())
 parser.add_argument('-H', '--host',		action="store",		**config.server.host.get_arg_parse_arguments())
