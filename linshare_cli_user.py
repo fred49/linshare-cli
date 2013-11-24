@@ -67,8 +67,8 @@ section_server.add_element(Element('host', default = 'http://localhost:8080/lins
 section_server.add_element(Element('realm', desc=argparse.SUPPRESS, default="Name Of Your LinShare Realm"))
 section_server.add_element(Element('user'))
 section_server.add_element(Element('password', hidden = True, desc = "user password to linshare" , hooks = [ Base64DataHook(),] ))
-section_server.add_element(Element('application_name' , desc="Default value is 'linshare' (extracted from http:/x.x.x.x/linshare)" , conf_hidden=True))
-section_server.add_element(Element('nocache' , e_type=bool, default=False , desc=argparse.SUPPRESS, conf_commented = True))
+section_server.add_element(Element('application_name' , desc="Default value is 'linshare' (extracted from http:/x.x.x.x/linshare)", default = "linshare", conf_hidden=True))
+section_server.add_element(Element('nocache' , e_type=bool, default=False , desc=argparse.SUPPRESS))
 section_server.add_element(Element('verbose'))
 section_server.add_element(Element('debug' , e_type=int, default=0 , desc="""(default: 0)
 # 0 : debug off
