@@ -42,14 +42,14 @@ from linshare_cli.user import add_users_parser , add_config_parser , add_test_pa
 # ---------------------------------------------------------------------------------------------------------------------
 # logs
 # ---------------------------------------------------------------------------------------------------------------------
-log = logging.getLogger()
-log.setLevel(logging.INFO)
+g_log = logging.getLogger()
+g_log.setLevel(logging.INFO)
 # logger handlers
-log.addHandler(streamHandler)
+g_log.addHandler(streamHandler)
 # debug mode
 # if you need debug during class construction, file config loading, ...,  you need to modify the logger level here.
 if False :
-	log.setLevel(logging.DEBUG)
+	g_log.setLevel(logging.DEBUG)
 	streamHandler.setFormatter(myDebugFormat)
 
 # global logger variable

@@ -30,30 +30,21 @@ import sys
 import logging
 import json
 import getpass
-import base64
 import copy
 import datetime
 from core import UserCli
+import fmatoolbox
 
 # ---------------------------------------------------------------------------------------------------------------------
-class DefaultCommand(object):
+class DefaultCommand(fmatoolbox.DefaultCommand):
 
 	def __init__(self):
 		self.log = logging.getLogger('linshare-cli' + "." + str(self.__class__.__name__.lower()))
 
 	def __call__(self, args):
+		super(DefaultCommand, self).__call__(args)
 		self.verbose = args.verbose
 		self.debug = args.debug
-
-		# suppress __func__ object ang password just for display
-
-		dict_tmp=copy.copy(args)
-		delattr(dict_tmp,"__func__")
-		delattr(dict_tmp,"password")
-		self.log.debug("Namespace : begin :")
-		for i in dict_tmp.__dict__:
-			self.log.debug(i + " : " + str(getattr(args, i)))
-		self.log.debug("Namespace : end.")
 
 		if args.ask_password :
 			try:

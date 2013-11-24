@@ -35,6 +35,7 @@ import os
 import common
 from core import UserCli
 from fmatoolbox import DefaultCompleter , query_yes_no
+import fmatoolbox
 
 # ---------------------------------------------------------------------------------------------------------------------
 class DefaultCommand(common.DefaultCommand):
@@ -43,7 +44,7 @@ class DefaultCommand(common.DefaultCommand):
 		return UserCli(args.host , args.user , args.password , args.verbose, args.debug, args.realm, args.application_name)
 
 # ---------------------------------------------------------------------------------------------------------------------
-class TestCommand(object):
+class TestCommand(fmatoolbox.DefaultCommand):
 
 	def __call__(self, args):
 		self.verbose = args.verbose
