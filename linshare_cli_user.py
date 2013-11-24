@@ -33,7 +33,7 @@ import argparse
 import logging
 import logging.handlers
 
-from fmatoolbox import Base64DataHook , Config , Element , Section , myDebugFormat , streamHandler , SampleProgram
+from fmatoolbox import Base64DataHook , Config , Element , Section , SampleProgram , streamHandler , myFormat , myDebugFormat
 from linshare_cli.user import add_document_parser , add_share_parser , add_received_share_parser , add_threads_parser
 from linshare_cli.user import add_users_parser , add_config_parser , add_test_parser
 
@@ -42,12 +42,7 @@ from linshare_cli.user import add_users_parser , add_config_parser , add_test_pa
 # ---------------------------------------------------------------------------------------------------------------------
 log = logging.getLogger()
 log.setLevel(logging.INFO)
-# logger formats
-myFormat = logging.Formatter("%(asctime)s %(levelname)-8s: %(message)s", "%H:%M:%S")
-myDebugFormat = logging.Formatter("%(asctime)s %(levelname)-8s %(name)s:%(funcName)s:%(message)s", "%H:%M:%S")
 # logger handlers
-streamHandler = logging.StreamHandler(sys.stdout)
-streamHandler.setFormatter(myFormat)
 log.addHandler(streamHandler)
 # debug mode
 # if you need debug during class construction, file config loading, ...,  you need to modify the logger level here.
@@ -63,11 +58,13 @@ log = logging.getLogger('linshare-cli')
 # ---------------------------------------------------------------------------------------------------------------------
 config = Config("linshare-cli-user" , desc="""An user cli for LinShare, using its REST API.""")
 section_server = config.add_section(Section("server" ))
-section_server.add_element(Element('host', default = 'http://localhost:8080/linshare'))
+section_server.add_element(Element('host', required = True, default = 'http://localhost:8080/linshare'))
 section_server.add_element(Element('realm', desc=argparse.SUPPRESS, default="Name Of Your LinShare Realm"))
-section_server.add_element(Element('user'))
-section_server.add_element(Element('password', hidden = True, desc = "user password to linshare" , hooks = [ Base64DataHook(),] ))
-section_server.add_element(Element('application_name' , desc="Default value is 'linshare' (extracted from http:/x.x.x.x/linshare)", default = "linshare", conf_hidden=True))
+section_server.add_element(Element('user', required = True))
+section_server.add_element(Element('password', required = True, hidden = True, desc = "user password to linshare",
+					 hooks = [ Base64DataHook(),] ))
+section_server.add_element(Element('application_name', default = "linshare", conf_hidden = True,
+					desc="Default value is 'linshare' (example http:/x.x.x.x/linshare)"))
 section_server.add_element(Element('nocache' , e_type=bool, default=False , desc=argparse.SUPPRESS))
 section_server.add_element(Element('verbose'))
 section_server.add_element(Element('debug' , e_type=int, default=0 , desc="""(default: 0)
@@ -95,7 +92,7 @@ if args.server_section :
 	config.server.suffix = args.server_section
 config.reload(args)
 
-parser.add_argument('-u', '--user',		action="store",		**config.server.user.get_arg_parse_arguments())
+parser.add_argument('-u', '--user',		action="store", 	**config.server.user.get_arg_parse_arguments())
 parser.add_argument('-P', '--password',		action="store",		**config.server.password.get_arg_parse_arguments())
 parser.add_argument('-H', '--host',		action="store",		**config.server.host.get_arg_parse_arguments())
 parser.add_argument('-r', '--realm',		action="store",		**config.server.realm.get_arg_parse_arguments())

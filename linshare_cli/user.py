@@ -54,6 +54,7 @@ class TestCommand(object):
 class ConfigGenerationCommand(object):
 	def __init__(self , config):
 		self.config = config
+
 	def __call__(self, args):
 		log = logging.getLogger()
 
@@ -72,6 +73,7 @@ class ConfigGenerationCommand(object):
 					log.error("aborted.")
 					return False
 		self.config.write_default_config_file(args.output , args.nocomments)
+		print "config file generation complete : " + str(output)
 
 # ---------------------------------------------------------------------------------------------------------------------
 class ConfigAutoCompteCommand(object):
