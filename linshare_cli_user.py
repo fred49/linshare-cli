@@ -33,7 +33,9 @@ import argparse
 import logging
 import logging.handlers
 
-from fmatoolbox import Base64DataHook , Config , Element , Section , SampleProgram , streamHandler , myFormat , myDebugFormat
+from fmatoolbox import Config , Element , Section , SampleProgram
+from fmatoolbox import streamHandler , myFormat , myDebugFormat
+from fmatoolbox import Base64ElementHook, SectionHook
 from linshare_cli.user import add_document_parser , add_share_parser , add_received_share_parser , add_threads_parser
 from linshare_cli.user import add_users_parser , add_config_parser , add_test_parser
 
@@ -62,7 +64,7 @@ section_server.add_element(Element('host', required = True, default = 'http://lo
 section_server.add_element(Element('realm', desc=argparse.SUPPRESS, default="Name Of Your LinShare Realm"))
 section_server.add_element(Element('user', required = True))
 section_server.add_element(Element('password', required = True, hidden = True, desc = "user password to linshare",
-					 hooks = [ Base64DataHook(),] ))
+					 hooks = [ Base64ElementHook(),] ))
 section_server.add_element(Element('application_name', default = "linshare", conf_hidden = True,
 					desc="Default value is 'linshare' (example http:/x.x.x.x/linshare)"))
 section_server.add_element(Element('nocache' , e_type=bool, default=False , desc=argparse.SUPPRESS))
@@ -73,34 +75,26 @@ section_server.add_element(Element('debug' , e_type=int, default=0 , desc="""(de
 # 2 : debug on and request result is printed (pretty json)
 # 3 : debug on and urllib debug on and http headers and request are printed"""))
 
+# loading default configuration
 config.load()
 
 # ---------------------------------------------------------------------------------------------------------------------
 # arguments parser
 # ---------------------------------------------------------------------------------------------------------------------
 parser = config.get_parser(formatter_class=argparse.RawTextHelpFormatter)
-parser = config.get_parser(add_help = False, formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-d',			action="count",		**config.server.debug.get_arg_parse_arguments())
 parser.add_argument('-v', '--verbose',		action="store_true", default=False)
 parser.add_argument('--version',		action="version", version="%(prog)s 0.1")
-parser.add_argument('-s', dest='server_section', action="store", help="This option let you select the server section in the ini file you want to load (server section is always load first as default configuration). You just need to specify a number like '4' for section 'server-4'.")
 parser.add_argument('-p', 			action="store_true", default=False, dest="ask_password", help="If set, the program will ask you your password.")
+parser.add_argument('-s',			action="store", dest='server_section',
+						help="This option let you select the server section in the ini file you want to load (server section is always load first as default configuration). You just need to specify a number like '4' for section 'server-4'.")
+# if section_server is defined, we need to modify the suffix attribute of server Section object.
+hook = SectionHook(config.server, "suffix", "server_section")
 
-# Parsing the command line looking for the previous options like configuration file name or server section. Extra arguments will be store into argv.
-args , argv = parser.parse_known_args()
+# reloading configuration with previous optional arguments (ex config file name, server section, ...)
+config.reload(hook)
 
-# if section_server is defined, we need no modify the suffix attribute of server Section object. 
-# And reload the configuration.
-if args.server_section :
-	config.server.suffix = args.server_section
-
-# reloading configuration with optional arguments
-config.reload(args)
-
-# After the first argument parsing, for configuration reloading, we can add the help action.
-parser.add_argument('-h', '--help',		action='help', 		default=argparse.SUPPRESS, help='show this help message and exit')
-
-# Adding all others aptions.
+# Adding all others options.
 parser.add_argument('-u', '--user',		action="store", 	**config.server.user.get_arg_parse_arguments())
 parser.add_argument('-P', '--password',		action="store",		**config.server.password.get_arg_parse_arguments())
 parser.add_argument('-H', '--host',		action="store",		**config.server.host.get_arg_parse_arguments())
@@ -108,6 +102,7 @@ parser.add_argument('-r', '--realm',		action="store",		**config.server.realm.get
 parser.add_argument('--nocache',		action="store_true",	**config.server.nocache.get_arg_parse_arguments())
 parser.add_argument('-a', '--appname',		action="store",		**config.server.application_name.get_arg_parse_arguments())
 
+# Adding all others parsers.
 subparsers = parser.add_subparsers()
 add_document_parser(subparsers, "documents", "Documents management")
 add_threads_parser(subparsers, "threads", "threads management")
@@ -118,13 +113,12 @@ add_config_parser(subparsers, "config",  "Config tools like autocomplete configu
 add_users_parser(subparsers, "users",  "users")
 add_test_parser(subparsers)
 
-
 # ---------------------------------------------------------------------------------------------------------------------
 # MAIN
 # ---------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__" :
-	a = SampleProgram(parser , config)
-	if a() :
+	prog = SampleProgram(parser , config)
+	if prog() :
 		sys.exit(0)
 	else :
 		sys.exit(1)

@@ -54,26 +54,25 @@ class TestCommand(object):
 class ConfigGenerationCommand(object):
 	def __init__(self , config):
 		self.config = config
+		self.log = logging.getLogger('linshare-cli' + "." + str(self.__class__.__name__.lower()))
 
 	def __call__(self, args):
-		log = logging.getLogger()
-
 		dict_tmp=copy.copy(args)
 		delattr(dict_tmp,"__func__")
 		delattr(dict_tmp,"password")
-		log.debug("Namespace : begin :")
+		self.log.debug("Namespace : begin :")
 		for i in dict_tmp.__dict__:
-			log.debug(i + " : " + str(getattr(args, i)))
-		log.debug("Namespace : end.")
+			self.log.debug(i + " : " + str(getattr(args, i)))
+		self.log.debug("Namespace : end.")
 
 		if not args.force_yes :
 			if os.path.exists(args.output):
-				log.warn("current file already exists : " + str(args.output))
+				self.log.warn("current file already exists : " + str(args.output))
 				if not query_yes_no("overwrite ?" , "no") :
-					log.error("aborted.")
+					self.log.error("aborted.")
 					return False
 		self.config.write_default_config_file(args.output , args.nocomments)
-		print "config file generation complete : " + str(output)
+		print "config file generation complete : " + str(args.output)
 
 # ---------------------------------------------------------------------------------------------------------------------
 class ConfigAutoCompteCommand(object):
