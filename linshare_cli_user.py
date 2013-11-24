@@ -33,7 +33,7 @@ import argparse
 import logging
 import logging.handlers
 
-from fmatoolbox import Base64DataHook , Config , Element , Section , myDebugFormat , streamHandler 
+from fmatoolbox import Base64DataHook , Config , Element , Section , myDebugFormat , streamHandler , SampleProgram
 from linshare_cli.user import add_document_parser , add_share_parser , add_received_share_parser , add_threads_parser
 from linshare_cli.user import add_users_parser , add_config_parser , add_test_parser
 
@@ -62,20 +62,19 @@ log = logging.getLogger('linshare-cli')
 # create global configuration
 # ---------------------------------------------------------------------------------------------------------------------
 config = Config("linshare-cli-user" , desc="""An user cli for LinShare, using its REST API.""")
-section_server = config.add_section(Section("server"))
+section_server = config.add_section(Section("server" ))
 section_server.add_element(Element('host', default = 'http://localhost:8080/linshare'))
-section_server.add_element(Element('realm', desc=argparse.SUPPRESS))
+section_server.add_element(Element('realm', desc=argparse.SUPPRESS, default="Name Of Your LinShare Realm"))
 section_server.add_element(Element('user'))
 section_server.add_element(Element('password', hidden = True, desc = "user password to linshare" , hooks = [ Base64DataHook(),] ))
-section_server.add_element(Element('application_name' , desc="Default value is 'linshare' (extracted from http:/x.x.x.x/linshare)"))
-section_server.add_element(Element('nocache' , e_type=bool, default=False , desc=argparse.SUPPRESS))
+section_server.add_element(Element('application_name' , desc="Default value is 'linshare' (extracted from http:/x.x.x.x/linshare)" , conf_hidden=True))
+section_server.add_element(Element('nocache' , e_type=bool, default=False , desc=argparse.SUPPRESS, conf_commented = True))
 section_server.add_element(Element('verbose'))
 section_server.add_element(Element('debug' , e_type=int, default=0 , desc="""(default: 0)
 # 0 : debug off
 # 1 : debug on
 # 2 : debug on and request result is printed (pretty json)
-# 3 : debug on and urllib debug on and http headers and request are printed
-"""))
+# 3 : debug on and urllib debug on and http headers and request are printed"""))
 
 config.load()
 
@@ -109,7 +108,7 @@ add_threads_parser(subparsers, "threads", "threads management")
 add_share_parser(subparsers, "shares", "Created shares management")
 add_received_share_parser(subparsers, "received_shares", "Received shares management")
 add_received_share_parser(subparsers, "rshares", "Alias of received_share command")
-add_config_parser(subparsers, "config",  "Config tools like autocomplete configuration or pref-file generation.")
+add_config_parser(subparsers, "config",  "Config tools like autocomplete configuration or pref-file generation." , config)
 add_users_parser(subparsers, "users",  "users")
 add_test_parser(subparsers)
 
@@ -118,7 +117,9 @@ add_test_parser(subparsers)
 # MAIN
 # ---------------------------------------------------------------------------------------------------------------------
 if __name__ == "__main__" :
-	if config.start() :
+	a = SampleProgram(parser , config)
+	if a() :
 		sys.exit(0)
 	else :
 		sys.exit(1)
+

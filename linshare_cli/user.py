@@ -29,10 +29,12 @@ import sys
 import logging
 import urllib2
 import getpass
+import copy
+import os
 
 import common
 from core import UserCli
-from fmatoolbox import DefaultCompleter
+from fmatoolbox import DefaultCompleter , query_yes_no
 
 # ---------------------------------------------------------------------------------------------------------------------
 class DefaultCommand(common.DefaultCommand):
@@ -41,18 +43,35 @@ class DefaultCommand(common.DefaultCommand):
 		return UserCli(args.host , args.user , args.password , args.verbose, args.debug, args.realm, args.application_name)
 
 # ---------------------------------------------------------------------------------------------------------------------
-class TestCommand(DefaultCommand):
+class TestCommand(object):
 
 	def __call__(self, args):
-		super(TestCommand, self).__call__(args)
 		self.verbose = args.verbose
 		self.debug = args.debug
 		print "Test"
 
 # ---------------------------------------------------------------------------------------------------------------------
 class ConfigGenerationCommand(object):
+	def __init__(self , config):
+		self.config = config
 	def __call__(self, args):
-		config.write_default_config_file()
+		log = logging.getLogger()
+
+		dict_tmp=copy.copy(args)
+		delattr(dict_tmp,"__func__")
+		delattr(dict_tmp,"password")
+		log.debug("Namespace : begin :")
+		for i in dict_tmp.__dict__:
+			log.debug(i + " : " + str(getattr(args, i)))
+		log.debug("Namespace : end.")
+
+		if not args.force_yes :
+			if os.path.exists(args.output):
+				log.warn("current file already exists : " + str(args.output))
+				if not query_yes_no("overwrite ?" , "no") :
+					log.error("aborted.")
+					return False
+		self.config.write_default_config_file(args.output , args.nocomments)
 
 # ---------------------------------------------------------------------------------------------------------------------
 class ConfigAutoCompteCommand(object):
@@ -347,13 +366,16 @@ def add_users_parser(subparsers, name, desc):
 ####################################################################################
 ### config
 ####################################################################################
-def add_config_parser(subparsers, name, desc):
+def add_config_parser(subparsers, name, desc , config):
 	parser_tmp = subparsers.add_parser(name, help=desc)
 
 	subparsers2 = parser_tmp.add_subparsers()
 
 	parser_tmp2 = subparsers2.add_parser('generate', help="generate the default pref file")
-	parser_tmp2.set_defaults(__func__=ConfigGenerationCommand())
+	parser_tmp2.set_defaults(__func__=ConfigGenerationCommand(config))
+	parser_tmp2.add_argument('--output', action="store", required=True)
+	parser_tmp2.add_argument('-n', dest="nocomments" , action="store_false" , help="config file generation without commments.")
+	parser_tmp2.add_argument('-f', dest="force_yes" , action="store_true" , help="overwrite the current output file even it still exists.")
 
 	parser_tmp2 = subparsers2.add_parser('autocomplete', help="Print help to install and configure autocompletion module")
 	parser_tmp2.set_defaults(__func__=ConfigAutoCompteCommand())
@@ -364,3 +386,4 @@ def add_config_parser(subparsers, name, desc):
 def add_test_parser(subparsers):
 	parser_tmp = subparsers.add_parser('test', add_help=False)
 	parser_tmp.set_defaults(__func__=TestCommand())
+
