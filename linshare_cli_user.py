@@ -34,7 +34,7 @@ import logging
 import logging.handlers
 
 from fmatoolbox import Config , Element , Section , SampleProgram
-from fmatoolbox import streamHandler , myFormat , myDebugFormat
+from fmatoolbox import streamHandler , debug_logging_format
 from fmatoolbox import Base64ElementHook, SectionHook
 from linshare_cli.user import add_document_parser , add_share_parser , add_received_share_parser , add_threads_parser
 from linshare_cli.user import add_users_parser , add_config_parser , add_test_parser
@@ -50,7 +50,7 @@ g_log.addHandler(streamHandler)
 # if you need debug during class construction, file config loading, ...,  you need to modify the logger level here.
 if False :
 	g_log.setLevel(logging.DEBUG)
-	streamHandler.setFormatter(myDebugFormat)
+	streamHandler.setFormatter(debug_logging_format)
 
 # global logger variable
 log = logging.getLogger('linshare-cli')
