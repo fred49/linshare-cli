@@ -33,7 +33,7 @@ import argparse
 import logging
 import logging.handlers
 
-from fmatoolbox import Config , Element , Section , SampleProgram
+from fmatoolbox import Config , Element , SimpleSection , DefaultProgram
 from fmatoolbox import streamHandler , debug_logging_format
 from fmatoolbox import Base64ElementHook, SectionHook
 from linshare_cli.user import add_document_parser , add_share_parser , add_received_share_parser , add_threads_parser
@@ -59,7 +59,7 @@ log = logging.getLogger('linshare-cli')
 # create global configuration
 # ---------------------------------------------------------------------------------------------------------------------
 config = Config("linshare-cli-user" , desc="""An user cli for LinShare, using its REST API.""")
-section_server = config.add_section(Section("server" ))
+section_server = config.add_section(SimpleSection("server"))
 section_server.add_element(Element('host', required = True, default = 'http://localhost:8080/linshare'))
 section_server.add_element(Element('realm', desc=argparse.SUPPRESS, default="Name Of Your LinShare Realm"))
 section_server.add_element(Element('user', required = True))
