@@ -38,7 +38,8 @@ import fmatoolbox
 # ---------------------------------------------------------------------------------------------------------------------
 class DefaultCommand(fmatoolbox.DefaultCommand):
 
-	def __init__(self):
+	def __init__(self, config = None):
+		self.config =  config
 		self.log = logging.getLogger('linshare-cli' + "." + str(self.__class__.__name__.lower()))
 
 	def __call__(self, args):
