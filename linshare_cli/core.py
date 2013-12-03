@@ -276,10 +276,15 @@ class CoreCli(object):
 		endtime = datetime.now()
 		result = resultq.read()
 
-		jObj = json.loads(result)
-		if self.debuglevel >= 2 : 
-			self.log.debug("the result is : ")
-			self.log.debug(json.dumps(jObj, sort_keys = True, indent = 2))
+		if resultq.headers.getheader('Content-Type') == "application/json" :
+			jObj = json.loads(result)
+			if self.debuglevel >= 2 : 
+				self.log.debug("the result is : ")
+				self.log.debug(json.dumps(jObj, sort_keys = True, indent = 2))
+		else:
+			msg = "Wrong content type in the http response " + resultq.headers.getheader('Content-Type')
+			self.log.error(msg)
+			raise ValueError(msg)
 
 		self.last_req_time = str(endtime - starttime)
 		self.log.debug("list url : " + url + " : request time : " + self.last_req_time)
