@@ -47,8 +47,9 @@ g_log.setLevel(logging.INFO)
 # logger handlers
 g_log.addHandler(streamHandler)
 # debug mode
-# if you need debug during class construction, file config loading, ...,  you need to modify the logger level here.
-if False :
+# if you need debug during class construction, file config loading,
+# you just need to export _LINSHARE_CLI_USER_DEBUG=True
+if os.getenv('_LINSHARE_CLI_USER_DEBUG', False):
 	g_log.setLevel(logging.DEBUG)
 	streamHandler.setFormatter(debug_logging_format)
 
