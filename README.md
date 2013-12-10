@@ -2,6 +2,7 @@ dependencies :
 =============
 
 * fmatoolbox
-* ordereddict
+  * ordereddict
 * argcomplete (optional)
-
+* poster
+* progressbar
