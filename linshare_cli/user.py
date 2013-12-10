@@ -123,7 +123,8 @@ class DocumentsUploadCommand(DefaultCommand):
 
 		for file_path in args.files :
 			jObj = self.ls.documents.upload(file_path)
-			self.log.info("The file '" + jObj.get('name') + "' ("+ jObj.get('uuid') + ") was uploaded. (" + self.ls.last_req_time + "s)")
+			if jObj:
+				self.log.info("The file '" + jObj.get('name') + "' ("+ jObj.get('uuid') + ") was uploaded. (" + self.ls.last_req_time + "s)")
 
 
 # ---------------------------------------------------------------------------------------------------------------------
