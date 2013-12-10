@@ -297,11 +297,12 @@ class CoreCli(object):
 
 		# Generating datas and headers
 		file_size = os.path.getsize(file_path)
+		self.log.debug("file_path is : " + file_path)
 		file_name = file_path.split("/")[-1]
 		self.log.debug("file_name is : " + file_name)
 
 		if file_size <= 0 :
-			self.log.error("The file '" + file_name + "' can not be uploaded because its size less or equal to zero.")
+			self.log.fatal("The file '" + str(file_name) + "' can not be uploaded because its size less or equal to zero.")
 			return None
 
 		widgets = [FileTransferSpeed(),' <<<', Bar(), '>>> ', Percentage(),' ', ETA()]
@@ -325,14 +326,19 @@ class CoreCli(object):
 		        resultq = urllib2.urlopen(request)
 		except urllib2.HTTPError as e :
 			self.log.error("Http error : " + e.msg)
-			self.log.error("error code : " + e.code)
+			self.log.error("error code : " + str(e.code))
+
 
 		        # request end
 		        endtime = datetime.now()
 		        pbar.finish()
 
 		        self.last_req_time = str(endtime - starttime)
-		        self.log.error("The file '" + file_name + "' was uploaded (" + self.last_req_time + "s) but the proxy cut the connexion. No server acquitment was received.")
+			if e.code == 500:
+				self.log.fatal("Can not upload file " + str(file_name) + " (" + str(file_path) + ")")
+				print e
+			else:
+				self.log.error("The file '" + file_name + "' was uploaded (" + self.last_req_time + "s) but the proxy cut the connexion. No server acquitment was received.")
 		        return None
 
 
