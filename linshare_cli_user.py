@@ -116,14 +116,14 @@ parser.add_argument('-p', action="store_true", default=False,
         help="If set, the program will ask you your password.")
 
 parser.add_argument('-s', action="store", dest='server_section',
-        help="""This option let you select the server section in the ini file
+        help="""This option let you select the server section in the cfg file
          you want to load (server section is always load first as default
          configuration). You just need to specify a number like '4' for
          section 'server-4'""")
 
 # If section_server is defined, we need to modify the suffix attribute of
 # server Section object.
-hook = SectionHook(config.server, "suffix", "server_section")
+hook = SectionHook(config.server, "_suffix", "server_section")
 
 # Reloading configuration with previous optional arguments
 # (ex config file name, server section, ...)
