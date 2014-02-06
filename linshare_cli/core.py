@@ -37,7 +37,8 @@ import json
 import poster
 import time
 import copy
-from datetime import datetime
+#from datetime import datetime
+import datetime
 from time import time
 from progressbar import *
 import getpass
@@ -145,7 +146,7 @@ def cli_get_cache(user_function):
 		if os.path.isfile(cachefile) :
 			file_time = os.stat(cachefile).st_mtime
 			a = "{da:%Y-%m-%d %H:%M:%S}"
-			log.debug("cached data : "  + str(a.format(da=datetime.fromtimestamp(file_time))))
+			log.debug("cached data : "  + str(a.format(da=datetime.datetime.fromtimestamp(file_time))))
 
 			if time.time() - cache_time > file_time:
 				log.debug("refreshing cached data.")
@@ -267,13 +268,13 @@ class CoreCli(object):
 		request = urllib2.Request(url)
 
 		# request start
-		starttime =datetime.now()
+		starttime =datetime.datetime.now()
 
 		# doRequest
 		resultq = urllib2.urlopen(request)
 
 		# request end
-		endtime = datetime.now()
+		endtime = datetime.datetime.now()
 		result = resultq.read()
 
 		if resultq.headers.getheader('Content-Type') == "application/json" :
@@ -319,7 +320,7 @@ class CoreCli(object):
 
 		# request start
 	        pbar.start()
-		starttime = datetime.now()
+		starttime = datetime.datetime.now()
 
 		try:
 			# doRequest
@@ -330,7 +331,7 @@ class CoreCli(object):
 
 
 		        # request end
-		        endtime = datetime.now()
+		        endtime = datetime.datetime.now()
 		        pbar.finish()
 
 		        self.last_req_time = str(endtime - starttime)
@@ -343,7 +344,7 @@ class CoreCli(object):
 
 
 		# request end
-		endtime = datetime.now()
+		endtime = datetime.datetime.now()
 	        pbar.finish()
 		result = resultq.read()
 
@@ -368,7 +369,7 @@ This method could throw exceptions like urllib2.HTTPError."""
 		request = urllib2.Request(url)
 
 		# request start
-		starttime =datetime.now()
+		starttime =datetime.datetime.now()
 
 		# doRequest
 		resultq = urllib2.urlopen(request)
@@ -416,7 +417,7 @@ This method could throw exceptions like urllib2.HTTPError."""
 			pbar.finish()
 
 		# request end
-		endtime = datetime.now()
+		endtime = datetime.datetime.now()
 		self.last_req_time = str(endtime - starttime)
 		self.log.debug("list url : " + url + " : request time : " + self.last_req_time)
 		return (file_name, self.last_req_time)
@@ -467,7 +468,7 @@ class Shares(object):
 		request = urllib2.Request(url)
 
 		# request start
-		starttime =datetime.now()
+		starttime =datetime.datetime.now()
 
 		try:
 			# doRequest
@@ -479,7 +480,7 @@ class Shares(object):
 			raise e
 
 		# request end
-		endtime = datetime.now()
+		endtime = datetime.datetime.now()
 		code = resultq.getcode()
 		msg = resultq.msg
 
