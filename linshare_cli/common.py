@@ -35,23 +35,26 @@ import datetime
 from core import UserCli
 import fmatoolbox
 
-# ---------------------------------------------------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
 class DefaultCommand(fmatoolbox.DefaultCommand):
 
-    def __init__(self, config = None):
-        self.config =  config
-        self.log = logging.getLogger('linshare-cli' + "." + str(self.__class__.__name__.lower()))
+    def __init__(self, config=None):
+        self.config = config
+        classname = str(self.__class__.__name__.lower())
+        self.log = logging.getLogger('linshare-cli.' + classname)
 
     def __call__(self, args):
         super(DefaultCommand, self).__call__(args)
         self.verbose = args.verbose
         self.debug = args.debug
 
-        if args.ask_password :
+        if args.ask_password:
             try:
-                args.password = getpass.getpass("Please, enter your password : ")
+                args.password = getpass.getpass("Please enter your password :")
             except KeyboardInterrupt as e:
-                print "\nKeyboardInterrupt exception was caught. Program terminated."
+                print """\nKeyboardInterrupt exception was caught.
+                Program terminated."""
                 sys.exit(1)
 
         if not args.password:
@@ -64,30 +67,31 @@ class DefaultCommand(fmatoolbox.DefaultCommand):
             sys.exit(1)
 
     def _getCliObject(self, args):
-        raise NotImplementedError("You must implement the _getCliObject method and return a object instance of CoreCli or its children in your Command class.")
-
+        raise NotImplementedError("""You must implement the _getCliObject
+        method and return a object instance of CoreCli or its children in
+        your Command class.""")
 
     def printPrettyJson(self, obj):
-            print json.dumps(obj, sort_keys = True, indent = 2)
+            print json.dumps(obj, sort_keys=True, indent=2)
 
     def getLegend(self, data):
         legend = dict()
-        for i in data[0] :
-            legend[i]=i.upper()
+        for i in data[0]:
+            legend[i] = i.upper()
         return legend
 
     def addLegend(self, data):
         data.insert(0, self.getLegend(data))
 
     def formatDate(self, data, attr, dformat="%Y-%m-%d %H:%M:%S"):
-        """The current fied is replaced by a formatted date. The previous field is saved to a new field called 'field_orig'.
-        """
+        """The current fied is replaced by a formatted date. The previous
+        field is saved to a new field called 'field_orig'."""
 
         for f in data:
             a = "{da:" + dformat + "}"
             f[attr + "_orig"] = f[attr]
-            f[attr] = a.format(da=datetime.datetime.fromtimestamp(f.get(attr) /1000))
-
+            f[attr] = a.format(
+                da=datetime.datetime.fromtimestamp(f.get(attr) / 1000))
 
     def getUnderline(self, title):
         sub = ""
@@ -100,13 +104,13 @@ class DefaultCommand(fmatoolbox.DefaultCommand):
         print "\n" + _title
         print self.getUnderline(_title)
 
-    def printList(self, data, d_format, title = None, t_format = None):
-        """The input list is printed out using the d_format parametter. A Legend is built using field names.
-        """
+    def printList(self, data, d_format, title=None, t_format=None):
+        """The input list is printed out using the d_format parametter.
+        A Legend is built using field names."""
 
-        if not t_format :
+        if not t_format:
             t_format = d_format
-        if title :
+        if title:
             self.printTitle(data, title)
         legend = self.getLegend(data)
         print t_format.format(**legend)
@@ -120,6 +124,5 @@ class DefaultCommand(fmatoolbox.DefaultCommand):
         a = {}
         for i in data:
             for j in i:
-                a[j]=max([ len(str(i.get((j)))), a.get(j, 0)])
+                a[j] = max([len(str(i.get((j)))), a.get(j, 0)])
         print a
-
