@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
 
@@ -29,7 +29,7 @@ import urllib2
 import copy
 import os
 import linshare_cli.common as common
-from core import UserCli
+from linshare_cli.core import UserCli
 from fmatoolbox import DefaultCompleter
 from fmatoolbox import query_yes_no
 import fmatoolbox
@@ -37,14 +37,23 @@ import fmatoolbox
 
 # -----------------------------------------------------------------------------
 class DefaultCommand(common.DefaultCommand):
+    """ Default command object use by the ser API. If you want to add a new
+    command to the command line interface, your class should extend this one.
+    """
 
-    def _getCliObject(self, args):
+    def __get_cli_object(self, args):
         return UserCli(args.host, args.user, args.password, args.verbose,
                        args.debug, args.realm, args.application_name)
 
 
 # -----------------------------------------------------------------------------
 class TestCommand(fmatoolbox.DefaultCommand):
+    """Just for test. Print test to stdout"""
+
+    def __init__(self, config=None):
+        super(TestCommand, self).__init__(config)
+        self.verbose = False
+        self.debug = False
 
     def __call__(self, args):
         self.verbose = args.verbose
@@ -116,10 +125,10 @@ class DocumentsListCommand(DefaultCommand):
     def __call__(self, args):
         super(DocumentsListCommand, self).__call__(args)
 
-        jObj = self.ls.documents.list()
+        json_obj = self.ls.documents.list()
         d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
-        self.formatDate(jObj, 'creationDate')
-        self.printList(jObj, d_format, "Documents")
+        self.format_date(json_obj, 'creationDate')
+        self.print_list(json_obj, d_format, "Documents")
 
 
 # -----------------------------------------------------------------------------
@@ -131,12 +140,12 @@ class DocumentsUploadCommand(DefaultCommand):
         super(DocumentsUploadCommand, self).__call__(args)
 
         for file_path in args.files:
-            jObj = self.ls.documents.upload(file_path)
-            if jObj:
-                jObj['time'] = self.ls.last_req_time
+            json_obj = self.ls.documents.upload(file_path)
+            if json_obj:
+                json_obj['time'] = self.ls.last_req_time
                 self.log.info(
                     "The file '%(name)s' (%(uuid)s) was uploaded. (%(time)ss)",
-                    jObj)
+                    json_obj)
 
 
 # -----------------------------------------------------------------------------
@@ -151,17 +160,17 @@ class DocumentsDownloadCommand(DefaultCommand):
                 self.log.info(
                     "The file '" + file_name +
                     "' was downloaded. (" + req_time + "s)")
-            except urllib2.HTTPError as e:
+            except urllib2.HTTPError as ex:
                 print "Error : "
-                print e
+                print ex
                 return
 
     def complete(self, args,  prefix):
         super(DocumentsDownloadCommand, self).__call__(args)
 
-        jObj = self.ls.documents.list()
+        json_obj = self.ls.documents.list()
         return (
-            v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
+            v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
 
 
 # -----------------------------------------------------------------------------
@@ -171,13 +180,13 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
 
         for file_path in args.files:
-            jObj = self.ls.documents.upload(file_path)
-            uuid = jObj.get('uuid')
+            json_obj = self.ls.documents.upload(file_path)
+            uuid = json_obj.get('uuid')
 
-            jObj['time'] = self.ls.last_req_time
+            json_obj['time'] = self.ls.last_req_time
             self.log.info(
                 "The file '%(name)s' (%(uuid)s) was uploaded. (%(time)ss)",
-                jObj)
+                json_obj)
 
             for mail in args.mails:
                 code, msg, req_time = self.ls.shares.share(uuid, mail)
@@ -196,9 +205,9 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
     def complete(self, args,  prefix):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
 
-        jObj = self.ls.documents.list()
+        json_obj = self.ls.documents.list()
         return (
-            v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
+            v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
 
 
 # ----------------- Received Shares -------------------------------------------
@@ -208,10 +217,10 @@ class ReceivedSharesListCommand(DefaultCommand):
     def __call__(self, args):
         super(ReceivedSharesListCommand, self).__call__(args)
 
-        jObj = self.ls.rshares.list()
+        json_obj = self.ls.rshares.list()
         d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
-        self.formatDate(jObj, 'creationDate')
-        self.printList(jObj, d_format, "Received Shares")
+        self.format_date(json_obj, 'creationDate')
+        self.print_list(json_obj, d_format, "Received Shares")
 
 
 # -----------------------------------------------------------------------------
@@ -226,17 +235,17 @@ class ReceivedSharesDownloadCommand(DefaultCommand):
                 self.log.info(
                     "The share '" + file_name +
                     "' was downloaded. (" + req_time + "s)")
-            except urllib2.HTTPError as e:
+            except urllib2.HTTPError as ex:
                 print "Error : "
-                print e
+                print ex
                 return
 
     def complete(self, args, prefix):
         super(ReceivedSharesDownloadCommand, self).__call__(args)
 
-        jObj = self.ls.rshares.list()
+        json_obj = self.ls.rshares.list()
         return (
-            v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
+            v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
 
 
 # -------------------------- Shares -------------------------------------------
@@ -264,17 +273,17 @@ class SharesCommand(DefaultCommand):
     def complete(self, args,  prefix):
         super(SharesCommand, self).__call__(args)
 
-        jObj = self.ls.documents.list()
+        json_obj = self.ls.documents.list()
         return (
-            v.get('uuid') for v in jObj if v.get('uuid').startswith(prefix))
+            v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
 
     def complete_mail(self, args,  prefix):
         super(SharesCommand, self).__call__(args)
 
         if len(prefix) >= 3:
-            jObj = self.ls.users.list()
+            json_obj = self.ls.users.list()
             return (v.get('mail')
-                    for v in jObj if v.get('mail').startswith(prefix))
+                    for v in json_obj if v.get('mail').startswith(prefix))
 
 
 # -------------------------- Threads ------------------------------------------
@@ -285,13 +294,13 @@ class ThreadsListCommand(DefaultCommand):
     def __call__(self, args):
         super(ThreadsListCommand, self).__call__(args)
 
-        jObj = self.ls.threads.list()
+        json_obj = self.ls.threads.list()
         d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
-        #self.printPrettyJson(jObj)
-        self.formatDate(jObj, 'creationDate')
-        self.printList(jObj, d_format, "Threads")
+        #self.pretty_json(json_obj)
+        self.format_date(json_obj, 'creationDate')
+        self.print_list(json_obj, d_format, "Threads")
 
-        #self.printTest(jObj)
+        #self.print_test(json_obj)
 
 
 # -----------------------------------------------------------------------------
@@ -301,18 +310,18 @@ class ThreadMembersListCommand(DefaultCommand):
     def __call__(self, args):
         super(ThreadMembersListCommand, self).__call__(args)
 
-        jObj = self.ls.thread_members.list(args.uuid)
+        json_obj = self.ls.thread_members.list(args.uuid)
 
         d_format = "{firstName:11s}{lastName:10s}{admin:<7}{readonly:<9}{id}"
-        #self.printPrettyJson(jObj)
-        self.printList(jObj, d_format, "Thread members")
+        #self.pretty_json(json_obj)
+        self.print_list(json_obj, d_format, "Thread members")
 
     def complete(self, args,  prefix):
         super(ThreadMembersListCommand, self).__call__(args)
 
-        jObj = self.ls.threads.list()
+        json_obj = self.ls.threads.list()
         return (v.get('uuid')
-                for v in jObj if v.get('uuid').startswith(prefix))
+                for v in json_obj if v.get('uuid').startswith(prefix))
 
 
 # -------------------------- Users --------------------------------------------
@@ -323,11 +332,11 @@ class UsersListCommand(DefaultCommand):
     def __call__(self, args):
         super(UsersListCommand, self).__call__(args)
 
-        jObj = self.ls.users.list()
+        json_obj = self.ls.users.list()
         d_format = "{firstName:11s}{lastName:10s}{domain:<20}{mail}"
         #print "%(firstName)-10s %(lastName)-10s\t %(domain)s %(mail)s" % f
-        #self.printPrettyJson(jObj)
-        self.printList(jObj, d_format, "Users")
+        #self.pretty_json(json_obj)
+        self.print_list(json_obj, d_format, "Users")
 
 
 ###############################################################################

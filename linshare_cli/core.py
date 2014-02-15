@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
 
@@ -88,7 +88,6 @@ class file_with_callback(file):
 
 
 def cli_get_cache(user_function):
-    cache = {}
     cachedir = "~/.linshare-cache"
     cachedir = os.path.expanduser(cachedir)
     if not os.path.isdir(cachedir):
@@ -96,15 +95,15 @@ def cli_get_cache(user_function):
 
     log = logging.getLogger('linshare-cli.cli_get_cache')
 
-    def log_exec_time(fn, *args):
+    def log_exec_time(func, *args):
         start = time.time()
-        res = fn(*args)
+        res = func(*args)
         end = time.time()
         log.debug("function time : " + str(end - start))
         return res
 
-    def get_data(fn, cachefile,  *args):
-        res = log_exec_time(fn, *args)
+    def get_data(func, cachefile,  *args):
+        res = log_exec_time(func, *args)
         with open(cachefile, 'wb') as f:
             json.dump(res, f)
         return res
