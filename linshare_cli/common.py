@@ -30,12 +30,12 @@ import logging
 import json
 import getpass
 import datetime
-import fmatoolbox
+import argtoolbox
 
 
 # -----------------------------------------------------------------------------
 #pylint: disable=R0921
-class DefaultCommand(fmatoolbox.DefaultCommand):
+class DefaultCommand(argtoolbox.DefaultCommand):
     """ If you want to add a new command to the command line interface, your
     class should extend this class.
     """

@@ -34,9 +34,9 @@ import argparse
 import logging
 import logging.handlers
 
-from fmatoolbox import Config, Element, SimpleSection, DefaultProgram
-from fmatoolbox import streamHandler, DEFAULT_LOGGING_FORMAT
-from fmatoolbox import Base64ElementHook, SectionHook
+from argtoolbox import Config, Element, SimpleSection, DefaultProgram
+from argtoolbox import streamHandler, DEFAULT_LOGGING_FORMAT
+from argtoolbox import Base64ElementHook, SectionHook
 from linshare_cli.user import add_document_parser, add_share_parser
 from linshare_cli.user import add_received_share_parser, add_threads_parser
 from linshare_cli.user import add_users_parser, add_config_parser

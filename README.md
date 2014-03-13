@@ -1,7 +1,7 @@
 dependencies :
 =============
 
-* fmatoolbox
+* argtoolbox
   * ordereddict
 * argcomplete (optional)
 * poster

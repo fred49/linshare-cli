@@ -30,9 +30,9 @@ import copy
 import os
 import linshare_cli.common as common
 from linshare_cli.core import UserCli
-from fmatoolbox import DefaultCompleter
-from fmatoolbox import query_yes_no
-import fmatoolbox
+from argtoolbox import DefaultCompleter
+from argtoolbox import query_yes_no
+import argtoolbox
 
 
 # -----------------------------------------------------------------------------
@@ -47,7 +47,7 @@ class DefaultCommand(common.DefaultCommand):
 
 
 # -----------------------------------------------------------------------------
-class TestCommand(fmatoolbox.DefaultCommand):
+class TestCommand(argtoolbox.DefaultCommand):
     """Just for test. Print test to stdout"""
 
     def __init__(self, config=None):
