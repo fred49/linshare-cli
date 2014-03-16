@@ -35,3 +35,10 @@
 ._*
 .Spotlight-V100
 .Trashes
+
+
+# temp directories
+##################
+build
+dist
+linshare_cli.egg-info

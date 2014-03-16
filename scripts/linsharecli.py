@@ -62,7 +62,7 @@ log = logging.getLogger('linshare-cli')
 # -----------------------------------------------------------------------------
 # create global configuration
 # -----------------------------------------------------------------------------
-config = Config("linshare-cli-user",
+config = Config("linshare-cli",
                 desc="""An user cli for LinShare, using its REST API.""")
 
 section_server = config.add_section(SimpleSection("server"))
