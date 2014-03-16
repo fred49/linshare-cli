@@ -77,15 +77,19 @@ class ConfigGenerationCommand(object):
             self.log.debug(i + " : " + str(getattr(args, i)))
         self.log.debug("Namespace : end.")
 
+        configfile = self.config.prog_name + ".cfg"
+        if args.output:
+            configfile = args.output
+
         if not args.force_yes:
-            if os.path.exists(args.output):
+            if os.path.exists(configfile):
                 self.log.warn(
-                    "current file already exists : " + str(args.output))
+                    "current file already exists : " + str(configfile))
                 if not query_yes_no("overwrite ?", "no"):
                     self.log.error("aborted.")
                     return False
-        self.config.write_default_config_file(args.output, args.nocomments)
-        print "config file generation complete : " + str(args.output)
+        self.config.write_default_config_file(configfile, args.nocomments)
+        print "config file generation complete : " + str(configfile)
 
 
 # -----------------------------------------------------------------------------
@@ -464,7 +468,7 @@ def add_config_parser(subparsers, name, desc, config):
         'generate',
         help="generate the default pref file")
     parser_tmp2.set_defaults(__func__=ConfigGenerationCommand(config))
-    parser_tmp2.add_argument('--output', action="store", required=True)
+    parser_tmp2.add_argument('--output', action="store")
     parser_tmp2.add_argument(
         '-n',
         dest="nocomments",
