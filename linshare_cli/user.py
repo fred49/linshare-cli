@@ -98,24 +98,17 @@ class ConfigAutoCompteCommand(object):
         print """
 This program is comptible with the python autocomplete program called
 argcomplete.\n
-You can either install this program using:
-- sudo apt-get install python-argcomplete
-or
-- sudo apt-get install python-pip
-- sudo pip install argcomplete
-
-Once this program is installed, you have two configuration options:
+This program should already be installed, but in some case, you have to
+configure  it :
 
 1. Global configuration
     All programs compliant with argcomplete will be detected automatically
     with bash >= 4.2.
-    This won't work with Debian Squeeze for example.
     - sudo activate-global-python-argcomplete
 
 2. Specific configuration
     Manually include the following command ind your ~/.bashrc:
-    - eval "$(register-python-argcomplete linshare_cli_user.py)"
-
+    - eval "$(register-python-argcomplete linsharecli.py)"
 
 
 """
