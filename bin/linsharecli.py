@@ -69,8 +69,7 @@ section_server = config.add_section(SimpleSection("server"))
 
 section_server.add_element(Element(
     'host',
-    required=True,
-    default='http://localhost:8080/linshare'))
+    required=True))
 
 section_server.add_element(Element(
     'realm',
@@ -81,7 +80,6 @@ section_server.add_element(Element('user', required=True))
 
 section_server.add_element(Element(
     'password',
-    required=True,
     hidden=True,
     desc="user password to linshare",
     hooks=[Base64ElementHook(), ]))
@@ -129,13 +127,6 @@ parser.add_argument('-v', '--verbose', action="store_true", default=False)
 parser.add_argument('--version', action="version", version="%(prog)s 0.1")
 
 parser.add_argument(
-    '-p',
-    action="store_true",
-    default=False,
-    dest="ask_password",
-    help="If set, the program will ask you your password.")
-
-parser.add_argument(
     '-s',
     action="store",
     dest='server_section',
@@ -159,11 +150,23 @@ parser.add_argument(
     action="store",
     **config.server.user.get_arg_parse_arguments())
 
-parser.add_argument(
+password_group = parser.add_argument_group('Password')
+password_required = True
+if config.server.password is not None:
+    password_required = False
+group = password_group.add_mutually_exclusive_group(required=password_required)
+group.add_argument(
     '-P',
     '--password',
     action="store",
     **config.server.password.get_arg_parse_arguments())
+
+group.add_argument(
+    '-p',
+    action="store_true",
+    default=False,
+    dest="ask_password",
+    help="If set, the program will ask you your password.")
 
 parser.add_argument(
     '-H',
