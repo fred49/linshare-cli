@@ -41,6 +41,8 @@ from linshare_cli.user import add_document_parser, add_share_parser
 from linshare_cli.user import add_received_share_parser, add_threads_parser
 from linshare_cli.user import add_users_parser, add_config_parser
 from linshare_cli.user import add_test_parser
+import linshare_cli
+VERSION = linshare_cli.__version__
 
 # -----------------------------------------------------------------------------
 # logs
@@ -118,15 +120,6 @@ config.load()
 parser = config.get_parser(formatter_class=argparse.RawTextHelpFormatter)
 
 parser.add_argument(
-    '-d',
-    action="count",
-    **config.server.debug.get_arg_parse_arguments())
-
-parser.add_argument('-v', '--verbose', action="store_true", default=False)
-
-parser.add_argument('--version', action="version", version="%(prog)s 0.1")
-
-parser.add_argument(
     '-s',
     action="store",
     dest='server_section',
@@ -134,6 +127,15 @@ parser.add_argument(
     you want to load (server section is always load first as default
     configuration). You just need to specify a number like '4' for
     section 'server-4'""")
+
+parser.add_argument(
+    '-d',
+    action="count",
+    **config.server.debug.get_arg_parse_arguments())
+
+parser.add_argument('-v', '--verbose', action="store_true", default=False)
+
+parser.add_argument('--version', action="version", version="%(prog)s " + VERSION)
 
 # If section_server is defined, we need to modify the suffix attribute of
 # server Section object.
