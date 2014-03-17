@@ -77,7 +77,7 @@ class ConfigGenerationCommand(object):
             self.log.debug(i + " : " + str(getattr(args, i)))
         self.log.debug("Namespace : end.")
 
-        configfile = self.config.prog_name + ".cfg"
+        configfile = os.path.expanduser('~/.' + self.config.prog_name + '.cfg')
         if args.output:
             configfile = args.output
 
