@@ -123,7 +123,7 @@ class DocumentsListCommand(DefaultCommand):
         super(DocumentsListCommand, self).__call__(args)
 
         json_obj = self.ls.documents.list()
-        d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
+        d_format = u"{name:60s}{creationDate:30s}{uuid:30s}"
         self.format_date(json_obj, 'creationDate')
         self.print_list(json_obj, d_format, "Documents")
 
@@ -215,7 +215,7 @@ class ReceivedSharesListCommand(DefaultCommand):
         super(ReceivedSharesListCommand, self).__call__(args)
 
         json_obj = self.ls.rshares.list()
-        d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
+        d_format = u"{name:60s}{creationDate:30s}{uuid:30s}"
         self.format_date(json_obj, 'creationDate')
         self.print_list(json_obj, d_format, "Received Shares")
 
@@ -292,7 +292,7 @@ class ThreadsListCommand(DefaultCommand):
         super(ThreadsListCommand, self).__call__(args)
 
         json_obj = self.ls.threads.list()
-        d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
+        d_format = u"{name:60s}{creationDate:30s}{uuid:30s}"
         #self.pretty_json(json_obj)
         self.format_date(json_obj, 'creationDate')
         self.print_list(json_obj, d_format, "Threads")
@@ -309,7 +309,7 @@ class ThreadMembersListCommand(DefaultCommand):
 
         json_obj = self.ls.thread_members.list(args.uuid)
 
-        d_format = "{firstName:11s}{lastName:10s}{admin:<7}{readonly:<9}{id}"
+        d_format = u"{firstName:11s}{lastName:10s}{admin:<7}{readonly:<9}{id}"
         #self.pretty_json(json_obj)
         self.print_list(json_obj, d_format, "Thread members")
 
@@ -330,7 +330,7 @@ class UsersListCommand(DefaultCommand):
         super(UsersListCommand, self).__call__(args)
 
         json_obj = self.ls.users.list()
-        d_format = "{firstName:11s}{lastName:10s}{domain:<20}{mail}"
+        d_format = u"{firstName:11s}{lastName:10s}{domain:<20}{mail}"
         #print "%(firstName)-10s %(lastName)-10s\t %(domain)s %(mail)s" % f
         #self.pretty_json(json_obj)
         self.print_list(json_obj, d_format, "Users")

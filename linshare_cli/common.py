@@ -87,8 +87,10 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         builds a title for every key and store them in a dictionary
         which will be return as result."""
         legend = dict()
-        for i in data[0]:
-            legend[i] = i.upper()
+        for line in data:
+            for i in line:
+                legend[i] = i.upper()
+            break
         return legend
 
     def add_legend(self, data):
@@ -128,9 +130,10 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         if title:
             self.print_title(data, title)
         legend = self.get_legend(data)
-        print t_format.format(**legend)
+        if legend:
+            print t_format.format(**legend)
         for row in data:
-            print d_format.format(**row)
+            print unicode(d_format).format(**row)
         print ""
 
     def print_test(self, data):
