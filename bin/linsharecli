@@ -215,8 +215,8 @@ add_test_parser(subparsers)
 # -----------------------------------------------------------------------------
 # MAIN
 # -----------------------------------------------------------------------------
+prog = DefaultProgram(parser, config)
 if __name__ == "__main__":
-    prog = DefaultProgram(parser, config)
     if prog():
         sys.exit(0)
     else:
