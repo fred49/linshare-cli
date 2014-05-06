@@ -123,8 +123,10 @@ class DocumentsListCommand(DefaultCommand):
         super(DocumentsListCommand, self).__call__(args)
 
         json_obj = self.ls.documents.list()
-        d_format = u"{name:60s}{creationDate:30s}{uuid:30s}"
+        d_format = u"{name:60s}{creationDate:30s}{uuid:40s}{description}"
         self.format_date(json_obj, 'creationDate')
+        from operator import itemgetter
+        json_obj = sorted(json_obj, reverse = True, key=itemgetter("creationDate"))
         self.print_list(json_obj, d_format, "Documents")
 
 
@@ -137,7 +139,7 @@ class DocumentsUploadCommand(DefaultCommand):
         super(DocumentsUploadCommand, self).__call__(args)
 
         for file_path in args.files:
-            json_obj = self.ls.documents.upload(file_path)
+            json_obj = self.ls.documents.upload(file_path, args.description)
             if json_obj:
                 json_obj['time'] = self.ls.last_req_time
                 self.log.info(
@@ -164,6 +166,33 @@ class DocumentsDownloadCommand(DefaultCommand):
 
     def complete(self, args,  prefix):
         super(DocumentsDownloadCommand, self).__call__(args)
+
+        json_obj = self.ls.documents.list()
+        return (
+            v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
+
+
+# -----------------------------------------------------------------------------
+class DocumentsDeleteCommand(DefaultCommand):
+
+    def __call__(self, args):
+        super(DocumentsDeleteCommand, self).__call__(args)
+
+        for uuid in args.uuids:
+            try:
+                json_obj = self.ls.documents.delete(uuid)
+                file_name = json_obj.get('name')
+                self.log.info(
+                    "The file '" + file_name +
+                    "' (" + uuid + ")" +
+                    " was deleted. (" + self.ls.last_req_time + "s)")
+            except urllib2.HTTPError as ex:
+                print "Error : "
+                print ex
+                return
+
+    def complete(self, args,  prefix):
+        super(DocumentsDeleteCommand, self).__call__(args)
 
         json_obj = self.ls.documents.list()
         return (
@@ -347,6 +376,8 @@ def add_document_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser('upload',
                                          help="upload documents to linshare")
     parser_tmp2.set_defaults(__func__=DocumentsUploadCommand())
+    parser_tmp2.add_argument('--desc', action="store", dest="description",
+                             required=False, help="Optional description.")
     parser_tmp2.add_argument('files', nargs='+')
 
     parser_tmp2 = subparsers2.add_parser('upshare',
@@ -356,10 +387,17 @@ def add_document_parser(subparsers, name, desc):
     parser_tmp2.add_argument('-m', '--mail', action="append", dest="mails",
                              required=True, help="Recipient mails.")
 
+
     parser_tmp2 = subparsers2.add_parser(
         'download',
         help="download documents from linshare")
     parser_tmp2.set_defaults(__func__=DocumentsDownloadCommand())
+    parser_tmp2.add_argument('uuids', nargs='+').completer = DefaultCompleter()
+
+    parser_tmp2 = subparsers2.add_parser(
+        'delete',
+        help="delete documents from linshare")
+    parser_tmp2.set_defaults(__func__=DocumentsDeleteCommand())
     parser_tmp2.add_argument('uuids', nargs='+').completer = DefaultCompleter()
 
     parser_tmp2 = subparsers2.add_parser(

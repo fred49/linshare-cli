@@ -33,6 +33,8 @@ import sys
 import argparse
 import logging
 import logging.handlers
+import codecs
+import locale
 
 from argtoolbox import Config, Element, SimpleSection, DefaultProgram
 from argtoolbox import streamHandler, DEFAULT_LOGGING_FORMAT
@@ -43,6 +45,12 @@ from linshare_cli.user import add_users_parser, add_config_parser
 from linshare_cli.user import add_test_parser
 import linshare_cli
 VERSION = linshare_cli.__version__
+
+# -----------------------------------------------------------------------------
+# Encoding
+# -----------------------------------------------------------------------------
+sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
+sys.stdin = codecs.getreader(locale.getpreferredencoding())(sys.stdin)
 
 # -----------------------------------------------------------------------------
 # logs
@@ -209,7 +217,7 @@ add_config_parser(
     "config",
     "Config tools like autocomplete configuration or pref-file generation.",
     config)
-add_users_parser(subparsers, "users",  "users")
+add_users_parser(subparsers, "users", "users")
 add_test_parser(subparsers)
 
 # -----------------------------------------------------------------------------

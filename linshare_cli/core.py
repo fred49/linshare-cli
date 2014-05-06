@@ -293,7 +293,47 @@ class CoreCli(object):
                         "time": self.last_req_time})
         return jObj
 
-    def _upload(self, file_path, url):
+    def _delete(self, url):
+        """ List all documents store into LinShare."""
+        self.last_req_time = None
+        url = self.root_url + url
+        self.log.debug("list url : " + url)
+
+        # Building request
+        request = urllib2.Request(url)
+        request.get_method = lambda: 'DELETE'
+
+        # request start
+        starttime = datetime.datetime.now()
+
+        # doRequest
+        resultq = urllib2.urlopen(request)
+
+        # request end
+
+
+
+        endtime = datetime.datetime.now()
+        result = resultq.read()
+
+        content_type = resultq.headers.getheader('Content-Type')
+        if content_type == "application/json":
+            jObj = json.loads(result)
+            if self.debuglevel >= 2:
+                self.log.debug("the result is : ")
+                self.log.debug(json.dumps(jObj, sort_keys=True, indent=2))
+        else:
+            msg = "Wrong content type in the http response " + content_type
+            self.log.error(msg)
+            raise ValueError(msg)
+
+        self.last_req_time = str(endtime - starttime)
+        self.log.debug("""delete url : %(url)s : request time : %(time)s""",
+                       {"url": url,
+                        "time": self.last_req_time})
+        return jObj
+
+    def _upload(self, file_path, url, description = None):
         self.last_req_time = None
         url = self.root_url + url
         self.log.debug("upload url : " + url)
@@ -301,8 +341,11 @@ class CoreCli(object):
         # Generating datas and headers
         file_size = os.path.getsize(file_path)
         self.log.debug("file_path is : " + file_path)
-        file_name = file_path.split("/")[-1]
+        file_name = os.path.basename(file_path)
         self.log.debug("file_name is : " + file_name)
+
+        file_name = file_name.decode('UTF-8')
+        file_path = file_path.decode('UTF-8')
 
         if file_size <= 0:
             self.log.fatal("""The file '%(filename)s' can not be uploaded
@@ -316,12 +359,13 @@ class CoreCli(object):
         stream = file_with_callback(file_path, 'rb', pbar.update,
                                     file_size, file_path)
 
+
         p = poster.encode.MultipartParam("file", filename=file_name,
                                          fileobj=stream)
-
-        datagen, headers = poster.encode.multipart_encode([p, ])
-        #datagen, headers =
-        # poster.encode.multipart_encode( [ p, ("comment", self.comment)] )
+        params = [p,]
+        if description:
+            params.append(("description", description))
+        datagen, headers = poster.encode.multipart_encode(params)
 
         # Building request
         request = urllib2.Request(url, datagen, headers)
@@ -330,6 +374,7 @@ class CoreCli(object):
         pbar.start()
         starttime = datetime.datetime.now()
 
+        resultq = None
         try:
             # doRequest
             resultq = urllib2.urlopen(request)
@@ -347,7 +392,6 @@ class CoreCli(object):
                     "Can not upload file %(filename)s (%(filepath)s)",
                     {"filename": file_name,
                      "filepath": file_path})
-                print e
             else:
                 self.log.error(
                     """The file '%(filename)s' was uploaded
@@ -355,7 +399,7 @@ class CoreCli(object):
                     acquitment was received.""",
                     {"filename": file_name,
                      "time": self.last_req_time})
-                return None
+            return None
 
         # request end
         endtime = datetime.datetime.now()
@@ -453,14 +497,19 @@ class Documents(object):
         """ List all documents store into LinShare."""
         return self.core._list("documents.json")
 
-    def upload(self, file_path):
+    def upload(self, file_path, description = None):
         """ Upload a file to LinShare using its rest api.
         The uploaded document uuid will be returned"""
-        return self.core._upload(file_path, "documents.json")
+        return self.core._upload(file_path, "documents.json", description)
 
     def download(self, uuid):
         url = "documents/%s/download" % uuid
         return self.core._download(uuid, url)
+
+    def delete(self, uuid):
+        url = "documents/%s.json" % uuid
+        return self.core._delete(url)
+
 
 
 # -----------------------------------------------------------------------------
@@ -564,11 +613,13 @@ class ThreadsAdmin(object):
         self.core = corecli
 
     def list(self):
-        return self.core._list("threads.json")
+        return self.core._list("admin/threads.json")
 
 
 # -----------------------------------------------------------------------------
 class AdminCli(CoreCli):
     def __init__(self, *args, **kwargs):
         super(AdminCli, self).__init__(*args, **kwargs)
-        self.threads = Threads(self)
+        self.threads = ThreadsAdmin(self)
+        self.thread_members = ThreadsMembers(self)
+        self.users = Users(self)
