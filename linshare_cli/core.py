@@ -42,13 +42,16 @@ import hashlib
 
 # -----------------------------------------------------------------------------
 def extract_file_name(content_dispo):
+    #print type(content_dispo)
+    #print repr(content_dispo)
     file_name = ""
     for key_val in content_dispo.split(';'):
         param = key_val.strip().split('=')
         if param[0] == "filename":
             file_name = param[1]
-        if param[0] == "filename*":
-            file_name = param[1].split("'")[2]
+            # convertion of escape string (str type) from server to unicode object
+            file_name = file_name.decode('unicode-escape')
+            break
     return file_name
 
 
