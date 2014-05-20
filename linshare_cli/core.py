@@ -50,7 +50,7 @@ def extract_file_name(content_dispo):
         if param[0] == "filename":
             file_name = param[1]
             # convertion of escape string (str type) from server to unicode object
-            file_name = file_name.decode('unicode-escape')
+            file_name = file_name.decode('unicode-escape').strip('"')
             break
     return file_name
 
