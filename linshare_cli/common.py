@@ -99,13 +99,74 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 
     def format_date(self, data, attr, dformat="%Y-%m-%d %H:%M:%S"):
         """The current fied is replaced by a formatted date. The previous
-        field is saved to a new field called 'field_orig'."""
+        field is saved to a new field called 'field_raw'."""
 
         for row in data:
             date = "{da:" + dformat + "}"
-            row[attr + "_orig"] = row[attr]
+            row[attr + u"_raw"] = row[attr]
             row[attr] = date.format(
                 da=datetime.datetime.fromtimestamp(row.get(attr) / 1000))
+
+    def format_filesize(self, data, attr):
+        """The current fied is replaced by a formatted date. The previous
+        field is saved to a new field called 'field_raw'."""
+        from hurry.filesize import size
+        for row in data:
+            row[attr + u"_raw"] = row[attr]
+            row[attr] = size(row[attr])
+
+    def getmaxlength(self, data):
+        maxlength = {}
+        for row in data:
+            for k, v in row.items():
+                if not  maxlength.get(k, False):
+                    maxlength[k] = len(repr(v))
+                else:
+                    maxlength[k] = max((len(repr(v)), maxlength[k]))
+        self.log.debug(str(maxlength))
+        return maxlength
+
+    def getdatatype(self, data):
+        res = {}
+        fields = self.get_legend(data)
+        if fields:
+            row = data[0]
+            for field in row.keys():
+                res[field] = type(row[field])
+        return res
+
+    def build_on_field(self, name, maxlength, datatype, factor=1.3,
+                       suffix=u"s}  "):
+        if datatype[name] == int:
+            return u"{" + name + u"!s:" + str(int(maxlength[name] *
+                                                  factor)) + suffix
+        elif datatype[name] == long:
+            return u"{" + name + u"!s:" + str(int(maxlength[name] *
+                                                  factor)) + suffix
+        elif datatype[name] == bool:
+            return u"{" + name + u"!s:" + str(int(maxlength[name] *
+                                                  factor)) + suffix
+        else:
+            return u"{" + name + u":" + str(int(maxlength[name] *
+                                                factor)) + suffix
+
+    def print_fields(self, data):
+        fields = self.get_legend(data)
+        if fields:
+            _title = "Available returned fields :"
+            print "\n" + _title
+            print self.get_underline(_title)
+            if data:
+                row = data[0]
+                keys = row.keys()
+                keys.sort()
+                maxlengh = int(max([len(x) for x in keys]) * 1.3)
+                d_format = u"{field:" + str(maxlengh) + u"s}{typ:^10s}"
+                for field in keys:
+                    print unicode(d_format).format(**{
+                        'field': field,
+                        'typ': type(row[field]),
+                    })
 
     def get_underline(self, title):
         """Return a string with the '-' character, used to underline a title.
@@ -121,7 +182,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         print "\n" + _title
         print self.get_underline(_title)
 
-    def print_list(self, data, d_format, title=None, t_format=None):
+    def print_list(self, data, d_format, title=None, t_format=None,
+                   no_legend=False):
         """The input list is printed out using the d_format parametter.
         A Legend is built using field names."""
 
@@ -129,14 +191,17 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             t_format = d_format
         if title:
             self.print_title(data, title)
-        legend = self.get_legend(data)
-        if legend:
-            print t_format.format(**legend)
+        if not  no_legend:
+            legend = self.get_legend(data)
+            if legend:
+                print t_format.format(**legend)
         for row in data:
             print unicode(d_format).format(**row)
-        print ""
+        if title:
+            print ""
 
     def print_test(self, data):
+        """Just for test"""
         # test
         # compute max lengh by column.
         res = {}

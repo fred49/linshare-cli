@@ -33,6 +33,7 @@ from linshare_cli.core import UserCli
 from argtoolbox import DefaultCompleter
 from argtoolbox import query_yes_no
 import argtoolbox
+from argparse import RawTextHelpFormatter
 
 
 # -----------------------------------------------------------------------------
@@ -123,11 +124,51 @@ class DocumentsListCommand(DefaultCommand):
         super(DocumentsListCommand, self).__call__(args)
 
         json_obj = self.ls.documents.list()
-        d_format = u"{name:60s}{creationDate:30s}{uuid:40s}{description}"
+
+
         self.format_date(json_obj, 'creationDate')
+        self.format_date(json_obj, 'modificationDate')
+        self.format_date(json_obj, 'expirationDate')
+        self.format_filesize(json_obj, 'size')
+        maxlength = self.getmaxlength(json_obj)
+        datatype = self.getdatatype(json_obj)
+
+        keys = []
+        keys.append(u'name')
+        keys.append(u'size')
+        keys.append(u'uuid')
+        keys.append(u'creationDate')
+        if args.extended:
+            keys.append(u'type')
+            keys.append(u'expirationDate')
+            keys.append(u'modificationDate')
+
+        d_format = ""
+        if args.output_format:
+            d_format = args.output_format
+            d_format = d_format.decode('UTF-8')
+        else:
+            for key in keys:
+                d_format += self.build_on_field(key, maxlength, datatype)
+
+        if args.show_columns:
+            self.print_fields(json_obj)
+            return True
+
         from operator import itemgetter
-        json_obj = sorted(json_obj, reverse = True, key=itemgetter("creationDate"))
-        self.print_list(json_obj, d_format, "Documents")
+        param = "creationDate"
+        reverse = args.reverse
+        if args.name:
+            param = "name"
+        if args.size:
+            param = "size_raw"
+
+        json_obj = sorted(json_obj, reverse=reverse, key=itemgetter(param))
+        if args.no_title:
+            self.print_list(json_obj, d_format, no_legend=args.no_legend)
+        else:
+            self.print_list(json_obj, d_format, "Documents",
+                            no_legend=args.no_legend)
 
 
 # -----------------------------------------------------------------------------
@@ -164,7 +205,7 @@ class DocumentsDownloadCommand(DefaultCommand):
                 print ex
                 return
 
-    def complete(self, args,  prefix):
+    def complete(self, args, prefix):
         super(DocumentsDownloadCommand, self).__call__(args)
 
         json_obj = self.ls.documents.list()
@@ -191,7 +232,7 @@ class DocumentsDeleteCommand(DefaultCommand):
                 print ex
                 return
 
-    def complete(self, args,  prefix):
+    def complete(self, args, prefix):
         super(DocumentsDeleteCommand, self).__call__(args)
 
         json_obj = self.ls.documents.list()
@@ -228,7 +269,7 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
                     self.log.error("Unexpected return code : " +
                                    str(code) + " : " + msg)
 
-    def complete(self, args,  prefix):
+    def complete(self, args, prefix):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
 
         json_obj = self.ls.documents.list()
@@ -296,14 +337,14 @@ class SharesCommand(DefaultCommand):
                     self.log.error("Unexpected return code : " + str(code) +
                                    " : " + msg)
 
-    def complete(self, args,  prefix):
+    def complete(self, args, prefix):
         super(SharesCommand, self).__call__(args)
 
         json_obj = self.ls.documents.list()
         return (
             v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
 
-    def complete_mail(self, args,  prefix):
+    def complete_mail(self, args, prefix):
         super(SharesCommand, self).__call__(args)
 
         if len(prefix) >= 3:
@@ -342,7 +383,7 @@ class ThreadMembersListCommand(DefaultCommand):
         #self.pretty_json(json_obj)
         self.print_list(json_obj, d_format, "Thread members")
 
-    def complete(self, args,  prefix):
+    def complete(self, args, prefix):
         super(ThreadMembersListCommand, self).__call__(args)
 
         json_obj = self.ls.threads.list()
@@ -402,7 +443,30 @@ def add_document_parser(subparsers, name, desc):
 
     parser_tmp2 = subparsers2.add_parser(
         'list',
+        formatter_class=RawTextHelpFormatter,
         help="list documents from linshare")
+    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
+                             help="reverse order while sorting")
+    parser_tmp2.add_argument('-c', '--creation-date', action="store_true",
+                             help="sort by creation date")
+    parser_tmp2.add_argument('-n', '--name', action="store_true",
+                             help="sort by file name")
+    parser_tmp2.add_argument('-x', action="store_true",
+                             help="vertical display")
+    parser_tmp2.add_argument('--extended', action="store_true",
+                             help="extended format")
+    parser_tmp2.add_argument('--no-title', action="store_true",
+                             help="dont show the title")
+    parser_tmp2.add_argument('--no-legend', action="store_true",
+                             help="dont show the legend")
+    parser_tmp2.add_argument('--size', action="store_true",
+                             help="sort by file size")
+    parser_tmp2.add_argument('-f', '--format', dest="output_format",
+                             action="store",
+                             help="""Change output format, ex:
+{name:60s}{size!s:^10s}{uuid:40s}""")
+    parser_tmp2.add_argument('--show-columns', action="store_true",
+                             help="List all available fields in received data.")
     parser_tmp2.set_defaults(__func__=DocumentsListCommand())
 
 
