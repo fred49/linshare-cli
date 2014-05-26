@@ -78,7 +78,10 @@ setup(
     # project is installed.
     install_requires = ['argtoolbox',
                         'poster',
-                        'progressbar'],
+                        'progressbar',
+                        'veryprettytable',
+                        'hurry.filesize',
+                        ],
 
     scripts = glob.glob('bin/*'),
 )

@@ -36,12 +36,14 @@ import poster
 import time
 #from datetime import datetime
 import datetime
-from progressbar import *
+#from progressbar import *
+from progressbar import ProgressBar, FileTransferSpeed, Bar, ETA, Percentage
 import hashlib
 
 
 # -----------------------------------------------------------------------------
 def extract_file_name(content_dispo):
+    """Extract file name from the input request body"""
     #print type(content_dispo)
     #print repr(content_dispo)
     file_name = ""
@@ -49,13 +51,14 @@ def extract_file_name(content_dispo):
         param = key_val.strip().split('=')
         if param[0] == "filename":
             file_name = param[1]
-            # convertion of escape string (str type) from server to unicode object
+            # convertion of escape string (str type) from server
+            # to unicode object
             file_name = file_name.decode('unicode-escape').strip('"')
             break
     return file_name
 
 
-class file_with_callback(file):
+class FileWithCallback(file):
     def __init__(self, path, mode, callback, size=None, *args):
         file.__init__(self, path, mode)
         if size:
@@ -105,7 +108,7 @@ def cli_get_cache(user_function):
         log.debug("function time : " + str(end - start))
         return res
 
-    def get_data(func, cachefile,  *args):
+    def get_data(func, cachefile, *args):
         res = log_exec_time(func, *args)
         with open(cachefile, 'wb') as f:
             json.dump(res, f)
@@ -286,6 +289,8 @@ class CoreCli(object):
                 self.log.debug("the result is : ")
                 self.log.debug(json.dumps(jObj, sort_keys=True, indent=2))
         else:
+            self.log.debug(str("fred"))
+            self.log.debug(str(result))
             msg = "Wrong content type in the http response " + content_type
             self.log.error(msg)
             raise ValueError(msg)
@@ -352,14 +357,14 @@ class CoreCli(object):
 
         if file_size <= 0:
             self.log.fatal("""The file '%(filename)s' can not be uploaded
-                because its size less or equal to zero.""",
+because its size less or equal to zero.""",
                            {"filename": str(file_name)})
             return None
 
         widgets = [FileTransferSpeed(), ' <<<', Bar(), '>>> ',
                    Percentage(), ' ', ETA()]
         pbar = ProgressBar(widgets=widgets, maxval=file_size)
-        stream = file_with_callback(file_path, 'rb', pbar.update,
+        stream = FileWithCallback(file_path, 'rb', pbar.update,
                                     file_size, file_path)
 
 
@@ -462,7 +467,7 @@ This method could throw exceptions like urllib2.HTTPError."""
             widgets = [FileTransferSpeed(), ' <<<', Bar(), '>>> ',
                        Percentage(), ' ', ETA()]
             pbar = ProgressBar(widgets=widgets, maxval=file_size)
-            stream = file_with_callback(file_name, 'w', pbar.update,
+            stream = FileWithCallback(file_name, 'w', pbar.update,
                                         file_size, file_name)
             pbar.start()
 

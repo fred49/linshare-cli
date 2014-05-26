@@ -34,6 +34,7 @@ from argtoolbox import DefaultCompleter
 from argtoolbox import query_yes_no
 import argtoolbox
 from argparse import RawTextHelpFormatter
+from veryprettytable import VeryPrettyTable
 
 
 # -----------------------------------------------------------------------------
@@ -114,7 +115,6 @@ configure  it :
 
 """
 
-
 # -------------------------- Documents ----------------------------------------
 # -----------------------------------------------------------------------------
 class DocumentsListCommand(DefaultCommand):
@@ -124,25 +124,31 @@ class DocumentsListCommand(DefaultCommand):
         super(DocumentsListCommand, self).__call__(args)
 
         json_obj = self.ls.documents.list()
-
-
-        self.format_date(json_obj, 'creationDate')
-        self.format_date(json_obj, 'modificationDate')
-        self.format_date(json_obj, 'expirationDate')
-        self.format_filesize(json_obj, 'size')
-        maxlength = self.getmaxlength(json_obj)
-        datatype = self.getdatatype(json_obj)
+        if args.show_columns:
+            self.print_fields(json_obj)
+            return True
 
         keys = []
         keys.append(u'name')
         keys.append(u'size')
         keys.append(u'uuid')
         keys.append(u'creationDate')
+
         if args.extended:
             keys.append(u'type')
             keys.append(u'expirationDate')
             keys.append(u'modificationDate')
 
+        self.format_date(json_obj, 'creationDate')
+        self.format_filesize(json_obj, 'size')
+        self.format_date(json_obj, 'modificationDate')
+        self.format_date(json_obj, 'expirationDate')
+
+        # computing data for presentation
+        maxlength = self.getmaxlength(json_obj)
+        datatype = self.getdatatype(json_obj)
+
+        # computing string format
         d_format = ""
         if args.output_format:
             d_format = args.output_format
@@ -150,10 +156,6 @@ class DocumentsListCommand(DefaultCommand):
         else:
             for key in keys:
                 d_format += self.build_on_field(key, maxlength, datatype)
-
-        if args.show_columns:
-            self.print_fields(json_obj)
-            return True
 
         from operator import itemgetter
         param = "creationDate"
@@ -169,6 +171,72 @@ class DocumentsListCommand(DefaultCommand):
         else:
             self.print_list(json_obj, d_format, "Documents",
                             no_legend=args.no_legend)
+
+
+# -------------------------- Documents ----------------------------------------
+# -----------------------------------------------------------------------------
+class DocumentsListV2Command(DefaultCommand):
+    """ List all documents store into LinShare."""
+
+    def __call__(self, args):
+        super(DocumentsListV2Command, self).__call__(args)
+
+        json_obj = self.ls.documents.list()
+
+        keys = []
+        keys.append(u'name')
+        keys.append(u'uuid')
+        keys.append(u'size')
+        keys.append(u'creationDate')
+        if args.extended:
+            keys.append(u'type')
+            keys.append(u'expirationDate')
+            keys.append(u'description')
+            keys.append(u'modificationDate')
+            keys.append(u'ciphered')
+
+        self.format_date(json_obj, 'creationDate')
+        self.format_filesize(json_obj, 'size')
+        self.format_date(json_obj, 'modificationDate')
+        self.format_date(json_obj, 'expirationDate')
+
+        table = VeryPrettyTable(keys)
+
+        # styles
+        table.align[u"name"] = "l"
+        table.padding_width = 1
+        table.align["size"] = "l"
+
+        if args.name:
+            table.reversesort = args.reverse
+            table.sortby = "name"
+        elif args.size:
+            from operator import itemgetter
+            json_obj = sorted(json_obj, reverse=args.reverse,
+                              key=itemgetter("size_raw"))
+        else:
+            table.reversesort = args.reverse
+            table.sortby = "creationDate"
+
+        if True:
+            for row in json_obj:
+                data = []
+                for key in keys:
+                    data.append(row[key])
+                table.add_row(data)
+                #table.add_row(data, fore_color="red")
+        if False:
+            table = VeryPrettyTable()
+            for key in keys:
+                table.add_column(key, [row[key] for row in json_obj])
+
+        out = table.get_string(
+            fields=keys,
+            #start=10,
+            #end=10,
+            #sortby=param
+            )
+        print unicode(out)
 
 
 # -----------------------------------------------------------------------------
@@ -451,8 +519,6 @@ def add_document_parser(subparsers, name, desc):
                              help="sort by creation date")
     parser_tmp2.add_argument('-n', '--name', action="store_true",
                              help="sort by file name")
-    parser_tmp2.add_argument('-x', action="store_true",
-                             help="vertical display")
     parser_tmp2.add_argument('--extended', action="store_true",
                              help="extended format")
     parser_tmp2.add_argument('--no-title', action="store_true",
@@ -468,6 +534,25 @@ def add_document_parser(subparsers, name, desc):
     parser_tmp2.add_argument('--show-columns', action="store_true",
                              help="List all available fields in received data.")
     parser_tmp2.set_defaults(__func__=DocumentsListCommand())
+
+
+    parser_tmp2 = subparsers2.add_parser(
+        'listv2',
+        formatter_class=RawTextHelpFormatter,
+        help="list documents from linshare")
+    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
+                             help="reverse order while sorting", default=False)
+    parser_tmp2.add_argument('-c', '--creation-date', action="store_true",
+                             help="sort by creation date")
+    parser_tmp2.add_argument('-n', '--name', action="store_true",
+                             help="sort by file name")
+    #parser_tmp2.add_argument('-x', action="store_true",
+    #                         help="vertical display")
+    parser_tmp2.add_argument('--extended', action="store_true",
+                             help="extended format")
+    parser_tmp2.add_argument('--size', action="store_true",
+                             help="sort by file size")
+    parser_tmp2.set_defaults(__func__=DocumentsListV2Command())
 
 
 ###############################################################################
