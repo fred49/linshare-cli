@@ -24,6 +24,8 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
+from __future__ import unicode_literals
+
 import logging
 import urllib2
 import copy
@@ -61,6 +63,9 @@ class TestCommand(argtoolbox.DefaultCommand):
         self.verbose = args.verbose
         self.debug = args.debug
         print "Test"
+        print unicode(self.config)
+        print args
+        print ""
 
 
 # -----------------------------------------------------------------------------
@@ -669,6 +674,6 @@ def add_config_parser(subparsers, name, desc, config):
 ###############################################################################
 ### test
 ###############################################################################
-def add_test_parser(subparsers):
+def add_test_parser(subparsers, config):
     parser_tmp = subparsers.add_parser('test', add_help=False)
-    parser_tmp.set_defaults(__func__=TestCommand())
+    parser_tmp.set_defaults(__func__=TestCommand(config))

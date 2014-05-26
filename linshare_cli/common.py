@@ -25,6 +25,8 @@
 #
 
 
+from __future__ import unicode_literals
+
 import sys
 import logging
 import json
@@ -104,8 +106,12 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         for row in data:
             date = "{da:" + dformat + "}"
             row[attr + u"_raw"] = row[attr]
-            row[attr] = date.format(
-                da=datetime.datetime.fromtimestamp(row.get(attr) / 1000))
+            ldate = row.get(attr)
+            if not  ldate:
+                row[attr] = ""
+            else:
+                row[attr] = date.format(
+                    da=datetime.datetime.fromtimestamp(ldate / 1000))
 
     def format_filesize(self, data, attr):
         """The current fied is replaced by a formatted date. The previous

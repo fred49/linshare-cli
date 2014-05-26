@@ -25,6 +25,8 @@
 #
 
 
+from __future__ import unicode_literals
+
 import os
 import logging
 import logging.handlers
@@ -210,11 +212,16 @@ class CoreCli(object):
 
         # We declare all the handlers useful here.
         auth_handler = urllib2.HTTPBasicAuthHandler()
-        auth_handler.add_password(
-            realm=realm,
-            uri=host,
-            user=user,
-            passwd=password)
+        # we convert unicode objects to utf8 strings because
+        # the authentication module does not handle unicode
+        try:
+            auth_handler.add_password(
+                realm=realm.encode('utf8'),
+                uri=host.encode('utf8'),
+                user=user.encode('utf8'),
+                passwd=password.encode('utf8'))
+        except UnicodeEncodeError as ex:
+            self.log.error("the program was not able to compute the basic authentication token.")
 
         handlers = [
             poster.streaminghttp.StreamingHTTPSHandler(

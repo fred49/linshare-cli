@@ -25,9 +25,12 @@
 #
 
 
+
 # -----------------------------------------------------------------------------
 # Imports
 # -----------------------------------------------------------------------------
+from __future__ import unicode_literals
+
 import os
 import sys
 import argparse
@@ -65,6 +68,8 @@ g_log.addHandler(streamHandler)
 if os.getenv('_LINSHARE_CLI_USER_DEBUG', False):
     g_log.setLevel(logging.DEBUG)
     streamHandler.setFormatter(DEFAULT_LOGGING_FORMAT)
+# if you want to debug argcomplete completion,
+# you just need to export ARC_DEBUG=True
 
 # global logger variable
 log = logging.getLogger('linshare-cli')
@@ -73,7 +78,17 @@ log = logging.getLogger('linshare-cli')
 # create global configuration
 # -----------------------------------------------------------------------------
 config = Config("linshare-cli",
-                desc="""An user cli for LinShare, using its REST API.""")
+                desc="""An user cli for LinShare, using its REST API.
+
+
+
+Advanced documentation :
+------------------------
+If you need debug during class construction, file config loading,
+you just need to export _LINSHARE_CLI_USER_DEBUG=True
+
+================================================================
+""")
 
 section_server = config.add_section(SimpleSection("server"))
 
@@ -143,7 +158,8 @@ parser.add_argument(
 
 parser.add_argument('-v', '--verbose', action="store_true", default=False)
 
-parser.add_argument('--version', action="version", version="%(prog)s " + VERSION)
+parser.add_argument('--version', action="version",
+                    version="%(prog)s " + VERSION)
 
 # If section_server is defined, we need to modify the suffix attribute of
 # server Section object.
@@ -218,7 +234,7 @@ add_config_parser(
     "Config tools like autocomplete configuration or pref-file generation.",
     config)
 add_users_parser(subparsers, "users", "users")
-add_test_parser(subparsers)
+add_test_parser(subparsers, config)
 
 # -----------------------------------------------------------------------------
 # MAIN
