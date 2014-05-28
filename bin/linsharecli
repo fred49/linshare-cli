@@ -40,7 +40,8 @@ import codecs
 import locale
 
 from argtoolbox import Config, Element, SimpleSection, DefaultProgram
-from argtoolbox import streamHandler, DEFAULT_LOGGING_FORMAT
+from argtoolbox import streamHandler
+from argtoolbox import DEBUG_LOGGING_FORMAT, DEFAULT_LOGGING_FORMAT
 from argtoolbox import Base64ElementHook, SectionHook
 from linshare_cli.user import add_document_parser, add_share_parser
 from linshare_cli.user import add_received_share_parser, add_threads_parser
@@ -67,7 +68,13 @@ g_log.addHandler(streamHandler)
 # you just need to export _LINSHARE_CLI_USER_DEBUG=True
 if os.getenv('_LINSHARE_CLI_USER_DEBUG', False):
     g_log.setLevel(logging.DEBUG)
-    streamHandler.setFormatter(DEFAULT_LOGGING_FORMAT)
+    streamHandler.setFormatter(DEBUG_LOGGING_FORMAT)
+
+if os.getenv('_LINSHARE_CLI_USER_DEBUG_FILE', False):
+    fileHa = logging.FileHandler('/tmp/linshare.log', 'w', 'utf-8')
+    fileHa.setFormatter(DEBUG_LOGGING_FORMAT)
+    g_log.addHandler(fileHa)
+
 # if you want to debug argcomplete completion,
 # you just need to export ARC_DEBUG=True
 
