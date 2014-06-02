@@ -270,7 +270,7 @@ class CoreCli(object):
         #request.add_header("Cookie", "JSESSIONID=")
 
     @cli_get_cache
-    def _list(self, url):
+    def list(self, url):
         """ List all documents store into LinShare."""
         self.last_req_time = None
         url = self.root_url + url
@@ -308,7 +308,7 @@ class CoreCli(object):
                         "time": self.last_req_time})
         return jObj
 
-    def _delete(self, url):
+    def delete(self, url):
         """ List all documents store into LinShare."""
         self.last_req_time = None
         url = self.root_url + url
@@ -348,7 +348,7 @@ class CoreCli(object):
                         "time": self.last_req_time})
         return jObj
 
-    def _upload(self, file_path, url, description = None):
+    def upload(self, file_path, url, description=None):
         self.last_req_time = None
         url = self.root_url + url
         self.log.debug("upload url : " + url)
@@ -432,7 +432,7 @@ because its size less or equal to zero.""",
                         "time": self.last_req_time})
         return jObj
 
-    def _download(self, uuid, url):
+    def download(self, uuid, url):
         """ download a file from LinShare using its rest api.
 This method could throw exceptions like urllib2.HTTPError."""
         self.last_req_time = None
@@ -510,20 +510,20 @@ class Documents(object):
 
     def list(self):
         """ List all documents store into LinShare."""
-        return self.core._list("documents.json")
+        return self.core.list("documents.json")
 
-    def upload(self, file_path, description = None):
+    def upload(self, file_path, description=None):
         """ Upload a file to LinShare using its rest api.
         The uploaded document uuid will be returned"""
-        return self.core._upload(file_path, "documents.json", description)
+        return self.core.upload(file_path, "documents.json", description)
 
     def download(self, uuid):
         url = "documents/%s/download" % uuid
-        return self.core._download(uuid, url)
+        return self.core.download(uuid, url)
 
     def delete(self, uuid):
         url = "documents/%s.json" % uuid
-        return self.core._delete(url)
+        return self.core.delete(url)
 
 
 
@@ -533,11 +533,11 @@ class ReceivedShares(object):
         self.core = corecli
 
     def list(self):
-        return self.core._list("shares.json")
+        return self.core.list("shares.json")
 
     def download(self, uuid):
         url = "shares/%s/download" % uuid
-        return self.core._download(uuid, url)
+        return self.core.download(uuid, url)
 
 
 # -----------------------------------------------------------------------------
@@ -586,7 +586,7 @@ class Threads(object):
         self.core = corecli
 
     def list(self):
-        return self.core._list("threads.json")
+        return self.core.list("threads.json")
 
 
 # -----------------------------------------------------------------------------
@@ -596,7 +596,7 @@ class ThreadsMembers(object):
 
     def list(self, threadUuid):
         url = "thread_members/%s.json" % threadUuid
-        return self.core._list(url)
+        return self.core.list(url)
 
 
 # -----------------------------------------------------------------------------
@@ -605,7 +605,7 @@ class Users(object):
         self.core = corecli
 
     def list(self):
-        return self.core._list("users.json")
+        return self.core.list("users.json")
 
 
 # -----------------------------------------------------------------------------
@@ -628,7 +628,7 @@ class ThreadsAdmin(object):
         self.core = corecli
 
     def list(self):
-        return self.core._list("admin/threads.json")
+        return self.core.list("admin/threads.json")
 
 
 # -----------------------------------------------------------------------------
