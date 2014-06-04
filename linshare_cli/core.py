@@ -296,7 +296,6 @@ class CoreCli(object):
                 self.log.debug("the result is : ")
                 self.log.debug(json.dumps(jObj, sort_keys=True, indent=2))
         else:
-            self.log.debug(str("fred"))
             self.log.debug(str(result))
             msg = "Wrong content type in the http response " + content_type
             self.log.error(msg)
@@ -355,12 +354,11 @@ class CoreCli(object):
 
         # Generating datas and headers
         file_size = os.path.getsize(file_path)
+
+        file_path = file_path.decode('UTF-8')
         self.log.debug("file_path is : " + file_path)
         file_name = os.path.basename(file_path)
         self.log.debug("file_name is : " + file_name)
-
-        file_name = file_name.decode('UTF-8')
-        file_path = file_path.decode('UTF-8')
 
         if file_size <= 0:
             self.log.fatal("""The file '%(filename)s' can not be uploaded

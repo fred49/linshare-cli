@@ -676,4 +676,5 @@ def add_config_parser(subparsers, name, desc, config):
 ###############################################################################
 def add_test_parser(subparsers, config):
     parser_tmp = subparsers.add_parser('test', add_help=False)
+    parser_tmp.add_argument('files', nargs='*')
     parser_tmp.set_defaults(__func__=TestCommand(config))
