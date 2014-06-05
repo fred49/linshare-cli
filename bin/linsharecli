@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python2
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
 
@@ -24,8 +24,6 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-
-
 # -----------------------------------------------------------------------------
 # Imports
 # -----------------------------------------------------------------------------
@@ -39,216 +37,201 @@ import logging.handlers
 import codecs
 import locale
 
-from argtoolbox import Config, Element, SimpleSection, DefaultProgram
+from argtoolbox import BasicProgram
+from argtoolbox import SimpleSection
+from argtoolbox import Element
 from argtoolbox import streamHandler
 from argtoolbox import DEBUG_LOGGING_FORMAT
-from argtoolbox import Base64ElementHook, SectionHook
+from argtoolbox import Base64ElementHook
+from argtoolbox import SectionHook
 from linshare_cli.user import add_document_parser, add_share_parser
 from linshare_cli.user import add_received_share_parser, add_threads_parser
 from linshare_cli.user import add_users_parser, add_config_parser
 from linshare_cli.user import add_test_parser
 import linshare_cli
-VERSION = linshare_cli.__version__
-
-# -----------------------------------------------------------------------------
-# Encoding
-# -----------------------------------------------------------------------------
-sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
-sys.stdin = codecs.getreader(locale.getpreferredencoding())(sys.stdin)
-
-# -----------------------------------------------------------------------------
-# logs
-# -----------------------------------------------------------------------------
-g_log = logging.getLogger()
-g_log.setLevel(logging.INFO)
-# logger handlers
-g_log.addHandler(streamHandler)
-# debug mode
-# if you need debug during class construction, file config loading,
-# you just need to export _LINSHARE_CLI_USER_DEBUG=True
-if os.getenv('_LINSHARE_CLI_USER_DEBUG', False):
-    g_log.setLevel(logging.DEBUG)
-    streamHandler.setFormatter(DEBUG_LOGGING_FORMAT)
-
-if os.getenv('_LINSHARE_CLI_USER_DEBUG_FILE', False):
-    fileHa = logging.FileHandler('/tmp/linshare.log', 'w', 'utf-8')
-    fileHa.setFormatter(DEBUG_LOGGING_FORMAT)
-    g_log.addHandler(fileHa)
 
 # if you want to debug argcomplete completion,
 # you just need to export ARC_DEBUG=True
 
-# global logger variable
-log = logging.getLogger('linshare-cli')
+
+sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
+# Not use full ?
+#sys.stdin = codecs.getreader(locale.getpreferredencoding())(sys.stdin)
+
 
 # -----------------------------------------------------------------------------
-# create global configuration
-# -----------------------------------------------------------------------------
-config = Config("linshare-cli",
-                desc="""An user cli for LinShare, using its REST API.
+class LinShareCliProgram(BasicProgram):
+    """Main program."""
 
+    def add_config_options(self):
+        self.formatter_class = argparse.RawTextHelpFormatter
+
+        section_server = self.config.add_section(SimpleSection("server"))
+
+        section_server.add_element(Element(
+            'host',
+            required=True))
+
+        section_server.add_element(Element(
+            'realm',
+            desc=argparse.SUPPRESS,
+            default="Name Of Your LinShare Realm"))
+
+        section_server.add_element(Element('user', required=True))
+
+        section_server.add_element(Element(
+            'password',
+            hidden=True,
+            desc="user password to linshare",
+            hooks=[Base64ElementHook(), ]))
+
+        section_server.add_element(Element(
+            'application_name',
+            default="linshare",
+            conf_hidden=True,
+            desc="Default value is 'linshare' (ex: http:/x.x.x.x/linshare)"))
+
+        section_server.add_element(Element(
+            'nocache',
+            e_type=bool,
+            default=False,
+            desc=argparse.SUPPRESS))
+
+        section_server.add_element(Element('verbose'))
+
+        section_server.add_element(Element(
+            'debug',
+            e_type=int,
+            default=0,
+            desc="""(default: 0)
+0 : debug off
+1 : debug on
+2 : debug on and request result is printed (pretty json)
+3 : debug on and urllib debug on and http headers and request
+are printed"""
+        ))
+
+    def add_pre_commands(self):
+
+        self.parser.add_argument(
+            '-s',
+            action="store",
+            dest='server_section',
+            help="""This option let you select the server section in the cfg
+file you want to load (server section is always load first as default
+configuration). You just need to specify a number like '4' for
+section 'server-4'""")
+
+        self.parser.add_argument(
+            '-d',
+            action="count",
+            **self.config.server.debug.get_arg_parse_arguments())
+
+    def reload(self):
+        # If section_server is defined, we need to modify the suffix
+        # attribute ofserver Section object.
+        hook = SectionHook(self.config.server, "_suffix", "server_section")
+
+        # Reloading configuration with previous optional arguments
+        # (ex config file name, server section, ...)
+        self.config.reload(hook)
+
+    def add_commands(self):
+
+        # Adding all others options.
+        self.parser.add_argument(
+            '-u',
+            '--user',
+            action="store",
+            **self.config.server.user.get_arg_parse_arguments())
+
+        password_group = self.parser.add_argument_group('Password')
+        password_required = True
+        if self.config.server.password is not None:
+            password_required = False
+        group = password_group.add_mutually_exclusive_group(
+            required=password_required)
+        group.add_argument(
+            '-P',
+            '--password',
+            action="store",
+            **self.config.server.password.get_arg_parse_arguments())
+
+        group.add_argument(
+            '-p',
+            action="store_true",
+            default=False,
+            dest="ask_password",
+            help="If set, the program will ask you your password.")
+
+        self.parser.add_argument(
+            '-H',
+            '--host',
+            action="store",
+            **self.config.server.host.get_arg_parse_arguments())
+
+        self.parser.add_argument(
+            '-r',
+            '--realm',
+            action="store",
+            **self.config.server.realm.get_arg_parse_arguments())
+
+        self.parser.add_argument(
+            '--nocache',
+            action="store_true",
+            **self.config.server.nocache.get_arg_parse_arguments())
+
+        self.parser.add_argument(
+            '-a',
+            '--appname',
+            action="store",
+            **self.config.server.application_name.get_arg_parse_arguments())
+
+        # Adding all others parsers.
+        subparsers = self.parser.add_subparsers()
+        add_document_parser(subparsers, "documents", "Documents management")
+        add_threads_parser(subparsers, "threads", "threads management")
+        add_share_parser(subparsers, "shares", "Created shares management")
+        add_received_share_parser(subparsers,
+                                  "received_shares",
+                                  "Received shares management")
+        add_received_share_parser(subparsers,
+                                  "rshares",
+                                  "Alias of received_share command")
+        add_config_parser(
+            subparsers,
+            "config",
+            """Config tools like autocomplete configuration or pref-file
+generation.""",
+            self.config)
+        add_users_parser(subparsers, "users", "users")
+        add_test_parser(subparsers, self.config)
+
+
+PROG = LinShareCliProgram(
+    "linshare-cli",
+    version=linshare_cli.__version__,
+    desc="""An user cli for LinShare, using its REST API.
 
 
 Advanced documentation :
 ------------------------
-If you need debug during class construction, file config loading,
+If you need debug during class construction, config file loading,
 you just need to export _LINSHARE_CLI_USER_DEBUG=True
 
 ================================================================
 """)
-
-section_server = config.add_section(SimpleSection("server"))
-
-section_server.add_element(Element(
-    'host',
-    required=True))
-
-section_server.add_element(Element(
-    'realm',
-    desc=argparse.SUPPRESS,
-    default="Name Of Your LinShare Realm"))
-
-section_server.add_element(Element('user', required=True))
-
-section_server.add_element(Element(
-    'password',
-    hidden=True,
-    desc="user password to linshare",
-    hooks=[Base64ElementHook(), ]))
-
-section_server.add_element(Element(
-    'application_name',
-    default="linshare",
-    conf_hidden=True,
-    desc="Default value is 'linshare' (example http:/x.x.x.x/linshare)"))
-
-section_server.add_element(Element(
-    'nocache',
-    e_type=bool,
-    default=False,
-    desc=argparse.SUPPRESS))
-
-section_server.add_element(Element('verbose'))
-
-section_server.add_element(Element(
-    'debug',
-    e_type=int,
-    default=0,
-    desc="""(default: 0)
-# 0 : debug off
-# 1 : debug on
-# 2 : debug on and request result is printed (pretty json)
-# 3 : debug on and urllib debug on and http headers and request are printed"""
-))
-
-# loading default configuration
-config.load()
-
-# -----------------------------------------------------------------------------
-# arguments parser
-# -----------------------------------------------------------------------------
-parser = config.get_parser(formatter_class=argparse.RawTextHelpFormatter)
-
-parser.add_argument(
-    '-s',
-    action="store",
-    dest='server_section',
-    help="""This option let you select the server section in the cfg file
-    you want to load (server section is always load first as default
-    configuration). You just need to specify a number like '4' for
-    section 'server-4'""")
-
-parser.add_argument(
-    '-d',
-    action="count",
-    **config.server.debug.get_arg_parse_arguments())
-
-parser.add_argument('-v', '--verbose', action="store_true", default=False)
-
-parser.add_argument('--version', action="version",
-                    version="%(prog)s " + VERSION)
-
-# If section_server is defined, we need to modify the suffix attribute of
-# server Section object.
-hook = SectionHook(config.server, "_suffix", "server_section")
-
-# Reloading configuration with previous optional arguments
-# (ex config file name, server section, ...)
-config.reload(hook)
-
-# Adding all others options.
-parser.add_argument(
-    '-u',
-    '--user',
-    action="store",
-    **config.server.user.get_arg_parse_arguments())
-
-password_group = parser.add_argument_group('Password')
-password_required = True
-if config.server.password is not None:
-    password_required = False
-group = password_group.add_mutually_exclusive_group(required=password_required)
-group.add_argument(
-    '-P',
-    '--password',
-    action="store",
-    **config.server.password.get_arg_parse_arguments())
-
-group.add_argument(
-    '-p',
-    action="store_true",
-    default=False,
-    dest="ask_password",
-    help="If set, the program will ask you your password.")
-
-parser.add_argument(
-    '-H',
-    '--host',
-    action="store",
-    **config.server.host.get_arg_parse_arguments())
-
-parser.add_argument(
-    '-r',
-    '--realm',
-    action="store",
-    **config.server.realm.get_arg_parse_arguments())
-
-parser.add_argument(
-    '--nocache',
-    action="store_true",
-    **config.server.nocache.get_arg_parse_arguments())
-
-parser.add_argument(
-    '-a',
-    '--appname',
-    action="store",
-    **config.server.application_name.get_arg_parse_arguments())
-
-# Adding all others parsers.
-subparsers = parser.add_subparsers()
-add_document_parser(subparsers, "documents", "Documents management")
-add_threads_parser(subparsers, "threads", "threads management")
-add_share_parser(subparsers, "shares", "Created shares management")
-add_received_share_parser(subparsers,
-                          "received_shares",
-                          "Received shares management")
-add_received_share_parser(subparsers,
-                          "rshares",
-                          "Alias of received_share command")
-add_config_parser(
-    subparsers,
-    "config",
-    "Config tools like autocomplete configuration or pref-file generation.",
-    config)
-add_users_parser(subparsers, "users", "users")
-add_test_parser(subparsers, config)
-
-# -----------------------------------------------------------------------------
-# MAIN
-# -----------------------------------------------------------------------------
-prog = DefaultProgram(parser, config)
 if __name__ == "__main__":
-    if prog():
-        sys.exit(0)
-    else:
-        sys.exit(1)
+    # if you need debug during class construction, config file loading,
+    # you just need to export _LINSHARE_CLI_USER_DEBUG=True
+    if os.getenv('_LINSHARE_CLI_USER_DEBUG', False):
+        logging.getLogger().setLevel(logging.DEBUG)
+        streamHandler.setFormatter(DEBUG_LOGGING_FORMAT)
+
+    if os.getenv('_LINSHARE_CLI_USER_DEBUG_FILE', False):
+        FILEHA = logging.FileHandler('/tmp/linshare.log', 'w', 'utf-8')
+        FILEHA.setFormatter(DEBUG_LOGGING_FORMAT)
+        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(FILEHA)
+        streamHandler.setFormatter(DEBUG_LOGGING_FORMAT)
+    PROG()
