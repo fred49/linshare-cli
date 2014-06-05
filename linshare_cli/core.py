@@ -41,7 +41,7 @@ import datetime
 #from progressbar import *
 from progressbar import ProgressBar, FileTransferSpeed, Bar, ETA, Percentage
 import hashlib
-
+import locale
 
 # -----------------------------------------------------------------------------
 def extract_file_name(content_dispo):
@@ -355,7 +355,7 @@ class CoreCli(object):
         # Generating datas and headers
         file_size = os.path.getsize(file_path)
 
-        file_path = file_path.decode('UTF-8')
+        file_path = file_path.decode(locale.getpreferredencoding())
         self.log.debug("file_path is : " + file_path)
         file_name = os.path.basename(file_path)
         self.log.debug("file_name is : " + file_name)

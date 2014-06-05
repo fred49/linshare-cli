@@ -30,6 +30,7 @@ import logging
 import urllib2
 import copy
 import os
+import locale
 import linshare_cli.common as common
 from linshare_cli.core import UserCli
 from argtoolbox import DefaultCompleter
@@ -157,7 +158,7 @@ class DocumentsListCommand(DefaultCommand):
         d_format = ""
         if args.output_format:
             d_format = args.output_format
-            d_format = d_format.decode('UTF-8')
+            d_format = d_format.decode(locale.getpreferredencoding())
         else:
             for key in keys:
                 d_format += self.build_on_field(key, maxlength, datatype)
@@ -345,9 +346,47 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
     def complete(self, args, prefix):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
 
-        json_obj = self.ls.documents.list()
-        return (
-            v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
+        from argcomplete import warn
+        if len(prefix) >= 3:
+            json_obj = self.ls.users.list()
+            return (v.get('mail')
+                    for v in json_obj if v.get('mail').startswith(prefix))
+        else:
+            warn("Completion need at least 3 characters.")
+
+    def complete2(self, args, prefix):
+        super(DocumentsUploadAndSharingCommand, self).__call__(args)
+
+        from argcomplete import warn
+        if len(prefix) >= 3:
+            import re
+            json_obj = self.ls.users.list()
+            guesses = []
+            mails = []
+            cpt = 0
+            for v in json_obj:
+                mail = v.get('mail')
+                if re.match(".*" + prefix + ".*", mail):
+                    guesses.append(mail)
+                if mail.startswith(prefix):
+                    cpt += 1
+                    mails.append(mail)
+                if cpt >=5:
+                    break
+            if mails:
+                return mails
+            else:
+                cpt = 0
+                warning = ["Some results :"]
+                for i in guesses:
+                    cpt += 1
+                    warning.append(" * " + i + "\n")
+                    if cpt >=4:
+                        break
+                warn("".join(warning))
+                return guesses
+        else:
+            warn("Completion need at least 3 characters.")
 
 
 # ----------------- Received Shares -------------------------------------------
@@ -497,9 +536,14 @@ def add_document_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser('upshare',
                                          help="upload and share documents")
     parser_tmp2.set_defaults(__func__=DocumentsUploadAndSharingCommand())
-    parser_tmp2.add_argument('files', nargs='+').completer = DefaultCompleter()
-    parser_tmp2.add_argument('-m', '--mail', action="append", dest="mails",
-                             required=True, help="Recipient mails.")
+    parser_tmp2.add_argument('files', nargs='+')
+    parser_tmp2.add_argument('-m',
+                             '--mail',
+                             action="append",
+                             dest="mails",
+                             required=True,
+                             help="Recipient mails."
+                             ).completer = DefaultCompleter()
 
 
     parser_tmp2 = subparsers2.add_parser(

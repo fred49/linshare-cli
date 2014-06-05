@@ -51,7 +51,7 @@ from linshare_cli.user import add_test_parser
 import linshare_cli
 
 # if you want to debug argcomplete completion,
-# you just need to export ARC_DEBUG=True
+# you just need to export _ARC_DEBUG=True
 
 
 sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
@@ -83,7 +83,7 @@ class LinShareCliProgram(BasicProgram):
             'password',
             hidden=True,
             desc="user password to linshare",
-            hooks=[Base64ElementHook(), ]))
+            hooks=[Base64ElementHook(warning=True), ]))
 
         section_server.add_element(Element(
             'application_name',
