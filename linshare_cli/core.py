@@ -621,6 +621,31 @@ class UserCli(CoreCli):
 # -----------------------------------------------------------------------------
 # ADMIN API
 # -----------------------------------------------------------------------------
+class DomainAdmins(object):
+    def __init__(self, corecli):
+        self.core = corecli
+
+    def list(self):
+        return self.core.list("admin/domains.json")
+
+
+class DomainPatternsAdmin(object):
+    def __init__(self, corecli):
+        self.core = corecli
+
+    def list(self):
+        return self.core.list("admin/domain_patterns.json")
+
+
+class LdapConnectionsAdmin(object):
+    def __init__(self, corecli):
+        self.core = corecli
+
+    def list(self):
+        return self.core.list("admin/ldap_connections.json")
+
+
+# -----------------------------------------------------------------------------
 class ThreadsAdmin(object):
     def __init__(self, corecli):
         self.core = corecli
@@ -630,9 +655,32 @@ class ThreadsAdmin(object):
 
 
 # -----------------------------------------------------------------------------
+class ThreadsMembersAdmin(object):
+    def __init__(self, corecli):
+        self.core = corecli
+
+    def list(self, threadUuid):
+        url = "admin/thread_members/%s.json" % threadUuid
+        return self.core.list(url)
+
+
+# -----------------------------------------------------------------------------
+class UsersAdmin(object):
+    def __init__(self, corecli):
+        self.core = corecli
+
+    def list(self):
+        return self.core.list("users.json")
+
+
+# -----------------------------------------------------------------------------
 class AdminCli(CoreCli):
     def __init__(self, *args, **kwargs):
         super(AdminCli, self).__init__(*args, **kwargs)
         self.threads = ThreadsAdmin(self)
-        self.thread_members = ThreadsMembers(self)
-        self.users = Users(self)
+        self.thread_members = ThreadsMembersAdmin(self)
+        self.users = UsersAdmin(self)
+        self.domains = DomainAdmins(self)
+        self.ldap_connections = LdapConnectionsAdmin(self)
+        self.domain_patterns = DomainPatternsAdmin(self)
+

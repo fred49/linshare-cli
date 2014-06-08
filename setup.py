@@ -76,12 +76,11 @@ setup(
 
     # List run-time dependencies here.  These will be installed by pip when your
     # project is installed.
-    install_requires = ['argtoolbox',
+    install_requires = ['argtoolbox==0.0.6',
                         'poster',
                         'progressbar',
                         'veryprettytable',
                         'hurry.filesize',
                         ],
-
     scripts = glob.glob('bin/*'),
 )

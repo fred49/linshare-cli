@@ -33,7 +33,9 @@ import json
 import getpass
 import datetime
 import argtoolbox
-
+import locale
+from operator import itemgetter
+from veryprettytable import VeryPrettyTable
 
 # -----------------------------------------------------------------------------
 #pylint: disable=R0921
@@ -215,3 +217,114 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             for j in i:
                 res[j] = max([len(str(i.get((j)))), res.get(j, 0)])
         print res
+
+
+    def print_table_test_1(self, json_obj, sortby, reverse = False, keys = [], output_format = None, no_title = False, no_legend = False):
+        # computing data for presentation
+        maxlength = self.getmaxlength(json_obj)
+        datatype = self.getdatatype(json_obj)
+
+        # computing string format
+        d_format = ""
+        if output_format:
+            d_format = output_format
+            d_format = d_format.decode(locale.getpreferredencoding())
+        else:
+            for key in keys:
+                d_format += self.build_on_field(key, maxlength, datatype)
+
+        if sortby:
+            json_obj = sorted(json_obj, reverse=reverse, key=itemgetter(sortby))
+
+        if no_title:
+            self.print_list(json_obj, d_format, no_legend=no_legend)
+        else:
+            self.print_list(json_obj, d_format, "Documents",
+                            no_legend=no_legend)
+
+
+
+# -----------------------------------------------------------------------------
+class VTable(object):
+
+    def __init__(self, keys = [], reverse = False):
+        self.keys = keys
+        self._data = []
+        #self.maxlength = {}
+        self._maxlengthkey = 0
+        self.reversesort = reverse
+        for k in keys:
+            self.sortby = k
+            break
+
+
+    def load(self, data):
+        for row in data:
+            self.add_row(row)
+
+    def add_row(self, row):
+        self._data.append(row)
+        self.update_max_lengthkey(row)
+
+    def update_max_lengthkey(self, row):
+        for k, v in row.items():
+            self._maxlengthkey = max((len(repr(k)), self._maxlengthkey))
+
+    #def update_max_length(self, row):
+    #    for k, v in row.items():
+    #        if not  self.maxlength.get(k, False):
+    #            self.maxlength[k] = len(repr(v))
+    #        else:
+    #            self.maxlength[k] = max((len(repr(v)), self.maxlength[k]))
+
+    def get_string(self):
+        max_length_line = 0
+        records = []
+        out = []
+
+        self._data = sorted(self._data, reverse=self.reversesort,
+                            key=itemgetter(self.sortby))
+
+        for row in self._data:
+            record = []
+            for k in self.keys:
+                t_format = u"{key:" + unicode(str(self._maxlengthkey)) + u"s} | {value:s}"
+                dataa = { "key": k, "value": str(row.get(k))}
+                t_record = unicode(t_format).format(**dataa)
+                record.append(t_record)
+                max_length_line = max(max_length_line, len(t_record))
+            records.append("\n".join(record))
+        cptline=0
+        for record in records:
+            cptline+=1
+            header = "-[ RECORD " + str(cptline) + " ]-"
+            header += "".join([ "-" for i in xrange(max_length_line - len(header)) ])
+            out.append(header)
+            out.append(record)
+
+        return "\n".join(out)
+
+    def print_table(self, json_obj, keys):
+        self.load(json_obj)
+        out = self.get_string()
+        print unicode(out)
+
+
+# -----------------------------------------------------------------------------
+class HTable(VeryPrettyTable):
+
+    def print_table(self, json_obj, keys):
+
+        for row in json_obj:
+            data = []
+            for key in keys:
+                data.append(row[key])
+            self.add_row(data)
+        out = self.get_string(
+            fields=keys,
+            #start=10,
+            #end=10,
+            #sortby=param
+            )
+        print unicode(out)
+

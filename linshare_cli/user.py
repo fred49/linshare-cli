@@ -38,6 +38,7 @@ from argtoolbox import query_yes_no
 import argtoolbox
 from argparse import RawTextHelpFormatter
 from veryprettytable import VeryPrettyTable
+from operator import itemgetter
 
 
 # -----------------------------------------------------------------------------
@@ -69,58 +70,6 @@ class TestCommand(argtoolbox.DefaultCommand):
         print ""
 
 
-# -----------------------------------------------------------------------------
-class ConfigGenerationCommand(object):
-    def __init__(self, config):
-        self.config = config
-        classname = str(self.__class__.__name__.lower())
-        self.log = logging.getLogger('linshare-cli.' + classname)
-
-    def __call__(self, args):
-        dict_tmp = copy.copy(args)
-        delattr(dict_tmp, "__func__")
-        delattr(dict_tmp, "password")
-        self.log.debug("Namespace : begin :")
-        for i in dict_tmp.__dict__:
-            self.log.debug(i + " : " + str(getattr(args, i)))
-        self.log.debug("Namespace : end.")
-
-        configfile = os.path.expanduser('~/.' + self.config.prog_name + '.cfg')
-        if args.output:
-            configfile = args.output
-
-        if not args.force_yes:
-            if os.path.exists(configfile):
-                self.log.warn(
-                    "current file already exists : " + str(configfile))
-                if not query_yes_no("overwrite ?", "no"):
-                    self.log.error("aborted.")
-                    return False
-        self.config.write_default_config_file(configfile, args.nocomments)
-        print "config file generation complete : " + str(configfile)
-
-
-# -----------------------------------------------------------------------------
-class ConfigAutoCompteCommand(object):
-    def __call__(self, args):
-        print """
-This program is comptible with the python autocomplete program called
-argcomplete.\n
-This program should already be installed, but in some case, you have to
-configure  it :
-
-1. Global configuration
-    All programs compliant with argcomplete will be detected automatically
-    with bash >= 4.2.
-    - sudo activate-global-python-argcomplete
-
-2. Specific configuration
-    Manually include the following command ind your ~/.bashrc:
-    - eval "$(register-python-argcomplete linsharecli.py)"
-
-
-"""
-
 # -------------------------- Documents ----------------------------------------
 # -----------------------------------------------------------------------------
 class DocumentsListCommand(DefaultCommand):
@@ -150,33 +99,13 @@ class DocumentsListCommand(DefaultCommand):
         self.format_date(json_obj, 'modificationDate')
         self.format_date(json_obj, 'expirationDate')
 
-        # computing data for presentation
-        maxlength = self.getmaxlength(json_obj)
-        datatype = self.getdatatype(json_obj)
-
-        # computing string format
-        d_format = ""
-        if args.output_format:
-            d_format = args.output_format
-            d_format = d_format.decode(locale.getpreferredencoding())
-        else:
-            for key in keys:
-                d_format += self.build_on_field(key, maxlength, datatype)
-
-        from operator import itemgetter
         param = "creationDate"
-        reverse = args.reverse
         if args.name:
             param = "name"
         if args.size:
             param = "size_raw"
 
-        json_obj = sorted(json_obj, reverse=reverse, key=itemgetter(param))
-        if args.no_title:
-            self.print_list(json_obj, d_format, no_legend=args.no_legend)
-        else:
-            self.print_list(json_obj, d_format, "Documents",
-                            no_legend=args.no_legend)
+        self.print_table_test_1(json_obj, param, args.reverse, keys, args.output_format, args.no_title, args.no_legend)
 
 
 # -------------------------- Documents ----------------------------------------
@@ -217,32 +146,13 @@ class DocumentsListV2Command(DefaultCommand):
             table.reversesort = args.reverse
             table.sortby = "name"
         elif args.size:
-            from operator import itemgetter
             json_obj = sorted(json_obj, reverse=args.reverse,
                               key=itemgetter("size_raw"))
         else:
             table.reversesort = args.reverse
             table.sortby = "creationDate"
 
-        if True:
-            for row in json_obj:
-                data = []
-                for key in keys:
-                    data.append(row[key])
-                table.add_row(data)
-                #table.add_row(data, fore_color="red")
-        if False:
-            table = VeryPrettyTable()
-            for key in keys:
-                table.add_column(key, [row[key] for row in json_obj])
-
-        out = table.get_string(
-            fields=keys,
-            #start=10,
-            #end=10,
-            #sortby=param
-            )
-        print unicode(out)
+        self.print_table(json_obj, table, keys)
 
 
 # -----------------------------------------------------------------------------
@@ -479,8 +389,6 @@ class ThreadsListCommand(DefaultCommand):
         self.format_date(json_obj, 'creationDate')
         self.print_list(json_obj, d_format, "Threads")
 
-        #self.print_test(json_obj)
-
 
 # -----------------------------------------------------------------------------
 class ThreadMembersListCommand(DefaultCommand):
@@ -683,36 +591,6 @@ def add_users_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser('list',
                                          help="list users from linshare")
     parser_tmp2.set_defaults(__func__=UsersListCommand())
-
-
-###############################################################################
-### config
-###############################################################################
-def add_config_parser(subparsers, name, desc, config):
-    parser_tmp = subparsers.add_parser(name, help=desc)
-
-    subparsers2 = parser_tmp.add_subparsers()
-
-    parser_tmp2 = subparsers2.add_parser(
-        'generate',
-        help="generate the default pref file")
-    parser_tmp2.set_defaults(__func__=ConfigGenerationCommand(config))
-    parser_tmp2.add_argument('--output', action="store")
-    parser_tmp2.add_argument(
-        '-n',
-        dest="nocomments",
-        action="store_false",
-        help="config file generation without commments.")
-    parser_tmp2.add_argument(
-        '-f',
-        dest="force_yes",
-        action="store_true",
-        help="overwrite the current output file even it still exists.")
-
-    parser_tmp2 = subparsers2.add_parser(
-        'autocomplete',
-        help="Print help to install and configure autocompletion module")
-    parser_tmp2.set_defaults(__func__=ConfigAutoCompteCommand())
 
 
 ###############################################################################
