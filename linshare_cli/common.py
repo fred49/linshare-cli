@@ -243,20 +243,17 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                             no_legend=no_legend)
 
 
-
 # -----------------------------------------------------------------------------
 class VTable(object):
 
     def __init__(self, keys = [], reverse = False):
         self.keys = keys
         self._data = []
-        #self.maxlength = {}
         self._maxlengthkey = 0
         self.reversesort = reverse
         for k in keys:
             self.sortby = k
             break
-
 
     def load(self, data):
         for row in data:
@@ -269,13 +266,6 @@ class VTable(object):
     def update_max_lengthkey(self, row):
         for k, v in row.items():
             self._maxlengthkey = max((len(repr(k)), self._maxlengthkey))
-
-    #def update_max_length(self, row):
-    #    for k, v in row.items():
-    #        if not  self.maxlength.get(k, False):
-    #            self.maxlength[k] = len(repr(v))
-    #        else:
-    #            self.maxlength[k] = max((len(repr(v)), self.maxlength[k]))
 
     def get_string(self):
         max_length_line = 0

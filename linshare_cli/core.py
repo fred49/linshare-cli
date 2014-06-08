@@ -38,10 +38,10 @@ import poster
 import time
 #from datetime import datetime
 import datetime
-#from progressbar import *
 from progressbar import ProgressBar, FileTransferSpeed, Bar, ETA, Percentage
 import hashlib
 import locale
+import json
 
 # -----------------------------------------------------------------------------
 def extract_file_name(content_dispo):
@@ -269,6 +269,25 @@ class CoreCli(object):
         request.add_header("Authorization", "Basic %s" % base64string)
         #request.add_header("Cookie", "JSESSIONID=")
 
+
+    def get_json_result(self, resultq):
+        jObj  = None
+        result = resultq.read()
+        content_type = resultq.headers.getheader('Content-Type')
+        if content_type == "application/json":
+            jObj = json.loads(result)
+            if self.debuglevel >= 2:
+                self.log.debug("the result is : ")
+                self.log.debug(json.dumps(jObj, sort_keys=True, indent=2))
+        else:
+            self.log.debug(str(result))
+            msg = "Wrong content type in the http response : "
+            if content_type:
+                msg += content_type
+            self.log.error(msg)
+            raise ValueError(msg)
+        return jObj
+
     @cli_get_cache
     def list(self, url):
         """ List all documents store into LinShare."""
@@ -278,28 +297,29 @@ class CoreCli(object):
 
         # Building request
         request = urllib2.Request(url)
+        request.add_header('Content-Type', 'application/json; charset=UTF-8')
+        request.add_header('Accept', 'application/json')
 
         # request start
         starttime = datetime.datetime.now()
-
-        # doRequest
-        resultq = urllib2.urlopen(request)
+        jObj = None
+        try:
+            # doRequest
+            resultq = urllib2.urlopen(request)
+            code = resultq.getcode()
+            if code == 204:
+                self.log.info("ret code : " + str(code))
+            elif code == 200:
+                self.log.info("ret code : " + str(code))
+                jObj = self.get_json_result(resultq)
+            else:
+                self.log.error("ret code : " + str(code))
+        except urllib2.HTTPError as e:
+            self.log.error("Http error : " + e.msg)
+            self.log.error("error code : " + str(e.code))
 
         # request end
         endtime = datetime.datetime.now()
-        result = resultq.read()
-
-        content_type = resultq.headers.getheader('Content-Type')
-        if content_type == "application/json":
-            jObj = json.loads(result)
-            if self.debuglevel >= 2:
-                self.log.debug("the result is : ")
-                self.log.debug(json.dumps(jObj, sort_keys=True, indent=2))
-        else:
-            self.log.debug(str(result))
-            msg = "Wrong content type in the http response " + content_type
-            self.log.error(msg)
-            raise ValueError(msg)
 
         self.last_req_time = str(endtime - starttime)
         self.log.debug("""list url : %(url)s : request time : %(time)s""",
@@ -307,7 +327,7 @@ class CoreCli(object):
                         "time": self.last_req_time})
         return jObj
 
-    def delete(self, url):
+    def delete(self, url, data = None):
         """ List all documents store into LinShare."""
         self.last_req_time = None
         url = self.root_url + url
@@ -315,34 +335,77 @@ class CoreCli(object):
 
         # Building request
         request = urllib2.Request(url)
+        if data:
+            # Building request
+            headers = {'content-type': 'application/json'}
+            #request.add_header('Content-Type:', 'application/json; charset=UTF-8')
+            post_data = json.dumps(data).encode("UTF-8")
+            request = urllib2.Request(url, post_data, headers=headers)
+
         request.get_method = lambda: 'DELETE'
 
         # request start
         starttime = datetime.datetime.now()
-
-        # doRequest
-        resultq = urllib2.urlopen(request)
+        jObj = None
+        try:
+            # doRequest
+            resultq = urllib2.urlopen(request)
+            code = resultq.getcode()
+            if code == 204:
+                self.log.info("ret code : " + str(code))
+            elif code == 200:
+                self.log.info("ret code : " + str(code))
+                jObj = self.get_json_result(resultq)
+            else:
+                self.log.error("ret code : " + str(code))
+        except urllib2.HTTPError as e:
+            self.log.error("Http error : " + e.msg)
+            self.log.error("error code : " + str(e.code))
 
         # request end
-
-
-
         endtime = datetime.datetime.now()
-        result = resultq.read()
-
-        content_type = resultq.headers.getheader('Content-Type')
-        if content_type == "application/json":
-            jObj = json.loads(result)
-            if self.debuglevel >= 2:
-                self.log.debug("the result is : ")
-                self.log.debug(json.dumps(jObj, sort_keys=True, indent=2))
-        else:
-            msg = "Wrong content type in the http response " + content_type
-            self.log.error(msg)
-            raise ValueError(msg)
 
         self.last_req_time = str(endtime - starttime)
         self.log.debug("""delete url : %(url)s : request time : %(time)s""",
+                       {"url": url,
+                        "time": self.last_req_time})
+        return jObj
+
+    def create(self, url, data):
+        """ List all documents store into LinShare."""
+        self.last_req_time = None
+        url = self.root_url + url
+        self.log.debug("list url : " + url)
+
+        # Building request
+        headers = {'content-type': 'application/json'}
+        #request.add_header('Content-Type:', 'application/json; charset=UTF-8')
+        post_data = json.dumps(data).encode("UTF-8")
+        request = urllib2.Request(url, post_data, headers=headers)
+
+        # request start
+        starttime = datetime.datetime.now()
+
+        jObj = None
+        try:
+            # doRequest
+            resultq = urllib2.urlopen(request)
+            code = resultq.getcode()
+            if code == 204:
+                self.log.info("ret code : " + str(code))
+            elif code == 200:
+                self.log.info("ret code : " + str(code))
+            else:
+                self.log.error("ret code : " + str(code))
+        except urllib2.HTTPError as e:
+            self.log.error("Http error : " + e.msg)
+            self.log.error("error code : " + str(e.code))
+
+        # request end
+        endtime = datetime.datetime.now()
+
+        self.last_req_time = str(endtime - starttime)
+        self.log.debug("""post url : %(url)s : request time : %(time)s""",
                        {"url": url,
                         "time": self.last_req_time})
         return jObj
@@ -633,8 +696,20 @@ class DomainPatternsAdmin(object):
     def __init__(self, corecli):
         self.core = corecli
 
-    def list(self):
-        return self.core.list("admin/domain_patterns.json")
+    def list(self, model = False):
+        if model:
+            return self.core.list("admin/domain_patterns/models.json")
+        else:
+            return self.core.list("admin/domain_patterns")
+            return self.core.list("admin/domain_patterns.json")
+
+    def create(self, data):
+        return self.core.create("admin/domain_patterns.json", data)
+
+    def delete(self, id_dp):
+        data = { "identifier":  id_dp}
+        data = id_dp
+        return self.core.delete("admin/domain_patterns.json", data)
 
 
 class LdapConnectionsAdmin(object):

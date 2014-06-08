@@ -114,7 +114,6 @@ class LdapConnectionsListCommand(DefaultCommand):
         super(LdapConnectionsListCommand, self).__call__(args)
 
         json_obj = self.ls.ldap_connections.list()
-        self.pretty_json(json_obj)
 
         keys = []
         keys.append(u'identifier')
@@ -137,7 +136,6 @@ class LdapConnectionsListCommand(DefaultCommand):
         table.print_table(json_obj, keys)
 
 
-
 # ----------------------- Domains patterns ------------------------------------
 # -----------------------------------------------------------------------------
 class DomainPatternsListCommand(DefaultCommand):
@@ -146,28 +144,134 @@ class DomainPatternsListCommand(DefaultCommand):
     def __call__(self, args):
         super(DomainPatternsListCommand, self).__call__(args)
 
-        json_obj = self.ls.domain_patterns.list()
+        json_obj = self.ls.domain_patterns.list(args.models)
 
         keys = []
         keys.append(u"identifier")
+        keys.append(u"description")
         if args.extended:
-            keys.append(u"description")
             keys.append(u"authCommand")
             keys.append(u"searchUserCommand")
             keys.append(u"autoCompleteCommandOnAllAttributes")
             keys.append(u"autoCompleteCommandOnFirstAndLastName")
-        keys.append(u"completionPageSize")
-        keys.append(u"completionSizeLimit")
-        keys.append(u"searchPageSize")
-        keys.append(u"searchSizeLimit")
-        keys.append(u"ldapUid")
-        keys.append(u"userFirstName")
-        keys.append(u"userLastName")
-        keys.append(u"userMail")
+            keys.append(u"completionPageSize")
+            keys.append(u"completionSizeLimit")
+            keys.append(u"searchPageSize")
+            keys.append(u"searchSizeLimit")
+            keys.append(u"ldapUid")
+            keys.append(u"userFirstName")
+            keys.append(u"userLastName")
+            keys.append(u"userMail")
 
-        t = VTable(keys)
-        t.load(json_obj)
-        print t.get_string()
+        table = None
+        if args.vertical:
+            table = VTable(keys)
+            table.load(json_obj)
+        else:
+            table = HTable(keys)
+            # styles
+            table.align[u"identifier"] = "l"
+            table.padding_width = 1
+
+        table.sortby = "identifier"
+        table.reversesort = args.reverse
+        table.print_table(json_obj, keys)
+
+        #t = VTable(keys)
+        #t.load(json_obj)
+        #print t.get_string()
+
+
+# -----------------------------------------------------------------------------
+class DomainPatternsCreateCommand(DefaultCommand):
+    """ List all domain patterns."""
+
+    def __call__(self, args):
+        super(DomainPatternsCreateCommand, self).__call__(args)
+
+        keys = {}
+
+        def add(keys, key, field = None):
+            keys[key] = {}
+            keys[key]['attr'] = key
+            if not field:
+                field = ""
+                cpt = 0
+                for i in key.split("_"):
+                    if cpt >= 1:
+                        i=i.capitalize()
+                        field += i
+                    else:
+                        field += i
+                    cpt += 1
+            keys[key]['field'] = field
+
+        add(keys, 'identifier')
+        add(keys, 'completion_page_size')
+        add(keys, 'completion_size_limit')
+        add(keys, 'search_page_size')
+        add(keys, 'search_size_limit')
+        add(keys, 'uid', 'ldapUid')
+        add(keys, 'first_name', 'userFirstName')
+        add(keys, 'last_name', 'userLastName')
+        add(keys, 'mail', 'userMail')
+        add(keys, 'description')
+        add(keys, "auth_command")
+        add(keys, "search_user_command")
+        add(keys, "auto_complete_command_on_all_attributes")
+        add(keys, "auto_complete_command_on_first_and_last_name")
+        #self.pretty_json(keys)
+
+        pattern =   {
+                "authCommand": "",
+                "searchUserCommand": "",
+                "autoCompleteCommandOnAllAttributes": "",
+                "autoCompleteCommandOnFirstAndLastName": "",
+                "description": "",
+                "identifier": "",
+                "ldapUid": "",
+                "userFirstName": "",
+                "userLastName": "",
+                "userMail": ""
+              }
+
+
+        json_obj = self.ls.domain_patterns.list(args.models)
+        for model in json_obj:
+            if model.get('identifier') == args.models:
+                pattern = model
+                pattern['identifier'] = ""
+                break
+
+        for k, v in keys.items():
+            attr = getattr(args, v.get('attr'), False)
+            if attr:
+                pattern[v.get('field')] = attr
+
+        json_obj = self.ls.domain_patterns.create(pattern)
+
+
+
+    def complete(self, args,  prefix):
+        super(DomainPatternsCreateCommand, self).__call__(args)
+
+        json_obj = self.ls.domain_patterns.list(True)
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+
+# -----------------------------------------------------------------------------
+class DomainPatternsDeleteCommand(DefaultCommand):
+    """ List all domain patterns."""
+
+    def __call__(self, args):
+        super(DomainPatternsDeleteCommand, self).__call__(args)
+
+        json_obj = self.ls.domain_patterns.list()
+        for model in json_obj:
+            if model.get('identifier') == args.identifier:
+                self.ls.domain_patterns.delete(model)
+                break
 
 
 # -------------------------- Threads ------------------------------------------
@@ -276,7 +380,37 @@ def add_domain_patterns_parser(subparsers, name, desc):
                              help="extended format")
     parser_tmp2.add_argument('-r', '--reverse', action="store_true",
                              help="reverse order while sorting")
+    parser_tmp2.add_argument('-m', '--models', action="store_true",
+                             help="show model of domain patterns")
+    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
+                             help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=DomainPatternsListCommand())
+
+    parser_tmp2 = subparsers2.add_parser(
+        'create',
+        help="create domain pattern.")
+    parser_tmp2.add_argument('--identifier', action="store", help="")
+    parser_tmp2.add_argument('--completion-page-size', action="store", type=int, help="")
+    parser_tmp2.add_argument('--completion-size-limit', action="store", type=int, help="")
+    parser_tmp2.add_argument('--search-page-size', action="store", type=int, help="")
+    parser_tmp2.add_argument('--search-size-limit', action="store", type=int, help="")
+    parser_tmp2.add_argument('--uid', action="store", help="")
+    parser_tmp2.add_argument('--first-name', action="store", help="")
+    parser_tmp2.add_argument('--last-name', action="store", help="")
+    parser_tmp2.add_argument('--mail', action="store", help="")
+    parser_tmp2.add_argument('--description', action="store", help="")
+    parser_tmp2.add_argument('--models', action="store", help="").completer = DefaultCompleter()
+    parser_tmp2.add_argument('--auth-command', action="store", help="")
+    parser_tmp2.add_argument('--search-user-command', action="store", help="")
+    parser_tmp2.add_argument('--auto-complete-command-on-all-attributes', action="store", help="")
+    parser_tmp2.add_argument('--auto-complete-command-on-first-and-last-name', action="store", help="")
+    parser_tmp2.set_defaults(__func__=DomainPatternsCreateCommand())
+
+    parser_tmp2 = subparsers2.add_parser(
+        'delete',
+        help="delete domain pattern.")
+    parser_tmp2.add_argument('--identifier', action="store", help="")
+    parser_tmp2.set_defaults(__func__=DomainPatternsDeleteCommand())
 
 
 ###############################################################################
