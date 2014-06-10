@@ -60,6 +60,7 @@ class TestCommand(argtoolbox.DefaultCommand):
         print "Test"
         print unicode(self.config)
         print args
+        self.log.info("End of test command.")
 
 
 # -------------------------- Domains ------------------------------------------
