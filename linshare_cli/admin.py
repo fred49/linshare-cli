@@ -29,8 +29,6 @@ from __future__ import unicode_literals
 import linshare_cli.common as common
 from linshare_cli.core import AdminCli
 from argtoolbox import DefaultCompleter
-from argtoolbox import query_yes_no
-from veryprettytable import VeryPrettyTable
 from linshare_cli.common import VTable
 from linshare_cli.common import HTable
 import argtoolbox
@@ -62,7 +60,6 @@ class TestCommand(argtoolbox.DefaultCommand):
         print "Test"
         print unicode(self.config)
         print args
-        print ""
 
 
 # -------------------------- Domains ------------------------------------------
@@ -77,16 +74,16 @@ class DomainsListCommand(DefaultCommand):
         self.pretty_json(json_obj)
 
         keys = []
-        keys.append(u'identifier')
-        keys.append(u'label')
-        keys.append(u'language')
-        keys.append(u'type')
-        keys.append(u'description')
-        keys.append(u'userRole')
+        keys.append('identifier')
+        keys.append('label')
+        keys.append('language')
+        keys.append('type')
+        keys.append('description')
+        keys.append('userRole')
         if args.extended:
-            keys.append(u'authShowOrder')
-            keys.append(u'mailConfigUuid')
-            keys.append(u'mimePolicyUuid')
+            keys.append('authShowOrder')
+            keys.append('mailConfigUuid')
+            keys.append('mimePolicyUuid')
 
         table = None
         if args.vertical:
@@ -94,7 +91,7 @@ class DomainsListCommand(DefaultCommand):
         else:
             table = HTable(keys)
             # styles
-            table.align[u"identifier"] = "l"
+            table.align["identifier"] = "l"
             table.padding_width = 1
 
         table.sortby = "identifier"
@@ -116,10 +113,10 @@ class LdapConnectionsListCommand(DefaultCommand):
         json_obj = self.ls.ldap_connections.list()
 
         keys = []
-        keys.append(u'identifier')
-        keys.append(u'providerUrl')
-        keys.append(u'securityPrincipal')
-        keys.append(u'securityCredentials')
+        keys.append('identifier')
+        keys.append('providerUrl')
+        keys.append('securityPrincipal')
+        keys.append('securityCredentials')
 
         table = None
         if args.vertical:
@@ -128,7 +125,7 @@ class LdapConnectionsListCommand(DefaultCommand):
         else:
             table = HTable(keys)
             # styles
-            table.align[u"identifier"] = "l"
+            table.align["identifier"] = "l"
             table.padding_width = 1
 
         table.sortby = "identifier"
@@ -147,21 +144,21 @@ class DomainPatternsListCommand(DefaultCommand):
         json_obj = self.ls.domain_patterns.list(args.models)
 
         keys = []
-        keys.append(u"identifier")
-        keys.append(u"description")
+        keys.append("identifier")
+        keys.append("description")
         if args.extended:
-            keys.append(u"authCommand")
-            keys.append(u"searchUserCommand")
-            keys.append(u"autoCompleteCommandOnAllAttributes")
-            keys.append(u"autoCompleteCommandOnFirstAndLastName")
-            keys.append(u"completionPageSize")
-            keys.append(u"completionSizeLimit")
-            keys.append(u"searchPageSize")
-            keys.append(u"searchSizeLimit")
-            keys.append(u"ldapUid")
-            keys.append(u"userFirstName")
-            keys.append(u"userLastName")
-            keys.append(u"userMail")
+            keys.append("authCommand")
+            keys.append("searchUserCommand")
+            keys.append("autoCompleteCommandOnAllAttributes")
+            keys.append("autoCompleteCommandOnFirstAndLastName")
+            keys.append("completionPageSize")
+            keys.append("completionSizeLimit")
+            keys.append("searchPageSize")
+            keys.append("searchSizeLimit")
+            keys.append("ldapUid")
+            keys.append("userFirstName")
+            keys.append("userLastName")
+            keys.append("userMail")
 
         table = None
         if args.vertical:
@@ -170,7 +167,7 @@ class DomainPatternsListCommand(DefaultCommand):
         else:
             table = HTable(keys)
             # styles
-            table.align[u"identifier"] = "l"
+            table.align["identifier"] = "l"
             table.padding_width = 1
 
         table.sortby = "identifier"

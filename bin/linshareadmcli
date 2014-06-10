@@ -32,16 +32,12 @@ from __future__ import unicode_literals
 import os
 import sys
 import argparse
-import logging
-import logging.handlers
 import codecs
 import locale
 
 from argtoolbox import BasicProgram
 from argtoolbox import SimpleSection
 from argtoolbox import Element
-from argtoolbox import streamHandler
-from argtoolbox import DEBUG_LOGGING_FORMAT
 from argtoolbox import Base64ElementHook
 from argtoolbox import SectionHook
 from linshare_cli.admin import add_threads_parser
@@ -198,10 +194,13 @@ section 'server-4'""")
         add_domain_patterns_parser(subparsers, "dpatterns", "domain patterns")
         add_test_parser(subparsers, self.config)
 
-
+# if you need debug during class construction, config file loading,
+# you just need to export _LINSHARE_CLI_ADMIN_DEBUG=True
 PROG = LinShareCliProgram(
     "linshare-admin-cli",
     version=linshare_cli.__version__,
+    force_debug = os.getenv('_LINSHARE_CLI_ADMIN_DEBUG', False),
+    force_debug_to_file = os.getenv('_LINSHARE_CLI_ADMIN_DEBUG_FILE', False),
     desc="""An user cli for LinShare, using its REST API.
 
 
@@ -213,16 +212,4 @@ you just need to export _LINSHARE_CLI_ADMIN_DEBUG=True
 ================================================================
 """)
 if __name__ == "__main__":
-    # if you need debug during class construction, config file loading,
-    # you just need to export _LINSHARE_CLI_ADMIN_DEBUG=True
-    if os.getenv('_LINSHARE_CLI_ADMIN_DEBUG', False):
-        logging.getLogger().setLevel(logging.DEBUG)
-        streamHandler.setFormatter(DEBUG_LOGGING_FORMAT)
-
-    if os.getenv('_LINSHARE_CLI_ADMIN_DEBUG_FILE', False):
-        FILEHA = logging.FileHandler('/tmp/linshare.log', 'w', 'utf-8')
-        FILEHA.setFormatter(DEBUG_LOGGING_FORMAT)
-        logging.getLogger().setLevel(logging.DEBUG)
-        logging.getLogger().addHandler(FILEHA)
-        streamHandler.setFormatter(DEBUG_LOGGING_FORMAT)
     PROG()
