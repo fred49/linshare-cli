@@ -40,22 +40,20 @@ import time
 import datetime
 from progressbar import ProgressBar, FileTransferSpeed, Bar, ETA, Percentage
 import hashlib
-import locale
-import json
 
 # -----------------------------------------------------------------------------
 def extract_file_name(content_dispo):
     """Extract file name from the input request body"""
     #print type(content_dispo)
     #print repr(content_dispo)
+    # convertion of escape string (str type) from server
+    # to unicode object
+    content_dispo = content_dispo.decode('unicode-escape').strip('"')
     file_name = ""
     for key_val in content_dispo.split(';'):
         param = key_val.strip().split('=')
         if param[0] == "filename":
             file_name = param[1]
-            # convertion of escape string (str type) from server
-            # to unicode object
-            file_name = file_name.decode('unicode-escape').strip('"')
             break
     return file_name
 
@@ -418,7 +416,6 @@ class CoreCli(object):
         # Generating datas and headers
         file_size = os.path.getsize(file_path)
 
-        file_path = file_path.decode(locale.getpreferredencoding())
         self.log.debug("file_path is : " + file_path)
         file_name = os.path.basename(file_path)
         self.log.debug("file_name is : " + file_name)
