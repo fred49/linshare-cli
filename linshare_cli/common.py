@@ -34,6 +34,7 @@ import getpass
 import datetime
 import argtoolbox
 import locale
+import types
 from operator import itemgetter
 from veryprettytable import VeryPrettyTable
 
@@ -279,7 +280,12 @@ class VTable(object):
             record = []
             for k in self.keys:
                 t_format = u"{key:" + unicode(str(self._maxlengthkey)) + u"s} | {value:s}"
-                dataa = { "key": k, "value": str(row.get(k))}
+                dataa = None
+                column_data = row.get(k)
+                if isinstance(column_data, types.UnicodeType):
+                    dataa = { "key": k, "value": column_data}
+                else:
+                    dataa = { "key": k, "value": str(column_data)}
                 t_record = unicode(t_format).format(**dataa)
                 record.append(t_record)
                 max_length_line = max(max_length_line, len(t_record))

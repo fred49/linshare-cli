@@ -32,16 +32,12 @@ from __future__ import unicode_literals
 import os
 import sys
 import argparse
-import logging
-import logging.handlers
 import codecs
 import locale
 
 from argtoolbox import BasicProgram
 from argtoolbox import SimpleSection
 from argtoolbox import Element
-from argtoolbox import streamHandler
-from argtoolbox import DEBUG_LOGGING_FORMAT
 from argtoolbox import Base64ElementHook
 from argtoolbox import SectionHook
 from linshare_cli.user import add_document_parser

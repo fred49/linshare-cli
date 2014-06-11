@@ -33,6 +33,8 @@ import os
 import locale
 import linshare_cli.common as common
 from linshare_cli.core import UserCli
+from linshare_cli.common import VTable
+from linshare_cli.common import HTable
 from argtoolbox import DefaultCompleter
 from argtoolbox import query_yes_no
 import argtoolbox
@@ -79,80 +81,44 @@ class DocumentsListCommand(DefaultCommand):
         super(DocumentsListCommand, self).__call__(args)
 
         json_obj = self.ls.documents.list()
-        if args.show_columns:
-            self.print_fields(json_obj)
-            return True
 
         keys = []
-        keys.append(u'name')
-        keys.append(u'size')
-        keys.append(u'uuid')
-        keys.append(u'creationDate')
+        keys.append('name')
+        keys.append('size')
+        keys.append('uuid')
+        keys.append('creationDate')
 
         if args.extended:
-            keys.append(u'type')
-            keys.append(u'expirationDate')
-            keys.append(u'modificationDate')
+            keys.append('type')
+            keys.append('expirationDate')
+            keys.append('modificationDate')
+            keys.append('description')
+            keys.append('ciphered')
 
         self.format_date(json_obj, 'creationDate')
         self.format_filesize(json_obj, 'size')
         self.format_date(json_obj, 'modificationDate')
         self.format_date(json_obj, 'expirationDate')
 
-        param = "creationDate"
-        if args.name:
-            param = "name"
+        table = None
+        if args.vertical:
+            table = VTable(keys)
+        else:
+            table = HTable(keys)
+            # styles
+            table.align["identifier"] = "l"
+            table.padding_width = 1
+
         if args.size:
-            param = "size_raw"
-
-        self.print_table_test_1(json_obj, param, args.reverse, keys, args.output_format, args.no_title, args.no_legend)
-
-
-# -------------------------- Documents ----------------------------------------
-# -----------------------------------------------------------------------------
-class DocumentsListV2Command(DefaultCommand):
-    """ List all documents store into LinShare."""
-
-    def __call__(self, args):
-        super(DocumentsListV2Command, self).__call__(args)
-
-        json_obj = self.ls.documents.list()
-
-        keys = []
-        keys.append(u'name')
-        keys.append(u'uuid')
-        keys.append(u'size')
-        keys.append(u'creationDate')
-        if args.extended:
-            keys.append(u'type')
-            keys.append(u'expirationDate')
-            keys.append(u'description')
-            keys.append(u'modificationDate')
-            keys.append(u'ciphered')
-
-        self.format_date(json_obj, 'creationDate')
-        self.format_filesize(json_obj, 'size')
-        self.format_date(json_obj, 'modificationDate')
-        self.format_date(json_obj, 'expirationDate')
-
-        table = VeryPrettyTable(keys)
-
-        # styles
-        table.align[u"name"] = "l"
-        table.padding_width = 1
-        table.align["size"] = "l"
-
-        if args.name:
-            table.reversesort = args.reverse
-            table.sortby = "name"
-        elif args.size:
             json_obj = sorted(json_obj, reverse=args.reverse,
                               key=itemgetter("size_raw"))
         else:
-            table.reversesort = args.reverse
             table.sortby = "creationDate"
+        table.reversesort = args.reverse
+        if args.name:
+            table.sortby = "name"
 
-        self.print_table(json_obj, table, keys)
+        table.print_table(json_obj, keys)
 
 
 # -----------------------------------------------------------------------------
@@ -307,7 +273,7 @@ class ReceivedSharesListCommand(DefaultCommand):
         super(ReceivedSharesListCommand, self).__call__(args)
 
         json_obj = self.ls.rshares.list()
-        d_format = u"{name:60s}{creationDate:30s}{uuid:30s}"
+        d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
         self.format_date(json_obj, 'creationDate')
         self.print_list(json_obj, d_format, "Received Shares")
 
@@ -384,7 +350,7 @@ class ThreadsListCommand(DefaultCommand):
         super(ThreadsListCommand, self).__call__(args)
 
         json_obj = self.ls.threads.list()
-        d_format = u"{name:60s}{creationDate:30s}{uuid:30s}"
+        d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
         #self.pretty_json(json_obj)
         self.format_date(json_obj, 'creationDate')
         self.print_list(json_obj, d_format, "Threads")
@@ -399,7 +365,7 @@ class ThreadMembersListCommand(DefaultCommand):
 
         json_obj = self.ls.thread_members.list(args.uuid)
 
-        d_format = u"{firstName:11s}{lastName:10s}{admin:<7}{readonly:<9}{id}"
+        d_format = "{firstName:11s}{lastName:10s}{admin:<7}{readonly:<9}{id}"
         #self.pretty_json(json_obj)
         self.print_list(json_obj, d_format, "Thread members")
 
@@ -420,7 +386,7 @@ class UsersListCommand(DefaultCommand):
         super(UsersListCommand, self).__call__(args)
 
         json_obj = self.ls.users.list()
-        d_format = u"{firstName:11s}{lastName:10s}{domain:<20}{mail}"
+        d_format = "{firstName:11s}{lastName:10s}{domain:<20}{mail}"
         #print "%(firstName)-10s %(lastName)-10s\t %(domain)s %(mail)s" % f
         #self.pretty_json(json_obj)
         self.print_list(json_obj, d_format, "Users")
@@ -478,38 +444,13 @@ def add_document_parser(subparsers, name, desc):
                              help="sort by file name")
     parser_tmp2.add_argument('--extended', action="store_true",
                              help="extended format")
-    parser_tmp2.add_argument('--no-title', action="store_true",
-                             help="dont show the title")
-    parser_tmp2.add_argument('--no-legend', action="store_true",
-                             help="dont show the legend")
     parser_tmp2.add_argument('--size', action="store_true",
                              help="sort by file size")
-    parser_tmp2.add_argument('-f', '--format', dest="output_format",
-                             action="store",
-                             help="""Change output format, ex:
-{name:60s}{size!s:^10s}{uuid:40s}""")
-    parser_tmp2.add_argument('--show-columns', action="store_true",
-                             help="List all available fields in received data.")
+    #parser_tmp2.add_argument('--show-columns', action="store_true",
+    #                         help="List all available fields in received data.")
+    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
+                             help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=DocumentsListCommand())
-
-
-    parser_tmp2 = subparsers2.add_parser(
-        'listv2',
-        formatter_class=RawTextHelpFormatter,
-        help="list documents from linshare")
-    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
-                             help="reverse order while sorting", default=False)
-    parser_tmp2.add_argument('-c', '--creation-date', action="store_true",
-                             help="sort by creation date")
-    parser_tmp2.add_argument('-n', '--name', action="store_true",
-                             help="sort by file name")
-    #parser_tmp2.add_argument('-x', action="store_true",
-    #                         help="vertical display")
-    parser_tmp2.add_argument('--extended', action="store_true",
-                             help="extended format")
-    parser_tmp2.add_argument('--size', action="store_true",
-                             help="sort by file size")
-    parser_tmp2.set_defaults(__func__=DocumentsListV2Command())
 
 
 ###############################################################################
