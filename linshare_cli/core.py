@@ -218,7 +218,7 @@ class CoreCli(object):
                 uri=host.encode('utf8'),
                 user=user.encode('utf8'),
                 passwd=password.encode('utf8'))
-        except UnicodeEncodeError as ex:
+        except UnicodeEncodeError:
             self.log.error("the program was not able to compute the basic authentication token.")
 
         handlers = [
@@ -306,9 +306,11 @@ class CoreCli(object):
             resultq = urllib2.urlopen(request)
             code = resultq.getcode()
             if code == 204:
-                self.log.info("ret code : " + str(code))
+                if self.verbose or self.debug:
+                    self.log.info("ret code : " + str(code))
             elif code == 200:
-                self.log.info("ret code : " + str(code))
+                if self.verbose or self.debug:
+                    self.log.info("ret code : " + str(code))
                 jObj = self.get_json_result(resultq)
             else:
                 self.log.error("ret code : " + str(code))

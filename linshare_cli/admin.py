@@ -42,7 +42,18 @@ class DefaultCommand(common.DefaultCommand):
 
     def __get_cli_object(self, args):
         return AdminCli(args.host, args.user, args.password, args.verbose,
-                       args.debug, args.realm, args.application_name)
+                        args.debug, args.realm, args.application_name)
+
+
+# -----------------------------------------------------------------------------
+class NotYetImplementedCommand(argtoolbox.DefaultCommand):
+    """Just for test. Print test to stdout"""
+
+    def __init__(self, config=None):
+        super(NotYetImplementedCommand, self).__init__(config)
+
+    def __call__(self, args):
+        print "Not Yet Implemented."
 
 
 # -----------------------------------------------------------------------------
@@ -72,7 +83,7 @@ class DomainsListCommand(DefaultCommand):
         super(DomainsListCommand, self).__call__(args)
 
         json_obj = self.ls.domains.list()
-        self.pretty_json(json_obj)
+        #self.pretty_json(json_obj)
 
         keys = []
         keys.append('identifier')
@@ -189,7 +200,7 @@ class DomainPatternsCreateCommand(DefaultCommand):
 
         keys = {}
 
-        def add(keys, key, field = None):
+        def add(keys, key, field=None):
             keys[key] = {}
             keys[key]['attr'] = key
             if not field:
@@ -197,7 +208,7 @@ class DomainPatternsCreateCommand(DefaultCommand):
                 cpt = 0
                 for i in key.split("_"):
                     if cpt >= 1:
-                        i=i.capitalize()
+                        i = i.capitalize()
                         field += i
                     else:
                         field += i
@@ -209,7 +220,7 @@ class DomainPatternsCreateCommand(DefaultCommand):
         add(keys, 'completion_size_limit')
         add(keys, 'search_page_size')
         add(keys, 'search_size_limit')
-        add(keys, 'uid', 'ldapUid')
+        add(keys, 'ldap_uid', 'ldapUid')
         add(keys, 'first_name', 'userFirstName')
         add(keys, 'last_name', 'userLastName')
         add(keys, 'mail', 'userMail')
@@ -220,18 +231,18 @@ class DomainPatternsCreateCommand(DefaultCommand):
         add(keys, "auto_complete_command_on_first_and_last_name")
         #self.pretty_json(keys)
 
-        pattern =   {
-                "authCommand": "",
-                "searchUserCommand": "",
-                "autoCompleteCommandOnAllAttributes": "",
-                "autoCompleteCommandOnFirstAndLastName": "",
-                "description": "",
-                "identifier": "",
-                "ldapUid": "",
-                "userFirstName": "",
-                "userLastName": "",
-                "userMail": ""
-              }
+        pattern = {
+            "authCommand": "",
+            "searchUserCommand": "",
+            "autoCompleteCommandOnAllAttributes": "",
+            "autoCompleteCommandOnFirstAndLastName": "",
+            "description": "",
+            "identifier": "",
+            "ldapUid": "",
+            "userFirstName": "",
+            "userLastName": "",
+            "userMail": ""
+        }
 
 
         json_obj = self.ls.domain_patterns.list(args.models)
@@ -241,16 +252,16 @@ class DomainPatternsCreateCommand(DefaultCommand):
                 pattern['identifier'] = ""
                 break
 
-        for k, v in keys.items():
-            attr = getattr(args, v.get('attr'), False)
+        for val in keys.values():
+            attr = getattr(args, val.get('attr'), False)
             if attr:
-                pattern[v.get('field')] = attr
+                pattern[val.get('field')] = attr
 
         json_obj = self.ls.domain_patterns.create(pattern)
 
 
 
-    def complete(self, args,  prefix):
+    def complete(self, args, prefix):
         super(DomainPatternsCreateCommand, self).__call__(args)
 
         json_obj = self.ls.domain_patterns.list(True)
@@ -270,6 +281,13 @@ class DomainPatternsDeleteCommand(DefaultCommand):
             if model.get('identifier') == args.identifier:
                 self.ls.domain_patterns.delete(model)
                 break
+
+    def complete(self, args, prefix):
+        super(DomainPatternsDeleteCommand, self).__call__(args)
+
+        json_obj = self.ls.domain_patterns.list(True)
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
 
 
 # -------------------------- Threads ------------------------------------------
@@ -302,7 +320,7 @@ class ThreadMembersListCommand(DefaultCommand):
         #self.pretty_json(json_obj)
         self.print_list(json_obj, d_format, "Thread members")
 
-    def complete(self, args,  prefix):
+    def complete(self, args, prefix):
         super(ThreadMembersListCommand, self).__call__(args)
 
         json_obj = self.ls.threads.list()
@@ -330,6 +348,7 @@ class UsersListCommand(DefaultCommand):
 ###  domains
 ###############################################################################
 def add_domains_parser(subparsers, name, desc):
+    """Add all domain sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
@@ -346,11 +365,27 @@ def add_domains_parser(subparsers, name, desc):
                              help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=DomainsListCommand())
 
+    parser_tmp2 = subparsers2.add_parser(
+        'create',
+        help="create domain : Not Yet Implemented.")
+    parser_tmp2.set_defaults(__func__=NotYetImplementedCommand())
+
+    parser_tmp2 = subparsers2.add_parser(
+        'update',
+        help="update domain : Not Yet Implemented.")
+    parser_tmp2.set_defaults(__func__=NotYetImplementedCommand())
+
+    parser_tmp2 = subparsers2.add_parser(
+        'delete',
+        help="delete domain : Not Yet Implemented.")
+    parser_tmp2.set_defaults(__func__=NotYetImplementedCommand())
+
 
 ###############################################################################
 ###  ldap connections
 ###############################################################################
 def add_ldap_connections_parser(subparsers, name, desc):
+    """Add all ldap connections sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
@@ -363,11 +398,27 @@ def add_ldap_connections_parser(subparsers, name, desc):
                              help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=LdapConnectionsListCommand())
 
+    parser_tmp2 = subparsers2.add_parser(
+        'delete',
+        help="delete ldap connections : Not Yet Implemented.")
+    parser_tmp2.set_defaults(__func__=NotYetImplementedCommand())
+
+    parser_tmp2 = subparsers2.add_parser(
+        'create',
+        help="create ldap connections : Not Yet Implemented.")
+    parser_tmp2.set_defaults(__func__=NotYetImplementedCommand())
+
+    parser_tmp2 = subparsers2.add_parser(
+        'update',
+        help="update ldap connections : Not Yet Implemented.")
+    parser_tmp2.set_defaults(__func__=NotYetImplementedCommand())
+
 
 ###############################################################################
 ###  domain patterns
 ###############################################################################
 def add_domain_patterns_parser(subparsers, name, desc):
+    """Add all domain pattern sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
@@ -387,34 +438,50 @@ def add_domain_patterns_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser(
         'create',
         help="create domain pattern.")
-    parser_tmp2.add_argument('--identifier', action="store", help="")
-    parser_tmp2.add_argument('--completion-page-size', action="store", type=int, help="")
-    parser_tmp2.add_argument('--completion-size-limit', action="store", type=int, help="")
-    parser_tmp2.add_argument('--search-page-size', action="store", type=int, help="")
-    parser_tmp2.add_argument('--search-size-limit', action="store", type=int, help="")
-    parser_tmp2.add_argument('--uid', action="store", help="")
+    parser_tmp2.add_argument('--identifier', action="store", help="",
+                             required=True)
+    parser_tmp2.add_argument('--completion-page-size', action="store",
+                             type=int, help="")
+    parser_tmp2.add_argument('--completion-size-limit', action="store",
+                             type=int, help="")
+    parser_tmp2.add_argument('--search-page-size', action="store",
+                             type=int, help="")
+    parser_tmp2.add_argument('--search-size-limit', action="store",
+                             type=int, help="")
+    parser_tmp2.add_argument('--ldap-uid', action="store", help="")
     parser_tmp2.add_argument('--first-name', action="store", help="")
     parser_tmp2.add_argument('--last-name', action="store", help="")
     parser_tmp2.add_argument('--mail', action="store", help="")
     parser_tmp2.add_argument('--description', action="store", help="")
-    parser_tmp2.add_argument('--models', action="store", help="").completer = DefaultCompleter()
+    parser_tmp2.add_argument('--models', action="store",
+                             help="").completer = DefaultCompleter()
     parser_tmp2.add_argument('--auth-command', action="store", help="")
     parser_tmp2.add_argument('--search-user-command', action="store", help="")
-    parser_tmp2.add_argument('--auto-complete-command-on-all-attributes', action="store", help="")
-    parser_tmp2.add_argument('--auto-complete-command-on-first-and-last-name', action="store", help="")
+    parser_tmp2.add_argument('--auto-complete-command-on-all-attributes',
+                             action="store", help="")
+    parser_tmp2.add_argument('--auto-complete-command-on-first-and-last-name',
+                             action="store", help="")
     parser_tmp2.set_defaults(__func__=DomainPatternsCreateCommand())
 
     parser_tmp2 = subparsers2.add_parser(
         'delete',
         help="delete domain pattern.")
-    parser_tmp2.add_argument('--identifier', action="store", help="")
+    parser_tmp2.add_argument('identifier', action="store",
+                             help="").completer = DefaultCompleter()
     parser_tmp2.set_defaults(__func__=DomainPatternsDeleteCommand())
+
+
+    parser_tmp2 = subparsers2.add_parser(
+        'update',
+        help="update domain patterns : Not Yet Implemented.")
+    parser_tmp2.set_defaults(__func__=NotYetImplementedCommand())
 
 
 ###############################################################################
 ###  threads
 ###############################################################################
 def add_threads_parser(subparsers, name, desc):
+    """Add all thread sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
@@ -428,6 +495,7 @@ def add_threads_parser(subparsers, name, desc):
 ###  threads
 ###############################################################################
 def add_thread_members_parser(subparsers, name, desc):
+    """Add all thread member sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
@@ -447,6 +515,7 @@ def add_thread_members_parser(subparsers, name, desc):
 ###  users
 ###############################################################################
 def add_users_parser(subparsers, name, desc):
+    """Add all user sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
@@ -458,6 +527,7 @@ def add_users_parser(subparsers, name, desc):
 ### test
 ###############################################################################
 def add_test_parser(subparsers, config):
+    """Add test commands."""
     parser_tmp = subparsers.add_parser('test', add_help=False)
     parser_tmp.add_argument('files', nargs='*')
     parser_tmp.set_defaults(__func__=TestCommand(config))
