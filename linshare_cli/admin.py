@@ -186,10 +186,6 @@ class DomainPatternsListCommand(DefaultCommand):
         table.reversesort = args.reverse
         table.print_table(json_obj, keys)
 
-        #t = VTable(keys)
-        #t.load(json_obj)
-        #print t.get_string()
-
 
 # -----------------------------------------------------------------------------
 class DomainPatternsCreateCommand(DefaultCommand):
@@ -246,6 +242,7 @@ class DomainPatternsCreateCommand(DefaultCommand):
 
 
         json_obj = self.ls.domain_patterns.list(args.models)
+
         for model in json_obj:
             if model.get('identifier') == args.models:
                 pattern = model

@@ -42,6 +42,15 @@ from progressbar import ProgressBar, FileTransferSpeed, Bar, ETA, Percentage
 import hashlib
 
 # -----------------------------------------------------------------------------
+class LinShareException(Exception):
+    pass
+
+#    def __init__(self, code, msg, *args, **kwargs):
+#        super(LinShareException, self).__init__(*args, **kwargs)
+#        self.code = code
+#        self.msg = msg
+
+# -----------------------------------------------------------------------------
 def extract_file_name(content_dispo):
     """Extract file name from the input request body"""
     #print type(content_dispo)
@@ -286,10 +295,48 @@ class CoreCli(object):
             raise ValueError(msg)
         return jObj
 
+    def do_request(self, request):
+        # request start
+        self.last_req_time = None
+        jObj = None
+        starttime = datetime.datetime.now()
+        try:
+            # doRequest
+            resultq = urllib2.urlopen(request)
+            code = resultq.getcode()
+
+            if self.verbose or self.debug:
+                self.log.info("http return code : " + str(code))
+
+            if code == 200:
+                jObj = self.get_json_result(resultq)
+
+        except urllib2.HTTPError as ex:
+            if self.verbose:
+                self.log.info("Http error : " + ex.msg + " (" + str(ex.code) + ")")
+            else:
+                self.log.debug("Http error : " + ex.msg + " (" + str(ex.code) + ")")
+            jObj = self.get_json_result(ex)
+            code = jObj.get('errCode')
+            msg = jObj.get('message')
+            self.log.debug("Server error code : " + str(code))
+            self.log.debug("Server error message : " + str(msg))
+
+            # request end
+            endtime = datetime.datetime.now()
+            self.last_req_time = str(endtime - starttime)
+            raise LinShareException(code, msg)
+
+        # request end
+        endtime = datetime.datetime.now()
+
+        self.last_req_time = str(endtime - starttime)
+        return jObj
+
+
     @cli_get_cache
     def list(self, url):
-        """ List all documents store into LinShare."""
-        self.last_req_time = None
+        """ List ressources store into LinShare."""
         url = self.root_url + url
         self.log.debug("list url : " + url)
 
@@ -298,40 +345,17 @@ class CoreCli(object):
         request.add_header('Content-Type', 'application/json; charset=UTF-8')
         request.add_header('Accept', 'application/json')
 
-        # request start
-        starttime = datetime.datetime.now()
-        jObj = None
-        try:
-            # doRequest
-            resultq = urllib2.urlopen(request)
-            code = resultq.getcode()
-            if code == 204:
-                if self.verbose or self.debug:
-                    self.log.info("ret code : " + str(code))
-            elif code == 200:
-                if self.verbose or self.debug:
-                    self.log.info("ret code : " + str(code))
-                jObj = self.get_json_result(resultq)
-            else:
-                self.log.error("ret code : " + str(code))
-        except urllib2.HTTPError as e:
-            self.log.error("Http error : " + e.msg)
-            self.log.error("error code : " + str(e.code))
+        ret = self.do_request(request)
 
-        # request end
-        endtime = datetime.datetime.now()
-
-        self.last_req_time = str(endtime - starttime)
         self.log.debug("""list url : %(url)s : request time : %(time)s""",
                        {"url": url,
                         "time": self.last_req_time})
-        return jObj
+        return ret
 
-    def delete(self, url, data = None):
-        """ List all documents store into LinShare."""
-        self.last_req_time = None
+    def delete(self, url, data=None):
+        """Delete one ressource store into LinShare."""
         url = self.root_url + url
-        self.log.debug("list url : " + url)
+        self.log.debug("delete url : " + url)
 
         # Building request
         request = urllib2.Request(url)
@@ -344,38 +368,17 @@ class CoreCli(object):
 
         request.get_method = lambda: 'DELETE'
 
-        # request start
-        starttime = datetime.datetime.now()
-        jObj = None
-        try:
-            # doRequest
-            resultq = urllib2.urlopen(request)
-            code = resultq.getcode()
-            if code == 204:
-                self.log.info("ret code : " + str(code))
-            elif code == 200:
-                self.log.info("ret code : " + str(code))
-                jObj = self.get_json_result(resultq)
-            else:
-                self.log.error("ret code : " + str(code))
-        except urllib2.HTTPError as e:
-            self.log.error("Http error : " + e.msg)
-            self.log.error("error code : " + str(e.code))
+        ret = self.do_request(request)
 
-        # request end
-        endtime = datetime.datetime.now()
-
-        self.last_req_time = str(endtime - starttime)
         self.log.debug("""delete url : %(url)s : request time : %(time)s""",
                        {"url": url,
                         "time": self.last_req_time})
-        return jObj
+        return ret
 
     def create(self, url, data):
-        """ List all documents store into LinShare."""
-        self.last_req_time = None
+        """ create ressources store into LinShare."""
         url = self.root_url + url
-        self.log.debug("list url : " + url)
+        self.log.debug("create url : " + url)
 
         # Building request
         headers = {'content-type': 'application/json'}
@@ -383,32 +386,12 @@ class CoreCli(object):
         post_data = json.dumps(data).encode("UTF-8")
         request = urllib2.Request(url, post_data, headers=headers)
 
-        # request start
-        starttime = datetime.datetime.now()
+        ret = self.do_request(request)
 
-        jObj = None
-        try:
-            # doRequest
-            resultq = urllib2.urlopen(request)
-            code = resultq.getcode()
-            if code == 204:
-                self.log.info("ret code : " + str(code))
-            elif code == 200:
-                self.log.info("ret code : " + str(code))
-            else:
-                self.log.error("ret code : " + str(code))
-        except urllib2.HTTPError as e:
-            self.log.error("Http error : " + e.msg)
-            self.log.error("error code : " + str(e.code))
-
-        # request end
-        endtime = datetime.datetime.now()
-
-        self.last_req_time = str(endtime - starttime)
         self.log.debug("""post url : %(url)s : request time : %(time)s""",
                        {"url": url,
                         "time": self.last_req_time})
-        return jObj
+        return ret
 
     def upload(self, file_path, url, description=None):
         self.last_req_time = None
@@ -423,10 +406,9 @@ class CoreCli(object):
         self.log.debug("file_name is : " + file_name)
 
         if file_size <= 0:
-            self.log.fatal("""The file '%(filename)s' can not be uploaded
-because its size less or equal to zero.""",
-                           {"filename": str(file_name)})
-            return None
+            msg = "The file '%(filename)s' can not be uploaded \
+because its size is less or equal to zero." % {"filename": str(file_name)}
+            raise LinShareException("-1", msg)
 
         widgets = [FileTransferSpeed(), ' <<<', Bar(), '>>> ',
                    Percentage(), ' ', ETA()]
@@ -453,28 +435,45 @@ because its size less or equal to zero.""",
         try:
             # doRequest
             resultq = urllib2.urlopen(request)
-        except urllib2.HTTPError as e:
-            self.log.error("Http error : " + e.msg)
-            self.log.error("error code : " + str(e.code))
+            code = resultq.getcode()
+
+            if self.verbose or self.debug:
+                self.log.info("http return code : " + str(code))
+
+            if code == 200:
+                jObj = self.get_json_result(resultq)
+
+        except urllib2.HTTPError as ex:
+
+            if self.verbose:
+                self.log.info("Http error : " + ex.msg + " (" + str(ex.code) + ")")
+            else:
+                self.log.debug("Http error : " + ex.msg + " (" + str(ex.code) + ")")
+            jObj = self.get_json_result(ex)
+            code = jObj.get('errCode')
+            msg = jObj.get('message')
+            self.log.debug("Server error code : " + str(code))
+            self.log.debug("Server error message : " + str(msg))
 
             # request end
             endtime = datetime.datetime.now()
             pbar.finish()
-
             self.last_req_time = str(endtime - starttime)
-            if e.code == 500:
-                self.log.fatal(
+
+            if ex.code == 502:
+                self.log.warn(
+                    """The file '%(filename)s' was uploaded
+                    (%(time)ss) but the proxy cut the connexion. No server
+                    acknowledge was received.""",
+                    {"filename": file_name,
+                     "time": self.last_req_time})
+            else:
+                self.log.debug(
                     "Can not upload file %(filename)s (%(filepath)s)",
                     {"filename": file_name,
                      "filepath": file_path})
-            else:
-                self.log.error(
-                    """The file '%(filename)s' was uploaded
-                    (%(time)ss) but the proxy cut the connexion. No server
-                    acquitment was received.""",
-                    {"filename": file_name,
-                     "time": self.last_req_time})
-            return None
+            raise LinShareException(code, msg)
+
 
         # request end
         endtime = datetime.datetime.now()
@@ -487,7 +486,7 @@ because its size less or equal to zero.""",
             self.log.debug(json.dumps(jObj, sort_keys=True, indent=2))
 
         self.last_req_time = str(endtime - starttime)
-        self.log.debug("list url : %(url)s : request time : %(time)s",
+        self.log.debug("upload url : %(url)s : request time : %(time)s",
                        {"url": url,
                         "time": self.last_req_time})
         return jObj
@@ -514,7 +513,7 @@ This method could throw exceptions like urllib2.HTTPError."""
         if code == 200:
             content_lenth = resultq.info().getheader('Content-Length')
             if not content_lenth:
-                print "ERRRRRRRRRRRRRRRRRRROOOOOOOOOOOOORR"
+                self.log.error("No content lengh header found !")
                 result = resultq.read()
                 print result
                 return
@@ -555,7 +554,7 @@ This method could throw exceptions like urllib2.HTTPError."""
         # request end
         endtime = datetime.datetime.now()
         self.last_req_time = str(endtime - starttime)
-        self.log.debug("list url : %(url)s : request time : %(time)s",
+        self.log.debug("download url : %(url)s : request time : %(time)s",
                        {"url": url,
                         "time": self.last_req_time})
         return (file_name, self.last_req_time)
