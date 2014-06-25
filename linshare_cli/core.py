@@ -28,6 +28,7 @@
 from __future__ import unicode_literals
 
 import os
+import re
 import logging
 import logging.handlers
 import base64
@@ -584,6 +585,46 @@ This method could throw exceptions like urllib2.HTTPError."""
         return (file_name, self.last_req_time)
 
 
+class ResourceBuilder(object):
+
+    def __init__(self, name=None):
+        self._name = name
+        self.fields = {}
+
+    def add_field(self, field, arg=None, value=None):
+        if not value:
+            value = ""
+        if not arg:
+            arg = re.sub('(?!^)([A-Z]+)', r'_\1', field).lower()
+        self.fields[field] = {
+            'field': field,
+            'arg': arg,
+            'value': value
+        }
+
+    def set_arg(self, key, arg):
+        field = self.fields.get(key, None)
+        if field:
+            print field
+            field['arg'] = arg
+
+    def set_value(self, key, value):
+        field = self.fields.get(key, None)
+        if field:
+            field['value'] = value
+
+    def to_resource(self):
+        ret = {}
+        for field in self.fields.values():
+            ret[field['field']] = field['value']
+        return ret
+
+    def load_from_args(self, namespace):
+        for field in self.fields.values():
+            value = getattr(namespace, field['arg'], None)
+            if value:
+                field['value'] = value
+
 # -----------------------------------------------------------------------------
 # USER API
 # -----------------------------------------------------------------------------
@@ -749,6 +790,27 @@ class DomainPatternsAdmin(object):
         data = {"identifier":  identifier}
         return self.core.delete("admin/domain_patterns", data)
 
+    def get_rbu(self):
+        rbu = ResourceBuilder("ldap_connection")
+        rbu.add_field('identifier')
+        rbu.add_field('completionPageSize')
+        rbu.add_field('completionSizeLimit')
+        rbu.add_field('searchPageSize')
+        rbu.add_field('searchSizeLimit')
+        rbu.add_field('ldapUid')
+        rbu.add_field('userFirstName', 'first_name')
+        rbu.add_field('userLastName', 'last_name')
+        rbu.add_field('userMail', 'mail')
+        rbu.add_field('description')
+        rbu.add_field("authCommand")
+        rbu.add_field("searchUserCommand")
+        rbu.add_field("autoCompleteCommandOnAllAttributes")
+        rbu.add_field("autoCompleteCommandOnFirstAndLastName")
+        return rbu
+
+    def get_resource(self):
+        return self.get_rbu().to_resource()
+
 
 class LdapConnectionsAdmin(object):
     def __init__(self, corecli):
@@ -767,6 +829,17 @@ class LdapConnectionsAdmin(object):
             raise ValueError("identifier is required")
         data = {"identifier":  identifier}
         return self.core.delete("admin/ldap_connections", data)
+
+    def get_rbu(self):
+        rbu = ResourceBuilder("ldap_connection")
+        rbu.add_field('identifier')
+        rbu.add_field('providerUrl')
+        rbu.add_field('securityPrincipal', "principal")
+        rbu.add_field('securityCredentials', "credential")
+        return rbu
+
+    def get_resource(self):
+        return self.get_rbu().to_resource()
 
 
 # -----------------------------------------------------------------------------

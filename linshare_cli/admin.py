@@ -36,8 +36,8 @@ import argtoolbox
 
 # -----------------------------------------------------------------------------
 class DefaultCommand(common.DefaultCommand):
-    """ Default command object use by the ser API. If you want to add a new
-    command to the command line interface, your class should extend this one.
+    """ Default command object use by the serer API. If you want to add a new
+    command to the command line interface, your class should extend this class.
     """
 
     def __get_cli_object(self, args):
@@ -197,12 +197,9 @@ class LdapConnectionsCreateCommand(DefaultCommand):
 
     def __call__(self, args):
         super(LdapConnectionsCreateCommand, self).__call__(args)
-        self.add_resource_attr('identifier')
-        self.add_resource_attr('provider_url')
-        self.add_resource_attr('principal', 'securityPrincipal')
-        self.add_resource_attr('credential', 'securityCredentials')
-        resource = self.load_resource_attr(args)
-        json_obj = self.ls.ldap_connections.create(resource)
+        rbu = self.ls.ldap_connections.get_rbu()
+        rbu.load_from_args(args)
+        json_obj = self.ls.ldap_connections.create(rbu.to_resource())
         self.pretty_json(json_obj)
 
 
@@ -474,8 +471,7 @@ def add_ldap_connections_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser(
         'create',
         help="create ldap connections.")
-    parser_tmp2.add_argument('--identifier', action="store", help="",
-                             required=True)
+    parser_tmp2.add_argument('identifier', action="store", help="")
     parser_tmp2.add_argument('--provider-url', action="store", help="",
                              required=True)
     parser_tmp2.add_argument('--principal', action="store", help="")
