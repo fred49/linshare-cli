@@ -114,6 +114,52 @@ class DomainsListCommand(DefaultCommand):
         table.print_table(json_obj, keys)
 
 
+# -----------------------------------------------------------------------------
+class DomainsCreateCommand(DefaultCommand):
+    """ List all domains."""
+
+    def __call__(self, args):
+        super(DomainsCreateCommand, self).__call__(args)
+
+        self.add_resource_attr('identifier')
+        self.add_resource_attr('label')
+        resource = {
+            "policy": {
+                "identifier": "DefaultDomainPolicy"
+            },
+            "type": args.domain_type,
+            "language": "ENGLISH",
+            "userRole": "SIMPLE",
+            "mailConfigUuid": "946b190d-4c95-485f-bfe6-d288a2de1edd",
+            "mimePolicyUuid": "3d6d8800-e0f7-11e3-8ec0-080027c0eef0",
+            "description": "a description",
+        }
+#                "providers": [],
+
+        self.load_resource_attr(args, resource)
+        json_obj = self.ls.domains.create(resource)
+        self.pretty_json(json_obj)
+
+    def complete_type(self, args, prefix):
+        super(DomainsCreateCommand, self).__call__(args)
+        return self.ls.domains.options()
+
+
+# -----------------------------------------------------------------------------
+class DomainsDeleteCommand(DefaultCommand):
+    """ List all domains."""
+
+    def __call__(self, args):
+        super(DomainsDeleteCommand, self).__call__(args)
+        self.ls.domains.delete(args.identifier)
+
+    def complete(self, args, prefix):
+        super(DomainsDeleteCommand, self).__call__(args)
+        json_obj = self.ls.deomains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+
 # ---------------------- Ldap connections -------------------------------------
 # -----------------------------------------------------------------------------
 class LdapConnectionsListCommand(DefaultCommand):
@@ -145,6 +191,37 @@ class LdapConnectionsListCommand(DefaultCommand):
         table.print_table(json_obj, keys)
 
 
+# -----------------------------------------------------------------------------
+class LdapConnectionsCreateCommand(DefaultCommand):
+    """Create ldap connection."""
+
+    def __call__(self, args):
+        super(LdapConnectionsCreateCommand, self).__call__(args)
+        self.add_resource_attr('identifier')
+        self.add_resource_attr('provider_url')
+        self.add_resource_attr('principal', 'securityPrincipal')
+        self.add_resource_attr('credential', 'securityCredentials')
+        resource = self.load_resource_attr(args)
+        json_obj = self.ls.ldap_connections.create(resource)
+        self.pretty_json(json_obj)
+
+
+# -----------------------------------------------------------------------------
+class LdapConnectionsDeleteCommand(DefaultCommand):
+    """Delete ldap connection."""
+
+    def __call__(self, args):
+        super(LdapConnectionsDeleteCommand, self).__call__(args)
+        self.ls.ldap_connections.delete(args.identifier)
+
+    def complete(self, args, prefix):
+        super(LdapConnectionsDeleteCommand, self).__call__(args)
+
+        json_obj = self.ls.ldap_connections.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+
 # ----------------------- Domains patterns ------------------------------------
 # -----------------------------------------------------------------------------
 class DomainPatternsListCommand(DefaultCommand):
@@ -153,7 +230,7 @@ class DomainPatternsListCommand(DefaultCommand):
     def __call__(self, args):
         super(DomainPatternsListCommand, self).__call__(args)
 
-        json_obj = self.ls.domain_patterns.list(args.models)
+        json_obj = self.ls.domain_patterns.list(args.model)
 
         keys = []
         keys.append("identifier")
@@ -194,38 +271,20 @@ class DomainPatternsCreateCommand(DefaultCommand):
     def __call__(self, args):
         super(DomainPatternsCreateCommand, self).__call__(args)
 
-        keys = {}
-
-        def add(keys, key, field=None):
-            keys[key] = {}
-            keys[key]['attr'] = key
-            if not field:
-                field = ""
-                cpt = 0
-                for i in key.split("_"):
-                    if cpt >= 1:
-                        i = i.capitalize()
-                        field += i
-                    else:
-                        field += i
-                    cpt += 1
-            keys[key]['field'] = field
-
-        add(keys, 'identifier')
-        add(keys, 'completion_page_size')
-        add(keys, 'completion_size_limit')
-        add(keys, 'search_page_size')
-        add(keys, 'search_size_limit')
-        add(keys, 'ldap_uid', 'ldapUid')
-        add(keys, 'first_name', 'userFirstName')
-        add(keys, 'last_name', 'userLastName')
-        add(keys, 'mail', 'userMail')
-        add(keys, 'description')
-        add(keys, "auth_command")
-        add(keys, "search_user_command")
-        add(keys, "auto_complete_command_on_all_attributes")
-        add(keys, "auto_complete_command_on_first_and_last_name")
-        #self.pretty_json(keys)
+        self.add_resource_attr('identifier')
+        self.add_resource_attr('completion_page_size')
+        self.add_resource_attr('completion_size_limit')
+        self.add_resource_attr('search_page_size')
+        self.add_resource_attr('search_size_limit')
+        self.add_resource_attr('ldap_uid', 'ldapUid')
+        self.add_resource_attr('first_name', 'userFirstName')
+        self.add_resource_attr('last_name', 'userLastName')
+        self.add_resource_attr('mail', 'userMail')
+        self.add_resource_attr('description')
+        self.add_resource_attr("auth_command")
+        self.add_resource_attr("search_user_command")
+        self.add_resource_attr("auto_complete_command_on_all_attributes")
+        self.add_resource_attr("auto_complete_command_on_first_and_last_name")
 
         pattern = {
             "authCommand": "",
@@ -240,22 +299,18 @@ class DomainPatternsCreateCommand(DefaultCommand):
             "userMail": ""
         }
 
+        if args.model:
+            json_obj = self.ls.domain_patterns.list(True)
+            for model in json_obj:
+                if model.get('identifier') == args.model:
+                    pattern = model
+                    # reset identifier
+                    pattern['identifier'] = ""
+                    break
 
-        json_obj = self.ls.domain_patterns.list(args.models)
-
-        for model in json_obj:
-            if model.get('identifier') == args.models:
-                pattern = model
-                pattern['identifier'] = ""
-                break
-
-        for val in keys.values():
-            attr = getattr(args, val.get('attr'), False)
-            if attr:
-                pattern[val.get('field')] = attr
-
+        self.load_resource_attr(args, pattern)
         json_obj = self.ls.domain_patterns.create(pattern)
-
+        self.pretty_json(json_obj)
 
 
     def complete(self, args, prefix):
@@ -272,12 +327,7 @@ class DomainPatternsDeleteCommand(DefaultCommand):
 
     def __call__(self, args):
         super(DomainPatternsDeleteCommand, self).__call__(args)
-
-        json_obj = self.ls.domain_patterns.list()
-        for model in json_obj:
-            if model.get('identifier') == args.identifier:
-                self.ls.domain_patterns.delete(model)
-                break
+        self.ls.domain_patterns.delete(args.identifier)
 
     def complete(self, args, prefix):
         super(DomainPatternsDeleteCommand, self).__call__(args)
@@ -365,7 +415,16 @@ def add_domains_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser(
         'create',
         help="create domain : Not Yet Implemented.")
-    parser_tmp2.set_defaults(__func__=NotYetImplementedCommand())
+    parser_tmp2.add_argument('--label', action="store", help="",
+                             required=True)
+    parser_tmp2.add_argument('--identifier', action="store", help="",
+                             required=True)
+    parser_tmp2.add_argument('--type',
+         dest="domain_type",
+         action="store",
+         help="",
+         required=True).completer = DefaultCompleter("complete_type")
+    parser_tmp2.set_defaults(__func__=DomainsCreateCommand())
 
     parser_tmp2 = subparsers2.add_parser(
         'update',
@@ -375,7 +434,10 @@ def add_domains_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser(
         'delete',
         help="delete domain : Not Yet Implemented.")
-    parser_tmp2.set_defaults(__func__=NotYetImplementedCommand())
+    parser_tmp2.add_argument('identifier', action="store",
+         help="").completer = DefaultCompleter()
+    #parser_tmp.add_argument('files', nargs='*')
+    parser_tmp2.set_defaults(__func__=DomainsDeleteCommand())
 
 
 ###############################################################################
@@ -398,12 +460,22 @@ def add_ldap_connections_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser(
         'delete',
         help="delete ldap connections : Not Yet Implemented.")
-    parser_tmp2.set_defaults(__func__=NotYetImplementedCommand())
+    parser_tmp2.add_argument('--identifier',
+                             action="store",
+                             help="",
+                             required=True).completer = DefaultCompleter()
+    parser_tmp2.set_defaults(__func__=LdapConnectionsDeleteCommand())
 
     parser_tmp2 = subparsers2.add_parser(
         'create',
-        help="create ldap connections : Not Yet Implemented.")
-    parser_tmp2.set_defaults(__func__=NotYetImplementedCommand())
+        help="create ldap connections.")
+    parser_tmp2.add_argument('--identifier', action="store", help="",
+                             required=True)
+    parser_tmp2.add_argument('--provider-url', action="store", help="",
+                             required=True)
+    parser_tmp2.add_argument('--principal', action="store", help="")
+    parser_tmp2.add_argument('--credential', action="store", help="")
+    parser_tmp2.set_defaults(__func__=LdapConnectionsCreateCommand())
 
     parser_tmp2 = subparsers2.add_parser(
         'update',
@@ -426,7 +498,7 @@ def add_domain_patterns_parser(subparsers, name, desc):
                              help="extended format")
     parser_tmp2.add_argument('-r', '--reverse', action="store_true",
                              help="reverse order while sorting")
-    parser_tmp2.add_argument('-m', '--models', action="store_true",
+    parser_tmp2.add_argument('-m', '--model', action="store_true",
                              help="show model of domain patterns")
     parser_tmp2.add_argument('-t', '--vertical', action="store_true",
                              help="use vertical output mode")
@@ -450,7 +522,7 @@ def add_domain_patterns_parser(subparsers, name, desc):
     parser_tmp2.add_argument('--last-name', action="store", help="")
     parser_tmp2.add_argument('--mail', action="store", help="")
     parser_tmp2.add_argument('--description', action="store", help="")
-    parser_tmp2.add_argument('--models', action="store",
+    parser_tmp2.add_argument('--model', action="store",
                              help="").completer = DefaultCompleter()
     parser_tmp2.add_argument('--auth-command', action="store", help="")
     parser_tmp2.add_argument('--search-user-command', action="store", help="")

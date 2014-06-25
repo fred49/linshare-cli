@@ -312,15 +312,19 @@ class CoreCli(object):
                 jObj = self.get_json_result(resultq)
 
         except urllib2.HTTPError as ex:
+            code = "-1"
+            msg = "Http error : " + ex.msg + " (" + str(ex.code) + ")"
             if self.verbose:
-                self.log.info("Http error : " + ex.msg + " (" + str(ex.code) + ")")
+                self.log.info(msg)
             else:
-                self.log.debug("Http error : " + ex.msg + " (" + str(ex.code) + ")")
-            jObj = self.get_json_result(ex)
-            code = jObj.get('errCode')
-            msg = jObj.get('message')
-            self.log.debug("Server error code : " + str(code))
-            self.log.debug("Server error message : " + str(msg))
+                self.log.debug(msg)
+
+            if ex.code != 405:
+                jObj = self.get_json_result(ex)
+                code = jObj.get('errCode')
+                msg = jObj.get('message')
+                self.log.debug("Server error code : " + str(code))
+                self.log.debug("Server error message : " + str(msg))
 
             # request end
             endtime = datetime.datetime.now()
@@ -375,6 +379,25 @@ class CoreCli(object):
                         "time": self.last_req_time})
         return ret
 
+    def options(self, url):
+        url = self.root_url + url
+        self.log.debug("options url : " + url)
+
+        # Building request
+        headers = {'content-type': 'application/json'}
+        #request.add_header('Content-Type:', 'application/json; charset=UTF-8')
+        request = urllib2.Request(url, headers=headers)
+        request.add_header('Accept', 'application/json')
+
+        request.get_method = lambda: 'OPTIONS'
+
+        ret = self.do_request(request)
+
+        self.log.debug("""options url : %(url)s : request time : %(time)s""",
+                       {"url": url,
+                        "time": self.last_req_time})
+        return ret
+
     def create(self, url, data):
         """ create ressources store into LinShare."""
         url = self.root_url + url
@@ -385,6 +408,7 @@ class CoreCli(object):
         #request.add_header('Content-Type:', 'application/json; charset=UTF-8')
         post_data = json.dumps(data).encode("UTF-8")
         request = urllib2.Request(url, post_data, headers=headers)
+        request.add_header('Accept', 'application/json')
 
         ret = self.do_request(request)
 
@@ -687,7 +711,21 @@ class DomainAdmins(object):
         self.core = corecli
 
     def list(self):
-        return self.core.list("admin/domains.json")
+        return self.core.list("admin/domains")
+
+    def create(self, data):
+        return self.core.create("admin/domains", data)
+
+    def delete(self, identifier):
+        if identifier:
+            identifier = identifier.strip(" ")
+        if not identifier:
+            raise ValueError("identifier is required")
+        data = { "identifier":  identifier}
+        return self.core.delete("admin/domains", data)
+
+    def options(self):
+        return self.core.options("admin/enums/domain_type")
 
 
 class DomainPatternsAdmin(object):
@@ -704,9 +742,12 @@ class DomainPatternsAdmin(object):
     def create(self, data):
         return self.core.create("admin/domain_patterns.json", data)
 
-    def delete(self, id_dp):
-        data = { "identifier":  id_dp}
-        data = id_dp
+    def delete(self, identifier):
+        if identifier:
+            identifier = identifier.strip(" ")
+        if not identifier:
+            raise ValueError("identifier is required")
+        data = { "identifier":  identifier}
         return self.core.delete("admin/domain_patterns.json", data)
 
 
@@ -715,7 +756,18 @@ class LdapConnectionsAdmin(object):
         self.core = corecli
 
     def list(self):
-        return self.core.list("admin/ldap_connections.json")
+        return self.core.list("admin/ldap_connections")
+
+    def create(self, data):
+        return self.core.create("admin/ldap_connections", data)
+
+    def delete(self, identifier):
+        if identifier:
+            identifier = identifier.strip(" ")
+        if not identifier:
+            raise ValueError("identifier is required")
+        data = { "identifier":  identifier}
+        return self.core.delete("admin/ldap_connections", data)
 
 
 # -----------------------------------------------------------------------------
