@@ -593,19 +593,19 @@ class Documents(object):
 
     def list(self):
         """ List all documents store into LinShare."""
-        return self.core.list("documents.json")
+        return self.core.list("documents")
 
     def upload(self, file_path, description=None):
         """ Upload a file to LinShare using its rest api.
         The uploaded document uuid will be returned"""
-        return self.core.upload(file_path, "documents.json", description)
+        return self.core.upload(file_path, "documents", description)
 
     def download(self, uuid):
         url = "documents/%s/download" % uuid
         return self.core.download(uuid, url)
 
     def delete(self, uuid):
-        url = "documents/%s.json" % uuid
+        url = "documents/%s" % uuid
         return self.core.delete(url)
 
 
@@ -616,7 +616,7 @@ class ReceivedShares(object):
         self.core = corecli
 
     def list(self):
-        return self.core.list("shares.json")
+        return self.core.list("shares")
 
     def download(self, uuid):
         url = "shares/%s/download" % uuid
@@ -669,7 +669,7 @@ class Threads(object):
         self.core = corecli
 
     def list(self):
-        return self.core.list("threads.json")
+        return self.core.list("threads")
 
 
 # -----------------------------------------------------------------------------
@@ -678,7 +678,7 @@ class ThreadsMembers(object):
         self.core = corecli
 
     def list(self, threadUuid):
-        url = "thread_members/%s.json" % threadUuid
+        url = "thread_members/%s" % threadUuid
         return self.core.list(url)
 
 
@@ -688,7 +688,7 @@ class Users(object):
         self.core = corecli
 
     def list(self):
-        return self.core.list("users.json")
+        return self.core.list("users")
 
 
 # -----------------------------------------------------------------------------
@@ -721,7 +721,7 @@ class DomainAdmins(object):
             identifier = identifier.strip(" ")
         if not identifier:
             raise ValueError("identifier is required")
-        data = { "identifier":  identifier}
+        data = {"identifier":  identifier}
         return self.core.delete("admin/domains", data)
 
     def options(self):
@@ -732,23 +732,22 @@ class DomainPatternsAdmin(object):
     def __init__(self, corecli):
         self.core = corecli
 
-    def list(self, model = False):
+    def list(self, model=False):
         if model:
-            return self.core.list("admin/domain_patterns/models.json")
+            return self.core.list("admin/domain_patterns/models")
         else:
             return self.core.list("admin/domain_patterns")
-            return self.core.list("admin/domain_patterns.json")
 
     def create(self, data):
-        return self.core.create("admin/domain_patterns.json", data)
+        return self.core.create("admin/domain_patterns", data)
 
     def delete(self, identifier):
         if identifier:
             identifier = identifier.strip(" ")
         if not identifier:
             raise ValueError("identifier is required")
-        data = { "identifier":  identifier}
-        return self.core.delete("admin/domain_patterns.json", data)
+        data = {"identifier":  identifier}
+        return self.core.delete("admin/domain_patterns", data)
 
 
 class LdapConnectionsAdmin(object):
@@ -766,7 +765,7 @@ class LdapConnectionsAdmin(object):
             identifier = identifier.strip(" ")
         if not identifier:
             raise ValueError("identifier is required")
-        data = { "identifier":  identifier}
+        data = {"identifier":  identifier}
         return self.core.delete("admin/ldap_connections", data)
 
 
@@ -776,7 +775,7 @@ class ThreadsAdmin(object):
         self.core = corecli
 
     def list(self):
-        return self.core.list("admin/threads.json")
+        return self.core.list("admin/threads")
 
 
 # -----------------------------------------------------------------------------
@@ -785,7 +784,7 @@ class ThreadsMembersAdmin(object):
         self.core = corecli
 
     def list(self, threadUuid):
-        url = "admin/thread_members/%s.json" % threadUuid
+        url = "admin/thread_members/%s" % threadUuid
         return self.core.list(url)
 
 
@@ -795,7 +794,7 @@ class UsersAdmin(object):
         self.core = corecli
 
     def list(self):
-        return self.core.list("users.json")
+        return self.core.list("users")
 
 
 # -----------------------------------------------------------------------------

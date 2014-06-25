@@ -155,7 +155,7 @@ class DomainsDeleteCommand(DefaultCommand):
 
     def complete(self, args, prefix):
         super(DomainsDeleteCommand, self).__call__(args)
-        json_obj = self.ls.deomains.list()
+        json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
@@ -397,8 +397,9 @@ class UsersListCommand(DefaultCommand):
 def add_domains_parser(subparsers, name, desc):
     """Add all domain sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
-
     subparsers2 = parser_tmp.add_subparsers()
+
+    # command : list
     parser_tmp2 = subparsers2.add_parser(
         'list',
         help="list domains.")
@@ -412,13 +413,13 @@ def add_domains_parser(subparsers, name, desc):
                              help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=DomainsListCommand())
 
+    # command : create
     parser_tmp2 = subparsers2.add_parser(
         'create',
-        help="create domain : Not Yet Implemented.")
+        help="create domain.")
     parser_tmp2.add_argument('--label', action="store", help="",
                              required=True)
-    parser_tmp2.add_argument('--identifier', action="store", help="",
-                             required=True)
+    parser_tmp2.add_argument('identifier', action="store", help="")
     parser_tmp2.add_argument('--type',
          dest="domain_type",
          action="store",
@@ -426,17 +427,18 @@ def add_domains_parser(subparsers, name, desc):
          required=True).completer = DefaultCompleter("complete_type")
     parser_tmp2.set_defaults(__func__=DomainsCreateCommand())
 
+    # command : update
     parser_tmp2 = subparsers2.add_parser(
         'update',
         help="update domain : Not Yet Implemented.")
     parser_tmp2.set_defaults(__func__=NotYetImplementedCommand())
 
+    # command : delete
     parser_tmp2 = subparsers2.add_parser(
         'delete',
-        help="delete domain : Not Yet Implemented.")
+        help="delete domain.")
     parser_tmp2.add_argument('identifier', action="store",
          help="").completer = DefaultCompleter()
-    #parser_tmp.add_argument('files', nargs='*')
     parser_tmp2.set_defaults(__func__=DomainsDeleteCommand())
 
 
@@ -446,8 +448,9 @@ def add_domains_parser(subparsers, name, desc):
 def add_ldap_connections_parser(subparsers, name, desc):
     """Add all ldap connections sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
-
     subparsers2 = parser_tmp.add_subparsers()
+
+    # command : list
     parser_tmp2 = subparsers2.add_parser(
         'list',
         help="list ldap connections.")
@@ -457,15 +460,17 @@ def add_ldap_connections_parser(subparsers, name, desc):
                              help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=LdapConnectionsListCommand())
 
+    # command : delete
     parser_tmp2 = subparsers2.add_parser(
         'delete',
-        help="delete ldap connections : Not Yet Implemented.")
+        help="delete ldap connections.")
     parser_tmp2.add_argument('--identifier',
                              action="store",
                              help="",
                              required=True).completer = DefaultCompleter()
     parser_tmp2.set_defaults(__func__=LdapConnectionsDeleteCommand())
 
+    # command : create
     parser_tmp2 = subparsers2.add_parser(
         'create',
         help="create ldap connections.")
@@ -477,6 +482,7 @@ def add_ldap_connections_parser(subparsers, name, desc):
     parser_tmp2.add_argument('--credential', action="store", help="")
     parser_tmp2.set_defaults(__func__=LdapConnectionsCreateCommand())
 
+    # command : update
     parser_tmp2 = subparsers2.add_parser(
         'update',
         help="update ldap connections : Not Yet Implemented.")
@@ -490,6 +496,7 @@ def add_domain_patterns_parser(subparsers, name, desc):
     """Add all domain pattern sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
 
+    # command : list
     subparsers2 = parser_tmp.add_subparsers()
     parser_tmp2 = subparsers2.add_parser(
         'list',
@@ -504,11 +511,11 @@ def add_domain_patterns_parser(subparsers, name, desc):
                              help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=DomainPatternsListCommand())
 
+    # command : create
     parser_tmp2 = subparsers2.add_parser(
         'create',
         help="create domain pattern.")
-    parser_tmp2.add_argument('--identifier', action="store", help="",
-                             required=True)
+    parser_tmp2.add_argument('identifier', action="store", help="")
     parser_tmp2.add_argument('--completion-page-size', action="store",
                              type=int, help="")
     parser_tmp2.add_argument('--completion-size-limit', action="store",
@@ -532,6 +539,7 @@ def add_domain_patterns_parser(subparsers, name, desc):
                              action="store", help="")
     parser_tmp2.set_defaults(__func__=DomainPatternsCreateCommand())
 
+    # command : delete
     parser_tmp2 = subparsers2.add_parser(
         'delete',
         help="delete domain pattern.")
@@ -539,7 +547,7 @@ def add_domain_patterns_parser(subparsers, name, desc):
                              help="").completer = DefaultCompleter()
     parser_tmp2.set_defaults(__func__=DomainPatternsDeleteCommand())
 
-
+    # command : update
     parser_tmp2 = subparsers2.add_parser(
         'update',
         help="update domain patterns : Not Yet Implemented.")
