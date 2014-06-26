@@ -85,18 +85,7 @@ class DomainsListCommand(DefaultCommand):
         json_obj = self.ls.domains.list()
         #self.pretty_json(json_obj)
 
-        keys = []
-        keys.append('identifier')
-        keys.append('label')
-        keys.append('language')
-        keys.append('type')
-        keys.append('description')
-        keys.append('userRole')
-        if args.extended:
-            keys.append('authShowOrder')
-            keys.append('mailConfigUuid')
-            keys.append('mimePolicyUuid')
-
+        keys = self.ls.domains.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:
             table = VTable(keys)
@@ -120,24 +109,9 @@ class DomainsCreateCommand(DefaultCommand):
 
     def __call__(self, args):
         super(DomainsCreateCommand, self).__call__(args)
-
-        self.add_resource_attr('identifier')
-        self.add_resource_attr('label')
-        resource = {
-            "policy": {
-                "identifier": "DefaultDomainPolicy"
-            },
-            "type": args.domain_type,
-            "language": "ENGLISH",
-            "userRole": "SIMPLE",
-            "mailConfigUuid": "946b190d-4c95-485f-bfe6-d288a2de1edd",
-            "mimePolicyUuid": "3d6d8800-e0f7-11e3-8ec0-080027c0eef0",
-            "description": "a description",
-        }
-#                "providers": [],
-
-        self.load_resource_attr(args, resource)
-        json_obj = self.ls.domains.create(resource)
+        rbu = self.ls.domains.get_rbu()
+        rbu.load_from_args(args)
+        json_obj = self.ls.domains.create(rbu.to_resource())
         self.pretty_json(json_obj)
 
     def complete_type(self, args, prefix):
@@ -170,12 +144,7 @@ class LdapConnectionsListCommand(DefaultCommand):
 
         json_obj = self.ls.ldap_connections.list()
 
-        keys = []
-        keys.append('identifier')
-        keys.append('providerUrl')
-        keys.append('securityPrincipal')
-        keys.append('securityCredentials')
-
+        keys = self.ls.ldap_connections.get_rbu().get_keys()
         table = None
         if args.vertical:
             table = VTable(keys)
@@ -226,26 +195,8 @@ class DomainPatternsListCommand(DefaultCommand):
 
     def __call__(self, args):
         super(DomainPatternsListCommand, self).__call__(args)
-
         json_obj = self.ls.domain_patterns.list(args.model)
-
-        keys = []
-        keys.append("identifier")
-        keys.append("description")
-        if args.extended:
-            keys.append("authCommand")
-            keys.append("searchUserCommand")
-            keys.append("autoCompleteCommandOnAllAttributes")
-            keys.append("autoCompleteCommandOnFirstAndLastName")
-            keys.append("completionPageSize")
-            keys.append("completionSizeLimit")
-            keys.append("searchPageSize")
-            keys.append("searchSizeLimit")
-            keys.append("ldapUid")
-            keys.append("userFirstName")
-            keys.append("userLastName")
-            keys.append("userMail")
-
+        keys = self.ls.domain_patterns.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:
             table = VTable(keys)
@@ -255,7 +206,6 @@ class DomainPatternsListCommand(DefaultCommand):
             # styles
             table.align["identifier"] = "l"
             table.padding_width = 1
-
         table.sortby = "identifier"
         table.reversesort = args.reverse
         table.print_table(json_obj, keys)
@@ -267,52 +217,21 @@ class DomainPatternsCreateCommand(DefaultCommand):
 
     def __call__(self, args):
         super(DomainPatternsCreateCommand, self).__call__(args)
-
-        self.add_resource_attr('identifier')
-        self.add_resource_attr('completion_page_size')
-        self.add_resource_attr('completion_size_limit')
-        self.add_resource_attr('search_page_size')
-        self.add_resource_attr('search_size_limit')
-        self.add_resource_attr('ldap_uid', 'ldapUid')
-        self.add_resource_attr('first_name', 'userFirstName')
-        self.add_resource_attr('last_name', 'userLastName')
-        self.add_resource_attr('mail', 'userMail')
-        self.add_resource_attr('description')
-        self.add_resource_attr("auth_command")
-        self.add_resource_attr("search_user_command")
-        self.add_resource_attr("auto_complete_command_on_all_attributes")
-        self.add_resource_attr("auto_complete_command_on_first_and_last_name")
-
-        pattern = {
-            "authCommand": "",
-            "searchUserCommand": "",
-            "autoCompleteCommandOnAllAttributes": "",
-            "autoCompleteCommandOnFirstAndLastName": "",
-            "description": "",
-            "identifier": "",
-            "ldapUid": "",
-            "userFirstName": "",
-            "userLastName": "",
-            "userMail": ""
-        }
-
+        rbu = self.ls.domain_patterns.get_rbu()
         if args.model:
             json_obj = self.ls.domain_patterns.list(True)
             for model in json_obj:
                 if model.get('identifier') == args.model:
-                    pattern = model
+                    rbu.copy(model)
                     # reset identifier
-                    pattern['identifier'] = ""
+                    rbu.set_value('identifier', "")
                     break
-
-        self.load_resource_attr(args, pattern)
-        json_obj = self.ls.domain_patterns.create(pattern)
+        rbu.load_from_args(args)
+        json_obj = self.ls.domain_patterns.create(rbu.to_resource())
         self.pretty_json(json_obj)
-
 
     def complete(self, args, prefix):
         super(DomainPatternsCreateCommand, self).__call__(args)
-
         json_obj = self.ls.domain_patterns.list(True)
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))

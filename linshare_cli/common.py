@@ -243,32 +243,6 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             self.print_list(json_obj, d_format, "Documents",
                             no_legend=no_legend)
 
-    def add_resource_attr(self, key, field=None):
-        if not getattr(self, "keys", False):
-            self.keys = {}
-
-        self.keys[key] = {}
-        self.keys[key]['attr'] = key
-        if not field:
-            field = ""
-            cpt = 0
-            for i in key.split("_"):
-                if cpt >= 1:
-                    i = i.capitalize()
-                    field += i
-                else:
-                    field += i
-                cpt += 1
-        self.keys[key]['field'] = field
-
-
-    def load_resource_attr(self, args, resource={}):
-        for val in self.keys.values():
-            attr = getattr(args, val.get('attr'), False)
-            if attr:
-                resource[val.get('field')] = attr
-        return resource
-
 
 # -----------------------------------------------------------------------------
 class VTable(object):

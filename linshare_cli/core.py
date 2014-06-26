@@ -39,6 +39,7 @@ import poster
 import time
 #from datetime import datetime
 import datetime
+from ordereddict import OrderedDict
 from progressbar import ProgressBar, FileTransferSpeed, Bar, ETA, Percentage
 import hashlib
 
@@ -277,7 +278,6 @@ class CoreCli(object):
         request.add_header("Authorization", "Basic %s" % base64string)
         #request.add_header("Cookie", "JSESSIONID=")
 
-
     def get_json_result(self, resultq):
         jObj  = None
         result = resultq.read()
@@ -337,7 +337,6 @@ class CoreCli(object):
 
         self.last_req_time = str(endtime - starttime)
         return jObj
-
 
     @cli_get_cache
     def list(self, url):
@@ -589,28 +588,55 @@ class ResourceBuilder(object):
 
     def __init__(self, name=None):
         self._name = name
-        self.fields = {}
+        self.fields = OrderedDict()
 
-    def add_field(self, field, arg=None, value=None):
-        if not value:
+    def add_field(self, field, arg=None, value=None, extended=False, hidden=False):
+        if value is None:
             value = ""
-        if not arg:
+        if arg is None:
             arg = re.sub('(?!^)([A-Z]+)', r'_\1', field).lower()
         self.fields[field] = {
             'field': field,
             'arg': arg,
-            'value': value
+            'value': value,
+            'extended': extended,
+            'hidden': hidden
         }
+
+    def get_keys(self, extended=False):
+        res = []
+        for field in self.fields.values():
+            if field['hidden']:
+                continue
+            if not field['extended']:
+                res.append(field['field'])
+            if extended and field['extended']:
+                res.append(field['field'])
+        return res
+
+    def get_fields(self, extended=False, full=False):
+        res = []
+        if extended:
+            for field in self.fields.values():
+                if field['extended']:
+                    res.append(field['field'])
+        elif full:
+            for field in self.fields.keys():
+                res.append(field)
+        else:
+            for field in self.fields.values():
+                if not field['extended']:
+                    res.append(field['field'])
+        return res
 
     def set_arg(self, key, arg):
         field = self.fields.get(key, None)
-        if field:
-            print field
+        if field is not None:
             field['arg'] = arg
 
     def set_value(self, key, value):
         field = self.fields.get(key, None)
-        if field:
+        if field is not None:
             field['value'] = value
 
     def to_resource(self):
@@ -622,8 +648,21 @@ class ResourceBuilder(object):
     def load_from_args(self, namespace):
         for field in self.fields.values():
             value = getattr(namespace, field['arg'], None)
-            if value:
+            if value is not None:
                 field['value'] = value
+
+    def copy(self, data):
+        if isinstance(data, dict):
+            for field, val in self.fields.items():
+                val['value'] = data.get(field, "")
+
+        if isinstance(data, ResourceBuilder):
+            for field, val in self.fields.items():
+                val['value'] = data[field]['value']
+
+    def __str__(self):
+        return json.dumps(self.fields, sort_keys=True, indent=2)
+
 
 # -----------------------------------------------------------------------------
 # USER API
@@ -747,9 +786,20 @@ class UserCli(CoreCli):
 # -----------------------------------------------------------------------------
 # ADMIN API
 # -----------------------------------------------------------------------------
-class DomainAdmins(object):
+class GenericAdminClass(object):
     def __init__(self, corecli):
         self.core = corecli
+        self.log = logging.getLogger('linshare-cli.rbu')
+
+    def get_rbu(self):
+        rbu = ResourceBuilder("generic")
+        return rbu
+
+    def get_resource(self):
+        return self.get_rbu().to_resource()
+
+
+class DomainAdmins(GenericAdminClass):
 
     def list(self):
         return self.core.list("admin/domains")
@@ -768,10 +818,24 @@ class DomainAdmins(object):
     def options(self):
         return self.core.options("admin/enums/domain_type")
 
+    def get_rbu(self):
+        #    "providers": [],
+        rbu = ResourceBuilder("domains")
+        rbu.add_field('identifier')
+        rbu.add_field('label')
+        rbu.add_field('policy', value={"identifier": "DefaultDomainPolicy"}, hidden=True)
+        rbu.add_field('type', "domain_type", value="TOPDOMAIN")
+        rbu.add_field('parent', "parent_id", extended=True)
+        rbu.add_field('language', value="ENGLISH")
+        rbu.add_field('userRole', value="SIMPLE")
+        rbu.add_field('mailConfigUuid', value="946b190d-4c95-485f-bfe6-d288a2de1edd", extended=True)
+        rbu.add_field('mimePolicyUuid', value="3d6d8800-e0f7-11e3-8ec0-080027c0eef0", extended=True)
+        rbu.add_field('description', value="description")
+        rbu.add_field('authShowOrder', value="authShowOrder", extended=True)
+        return rbu
 
-class DomainPatternsAdmin(object):
-    def __init__(self, corecli):
-        self.core = corecli
+
+class DomainPatternsAdmin(GenericAdminClass):
 
     def list(self, model=False):
         if model:
@@ -780,6 +844,8 @@ class DomainPatternsAdmin(object):
             return self.core.list("admin/domain_patterns")
 
     def create(self, data):
+        self.log.debug("input data :")
+        self.log.debug(json.dumps(data, sort_keys=True, indent=2))
         return self.core.create("admin/domain_patterns", data)
 
     def delete(self, identifier):
@@ -791,30 +857,25 @@ class DomainPatternsAdmin(object):
         return self.core.delete("admin/domain_patterns", data)
 
     def get_rbu(self):
-        rbu = ResourceBuilder("ldap_connection")
+        rbu = ResourceBuilder("domain_patterns")
         rbu.add_field('identifier')
-        rbu.add_field('completionPageSize')
-        rbu.add_field('completionSizeLimit')
-        rbu.add_field('searchPageSize')
-        rbu.add_field('searchSizeLimit')
-        rbu.add_field('ldapUid')
-        rbu.add_field('userFirstName', 'first_name')
-        rbu.add_field('userLastName', 'last_name')
-        rbu.add_field('userMail', 'mail')
         rbu.add_field('description')
-        rbu.add_field("authCommand")
-        rbu.add_field("searchUserCommand")
-        rbu.add_field("autoCompleteCommandOnAllAttributes")
-        rbu.add_field("autoCompleteCommandOnFirstAndLastName")
+        rbu.add_field('userFirstName', 'first_name', extended=True)
+        rbu.add_field('userLastName', 'last_name', extended=True)
+        rbu.add_field('userMail', 'mail', extended=True)
+        rbu.add_field('ldapUid', extended=True)
+        rbu.add_field("authCommand", extended=True)
+        rbu.add_field("searchUserCommand", extended=True)
+        rbu.add_field("autoCompleteCommandOnAllAttributes", extended=True)
+        rbu.add_field("autoCompleteCommandOnFirstAndLastName", extended=True)
+        rbu.add_field('completionPageSize', extended=True)
+        rbu.add_field('completionSizeLimit', extended=True)
+        rbu.add_field('searchPageSize', extended=True)
+        rbu.add_field('searchSizeLimit', extended=True)
         return rbu
 
-    def get_resource(self):
-        return self.get_rbu().to_resource()
 
-
-class LdapConnectionsAdmin(object):
-    def __init__(self, corecli):
-        self.core = corecli
+class LdapConnectionsAdmin(GenericAdminClass):
 
     def list(self):
         return self.core.list("admin/ldap_connections")
@@ -838,23 +899,16 @@ class LdapConnectionsAdmin(object):
         rbu.add_field('securityCredentials', "credential")
         return rbu
 
-    def get_resource(self):
-        return self.get_rbu().to_resource()
-
 
 # -----------------------------------------------------------------------------
-class ThreadsAdmin(object):
-    def __init__(self, corecli):
-        self.core = corecli
+class ThreadsAdmin(GenericAdminClass):
 
     def list(self):
         return self.core.list("admin/threads")
 
 
 # -----------------------------------------------------------------------------
-class ThreadsMembersAdmin(object):
-    def __init__(self, corecli):
-        self.core = corecli
+class ThreadsMembersAdmin(GenericAdminClass):
 
     def list(self, threadUuid):
         url = "admin/thread_members/%s" % threadUuid
@@ -862,9 +916,7 @@ class ThreadsMembersAdmin(object):
 
 
 # -----------------------------------------------------------------------------
-class UsersAdmin(object):
-    def __init__(self, corecli):
-        self.core = corecli
+class UsersAdmin(GenericAdminClass):
 
     def list(self):
         return self.core.list("users")
