@@ -64,7 +64,7 @@ def extract_file_name(content_dispo):
     for key_val in content_dispo.split(';'):
         param = key_val.strip().split('=')
         if param[0] == "filename":
-            file_name = param[1]
+            file_name = param[1].strip('"')
             break
     return file_name
 
@@ -213,7 +213,7 @@ class CoreCli(object):
         if self.debug:
             try:
                 self.debuglevel = int(self.debug)
-            except ValueError as e:
+            except ValueError:
                 self.debuglevel = 1
 
             if self.debuglevel >= 3:
@@ -363,12 +363,12 @@ class CoreCli(object):
 
         # Building request
         request = urllib2.Request(url)
+        request.add_header('Content-Type', 'application/json; charset=UTF-8')
+        request.add_header('Accept', 'application/json')
         if data:
             # Building request
-            headers = {'content-type': 'application/json'}
-            #request.add_header('Content-Type:', 'application/json; charset=UTF-8')
             post_data = json.dumps(data).encode("UTF-8")
-            request = urllib2.Request(url, post_data, headers=headers)
+            request = urllib2.Request(url, post_data)
 
         request.get_method = lambda: 'DELETE'
 
@@ -384,9 +384,8 @@ class CoreCli(object):
         self.log.debug("options url : " + url)
 
         # Building request
-        headers = {'content-type': 'application/json'}
-        #request.add_header('Content-Type:', 'application/json; charset=UTF-8')
-        request = urllib2.Request(url, headers=headers)
+        request = urllib2.Request(url)
+        request.add_header('Content-Type', 'application/json; charset=UTF-8')
         request.add_header('Accept', 'application/json')
 
         request.get_method = lambda: 'OPTIONS'
@@ -404,10 +403,9 @@ class CoreCli(object):
         self.log.debug("create url : " + url)
 
         # Building request
-        headers = {'content-type': 'application/json'}
-        #request.add_header('Content-Type:', 'application/json; charset=UTF-8')
         post_data = json.dumps(data).encode("UTF-8")
-        request = urllib2.Request(url, post_data, headers=headers)
+        request = urllib2.Request(url, post_data)
+        request.add_header('Content-Type', 'application/json; charset=UTF-8')
         request.add_header('Accept', 'application/json')
 
         ret = self.do_request(request)
@@ -450,6 +448,7 @@ because its size is less or equal to zero." % {"filename": str(file_name)}
 
         # Building request
         request = urllib2.Request(url, datagen, headers)
+        request.add_header('Accept', 'application/json')
 
         # request start
         pbar.start()
@@ -502,12 +501,6 @@ because its size is less or equal to zero." % {"filename": str(file_name)}
         # request end
         endtime = datetime.datetime.now()
         pbar.finish()
-        result = resultq.read()
-
-        jObj = json.loads(result)
-        if self.debuglevel >= 2:
-            self.log.debug("the result is : ")
-            self.log.debug(json.dumps(jObj, sort_keys=True, indent=2))
 
         self.last_req_time = str(endtime - starttime)
         self.log.debug("upload url : %(url)s : request time : %(time)s",
@@ -524,6 +517,8 @@ This method could throw exceptions like urllib2.HTTPError."""
 
         # Building request
         request = urllib2.Request(url)
+        #request.add_header('Content-Type', 'application/json; charset=UTF-8')
+        request.add_header('Accept', 'application/json;charset=UTF-8')
 
         # request start
         starttime = datetime.datetime.now()
@@ -545,7 +540,6 @@ This method could throw exceptions like urllib2.HTTPError."""
             content_dispo = resultq.info().getheader('Content-disposition')
             content_dispo = content_dispo.strip()
             file_name = extract_file_name(content_dispo)
-
             if os.path.isfile(file_name):
                 cpt = 1
                 while 1:
