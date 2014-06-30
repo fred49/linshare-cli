@@ -363,12 +363,12 @@ class CoreCli(object):
 
         # Building request
         request = urllib2.Request(url)
-        request.add_header('Content-Type', 'application/json; charset=UTF-8')
-        request.add_header('Accept', 'application/json')
         if data:
             # Building request
             post_data = json.dumps(data).encode("UTF-8")
             request = urllib2.Request(url, post_data)
+            request.add_header('Content-Type', 'application/json; charset=UTF-8')
+            request.add_header('Accept', 'application/json')
 
         request.get_method = lambda: 'DELETE'
 
@@ -580,26 +580,29 @@ This method could throw exceptions like urllib2.HTTPError."""
 
 class ResourceBuilder(object):
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, required=False):
         self._name = name
-        self.fields = OrderedDict()
+        self._fields = OrderedDict()
+        self._required = required
 
-    def add_field(self, field, arg=None, value=None, extended=False, hidden=False):
-        if value is None:
-            value = ""
+    def add_field(self, field, arg=None, value=None, extended=False, hidden=False, e_type=str, required=None):
+        if required is None:
+            required = self._required
         if arg is None:
             arg = re.sub('(?!^)([A-Z]+)', r'_\1', field).lower()
-        self.fields[field] = {
+        self._fields[field] = {
             'field': field,
             'arg': arg,
             'value': value,
             'extended': extended,
+            'required': required,
+            'e_type': e_type,
             'hidden': hidden
         }
 
     def get_keys(self, extended=False):
         res = []
-        for field in self.fields.values():
+        for field in self._fields.values():
             if field['hidden']:
                 continue
             if not field['extended']:
@@ -611,51 +614,64 @@ class ResourceBuilder(object):
     def get_fields(self, extended=False, full=False):
         res = []
         if extended:
-            for field in self.fields.values():
+            for field in self._fields.values():
                 if field['extended']:
                     res.append(field['field'])
         elif full:
-            for field in self.fields.keys():
+            for field in self._fields.keys():
                 res.append(field)
         else:
-            for field in self.fields.values():
+            for field in self._fields.values():
                 if not field['extended']:
                     res.append(field['field'])
         return res
 
     def set_arg(self, key, arg):
-        field = self.fields.get(key, None)
+        field = self._fields.get(key, None)
         if field is not None:
             field['arg'] = arg
 
     def set_value(self, key, value):
-        field = self.fields.get(key, None)
+        field = self._fields.get(key, None)
         if field is not None:
             field['value'] = value
 
     def to_resource(self):
         ret = {}
-        for field in self.fields.values():
+        for field in self._fields.values():
             ret[field['field']] = field['value']
         return ret
 
     def load_from_args(self, namespace):
-        for field in self.fields.values():
+        for field in self._fields.values():
             value = getattr(namespace, field['arg'], None)
             if value is not None:
                 field['value'] = value
 
     def copy(self, data):
         if isinstance(data, dict):
-            for field, val in self.fields.items():
+            for field, val in self._fields.items():
                 val['value'] = data.get(field, "")
 
         if isinstance(data, ResourceBuilder):
-            for field, val in self.fields.items():
+            for field, val in self._fields.items():
                 val['value'] = data[field]['value']
 
     def __str__(self):
-        return json.dumps(self.fields, sort_keys=True, indent=2)
+        return json.dumps(self._fields, sort_keys=True, indent=2)
+
+    def check_required_fields(self):
+        for field in self._fields.values():
+            if field['required']:
+                value = field['value']
+                if value is None:
+                    raise ValueError("missing value for required field : "
+                                     + field['field'])
+                e_type = field['e_type']
+                if e_type == int:
+                    int(value)
+                if e_type == float:
+                    float(value)
 
 
 # -----------------------------------------------------------------------------
@@ -840,6 +856,9 @@ class DomainPatternsAdmin(GenericAdminClass):
     def create(self, data):
         self.log.debug("input data :")
         self.log.debug(json.dumps(data, sort_keys=True, indent=2))
+        rbu = self.get_rbu()
+        rbu.copy(data)
+        rbu.check_required_fields()
         return self.core.create("admin/domain_patterns", data)
 
     def delete(self, identifier):
@@ -851,9 +870,9 @@ class DomainPatternsAdmin(GenericAdminClass):
         return self.core.delete("admin/domain_patterns", data)
 
     def get_rbu(self):
-        rbu = ResourceBuilder("domain_patterns")
+        rbu = ResourceBuilder("domain_patterns", True)
         rbu.add_field('identifier')
-        rbu.add_field('description')
+        rbu.add_field('description', value="")
         rbu.add_field('userFirstName', 'first_name', extended=True)
         rbu.add_field('userLastName', 'last_name', extended=True)
         rbu.add_field('userMail', 'mail', extended=True)
@@ -862,10 +881,10 @@ class DomainPatternsAdmin(GenericAdminClass):
         rbu.add_field("searchUserCommand", extended=True)
         rbu.add_field("autoCompleteCommandOnAllAttributes", extended=True)
         rbu.add_field("autoCompleteCommandOnFirstAndLastName", extended=True)
-        rbu.add_field('completionPageSize', extended=True)
-        rbu.add_field('completionSizeLimit', extended=True)
-        rbu.add_field('searchPageSize', extended=True)
-        rbu.add_field('searchSizeLimit', extended=True)
+        rbu.add_field('completionPageSize', extended=True, e_type=int)
+        rbu.add_field('completionSizeLimit', extended=True, e_type=int)
+        rbu.add_field('searchPageSize', extended=True, e_type=int)
+        rbu.add_field('searchSizeLimit', extended=True, e_type=int)
         return rbu
 
 
