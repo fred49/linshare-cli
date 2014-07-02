@@ -141,12 +141,141 @@ class DomainsCreateCommand(DefaultCommand):
 
 
 # -----------------------------------------------------------------------------
+class DomainProvidersCreateCommand(DefaultCommand):
+    """ List all domains."""
+
+    def __call__(self, args):
+        super(DomainProvidersCreateCommand, self).__call__(args)
+        resource = None
+        for model in self.ls.domains.list():
+            if model.get('identifier') == args.identifier:
+                resource = model
+                break
+        if resource is None:
+            raise ValueError("Domain idenfier not found")
+        rbu = self.ls.domains.get_rbu()
+        rbu.copy(resource)
+        rbu.load_from_args(args)
+        providers = [{
+            "baseDn": args.basedn,
+            "domainPatternId": args.dpattern,
+            "ldapConnectionId": args.ldap
+        }]
+        rbu.set_value("providers", providers)
+
+        json_obj = self.ls.domains.update(rbu.to_resource())
+        self.pretty_json(json_obj)
+
+    def complete(self, args, prefix):
+        super(DomainProvidersCreateCommand, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_ldap(self, args, prefix):
+        super(DomainProvidersCreateCommand, self).__call__(args)
+        json_obj = self.ls.ldap_connections.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_dpattern(self, args, prefix):
+        super(DomainProvidersCreateCommand, self).__call__(args)
+        json_obj = self.ls.domain_patterns.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+
+# -----------------------------------------------------------------------------
+class DomainProvidersDeleteCommand(DefaultCommand):
+    """ List all domains."""
+
+    def __call__(self, args):
+        super(DomainProvidersDeleteCommand, self).__call__(args)
+        resource = None
+        for model in self.ls.domains.list():
+            if model.get('identifier') == args.identifier:
+                resource = model
+                break
+        if resource is None:
+            raise ValueError("Domain idenfier not found")
+        rbu = self.ls.domains.get_rbu()
+        rbu.copy(resource)
+        rbu.load_from_args(args)
+        providers = []
+        rbu.set_value("providers", providers)
+        json_obj = self.ls.domains.update(rbu.to_resource())
+        self.pretty_json(json_obj)
+
+    def complete(self, args, prefix):
+        super(DomainProvidersDeleteCommand, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+
+# -----------------------------------------------------------------------------
+class DomainProvidersUpdateCommand(DefaultCommand):
+    """ List all domains."""
+
+    def __call__(self, args):
+        super(DomainProvidersUpdateCommand, self).__call__(args)
+        resource = None
+        for model in self.ls.domains.list():
+            if model.get('identifier') == args.identifier:
+                resource = model
+                break
+        if resource is None:
+            raise ValueError("Domain idenfier not found")
+        rbu = self.ls.domains.get_rbu()
+        rbu.copy(resource)
+        rbu.load_from_args(args)
+
+        resource = rbu.to_resource()
+        for i in resource['providers']:
+            if args.ldap is not None:
+                i['ldapConnectionId'] = args.ldap
+            if args.dpattern is not None:
+                i['domainPatternId'] = args.dpattern
+            if args.basedn is not None:
+                i['baseDn'] = args.basedn
+
+        json_obj = self.ls.domains.update(resource)
+        self.pretty_json(json_obj)
+
+    def complete(self, args, prefix):
+        super(DomainProvidersUpdateCommand, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_ldap(self, args, prefix):
+        super(DomainProvidersUpdateCommand, self).__call__(args)
+        json_obj = self.ls.ldap_connections.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_dpattern(self, args, prefix):
+        super(DomainProvidersUpdateCommand, self).__call__(args)
+        json_obj = self.ls.domain_patterns.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+
+# -----------------------------------------------------------------------------
 class DomainsUpdateCommand(DefaultCommand):
     """ List all domains."""
 
     def __call__(self, args):
         super(DomainsUpdateCommand, self).__call__(args)
+        resource = None
+        for model in self.ls.domains.list():
+            if model.get('identifier') == args.identifier:
+                resource = model
+                break
+        if resource is None:
+            raise ValueError("Domain idenfier not found")
         rbu = self.ls.domains.get_rbu()
+        rbu.copy(resource)
         rbu.load_from_args(args)
         json_obj = self.ls.domains.update(rbu.to_resource())
         self.pretty_json(json_obj)
@@ -156,6 +285,16 @@ class DomainsUpdateCommand(DefaultCommand):
         json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_role(self, args, prefix):
+        """ Complete with available role."""
+        super(DomainsUpdateCommand, self).__call__(args)
+        return self.ls.domains.options_role()
+
+    def complete_language(self, args, prefix):
+        """ Complete with available language."""
+        super(DomainsUpdateCommand, self).__call__(args)
+        return self.ls.domains.options_language()
 
 
 # -----------------------------------------------------------------------------
@@ -227,16 +366,13 @@ class LdapConnectionsUpdateCommand(DefaultCommand):
         super(LdapConnectionsUpdateCommand, self).__call__(args)
         resource = None
         for model in self.ls.ldap_connections.list():
-            print model
             if model.get('identifier') == args.identifier:
                 resource = model
                 break
         if resource is None:
             raise ValueError("Ldap idenfier not found")
-        rbu = self.ls.domain_resources.get_rbu()
-        rbu.copy(resource)
-        rbu.load_from_args(args)
         rbu = self.ls.ldap_connections.get_rbu()
+        rbu.copy(resource)
         rbu.load_from_args(args)
         json_obj = self.ls.ldap_connections.update(rbu.to_resource())
         self.pretty_json(json_obj)
@@ -303,13 +439,13 @@ class DomainPatternsUpdateCommand(DefaultCommand):
     def __call__(self, args):
         super(DomainPatternsUpdateCommand, self).__call__(args)
         resource = None
-        for model in self.ls.domain_resources.list():
+        for model in self.ls.domain_patterns.list():
             if model.get('identifier') == args.identifier:
                 resource = model
                 break
         if resource is None:
             raise ValueError("Domain resource idenfier not found")
-        rbu = self.ls.domain_resources.get_rbu()
+        rbu = self.ls.domain_patterns.get_rbu()
         rbu.copy(resource)
         rbu.load_from_args(args)
         json_obj = self.ls.domain_patterns.update(rbu.to_resource())
@@ -489,6 +625,45 @@ def add_domains_parser(subparsers, name, desc):
         'identifier', action="store",
         help="").completer = DefaultCompleter()
     parser_tmp2.set_defaults(__func__=DomainsDeleteCommand())
+
+    # command : set provider
+    parser_tmp2 = subparsers2.add_parser(
+        'setup', help="add user provider.")
+    parser_tmp2.add_argument(
+        'identifier', action="store",
+        help="domain identifier").completer = DefaultCompleter()
+    parser_tmp2.add_argument('--basedn', action="store", help="",
+                             required=True)
+    parser_tmp2.add_argument(
+        '--ldap', dest="ldap", action="store", help="ldap identifier",
+        required=True).completer = DefaultCompleter("complete_ldap")
+    parser_tmp2.add_argument(
+        '--dpattern', dest="dpattern", action="store", help="domain pattern identifier",
+        required=True).completer = DefaultCompleter("complete_dpattern")
+    parser_tmp2.set_defaults(__func__=DomainProvidersCreateCommand())
+
+    # command : update provider
+    parser_tmp2 = subparsers2.add_parser(
+        'updateup', help="update user provider.")
+    parser_tmp2.add_argument(
+        'identifier', action="store",
+        help="domain identifier").completer = DefaultCompleter()
+    parser_tmp2.add_argument('--basedn', action="store", help="")
+    parser_tmp2.add_argument(
+        '--ldap', dest="ldap", action="store",
+        help="ldap identifier").completer = DefaultCompleter("complete_ldap")
+    parser_tmp2.add_argument(
+        '--dpattern', dest="dpattern", action="store",
+        help="domain pattern identifier").completer = DefaultCompleter("complete_dpattern")
+    parser_tmp2.set_defaults(__func__=DomainProvidersUpdateCommand())
+
+    # command : del provider
+    parser_tmp2 = subparsers2.add_parser(
+        'delup', help="add user provider.")
+    parser_tmp2.add_argument(
+        'identifier', action="store",
+        help="domain identifier").completer = DefaultCompleter()
+    parser_tmp2.set_defaults(__func__=DomainProvidersDeleteCommand())
 
 
 ###############################################################################

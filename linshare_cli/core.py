@@ -677,7 +677,7 @@ class ResourceBuilder(object):
                 val['value'] = data[field]['value']
 
     def __str__(self):
-        return json.dumps(self._fields, sort_keys=True, indent=2)
+        return json.dumps(self.to_resource(), sort_keys=True, indent=2)
 
     def check_required_fields(self):
         for field in self._fields.values():
@@ -865,7 +865,6 @@ class DomainAdmins(GenericAdminClass):
     def options_role(self):
         my_list = self.core.options("admin/enums/role")
         return filter(lambda x: x not in ["SUPERADMIN", "SYSTEM"], my_list)
-        return my_list
 
     def options_type(self):
         my_list = self.core.options("admin/enums/domain_type")
@@ -873,7 +872,6 @@ class DomainAdmins(GenericAdminClass):
 
 
     def get_rbu(self):
-        #    "providers": [],
         rbu = ResourceBuilder("domains")
         rbu.add_field('identifier', required=True)
         rbu.add_field('label', required=True)
@@ -886,6 +884,7 @@ class DomainAdmins(GenericAdminClass):
         rbu.add_field('mimePolicyUuid', value="3d6d8800-e0f7-11e3-8ec0-080027c0eef0", extended=True)
         rbu.add_field('description', value="")
         rbu.add_field('authShowOrder', value="1", extended=True)
+        rbu.add_field('providers', value=[], extended=True)
         return rbu
 
 
