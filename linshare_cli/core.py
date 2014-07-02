@@ -415,6 +415,25 @@ class CoreCli(object):
                         "time": self.last_req_time})
         return ret
 
+    def update(self, url, data):
+        """ update ressources store into LinShare."""
+        url = self.root_url + url
+        self.log.debug("update url : " + url)
+
+        # Building request
+        post_data = json.dumps(data).encode("UTF-8")
+        request = urllib2.Request(url, post_data)
+        request.add_header('Content-Type', 'application/json; charset=UTF-8')
+        request.add_header('Accept', 'application/json')
+        request.get_method = lambda: 'PUT'
+
+        ret = self.do_request(request)
+
+        self.log.debug("""put url : %(url)s : request time : %(time)s""",
+                       {"url": url,
+                        "time": self.last_req_time})
+        return ret
+
     def upload(self, file_path, url, description=None):
         self.last_req_time = None
         url = self.root_url + url
@@ -808,6 +827,15 @@ class GenericAdminClass(object):
     def get_resource(self):
         return self.get_rbu().to_resource()
 
+    def debug(self, data):
+        self.log.debug("input data :")
+        self.log.debug(json.dumps(data, sort_keys=True, indent=2))
+
+    def check(self, data):
+        rbu = self.get_rbu()
+        rbu.copy(data)
+        rbu.check_required_fields()
+
 
 class DomainAdmins(GenericAdminClass):
 
@@ -815,7 +843,13 @@ class DomainAdmins(GenericAdminClass):
         return self.core.list("admin/domains")
 
     def create(self, data):
+        self.debug(data)
+        self.check(data)
         return self.core.create("admin/domains", data)
+
+    def update(self, data):
+        self.debug(data)
+        return self.core.update("admin/domains", data)
 
     def delete(self, identifier):
         if identifier:
@@ -825,23 +859,33 @@ class DomainAdmins(GenericAdminClass):
         data = {"identifier":  identifier}
         return self.core.delete("admin/domains", data)
 
-    def options(self):
-        return self.core.options("admin/enums/domain_type")
+    def options_language(self):
+        return self.core.options("admin/enums/language")
+
+    def options_role(self):
+        my_list = self.core.options("admin/enums/role")
+        return filter(lambda x: x not in ["SUPERADMIN", "SYSTEM"], my_list)
+        return my_list
+
+    def options_type(self):
+        my_list = self.core.options("admin/enums/domain_type")
+        return filter(lambda x: x != "ROOTDOMAIN", my_list)
+
 
     def get_rbu(self):
         #    "providers": [],
         rbu = ResourceBuilder("domains")
-        rbu.add_field('identifier')
-        rbu.add_field('label')
+        rbu.add_field('identifier', required=True)
+        rbu.add_field('label', required=True)
         rbu.add_field('policy', value={"identifier": "DefaultDomainPolicy"}, hidden=True)
         rbu.add_field('type', "domain_type", value="TOPDOMAIN")
         rbu.add_field('parent', "parent_id", extended=True)
         rbu.add_field('language', value="ENGLISH")
-        rbu.add_field('userRole', value="SIMPLE")
+        rbu.add_field('userRole', "role", value="SIMPLE")
         rbu.add_field('mailConfigUuid', value="946b190d-4c95-485f-bfe6-d288a2de1edd", extended=True)
         rbu.add_field('mimePolicyUuid', value="3d6d8800-e0f7-11e3-8ec0-080027c0eef0", extended=True)
-        rbu.add_field('description', value="description")
-        rbu.add_field('authShowOrder', value="authShowOrder", extended=True)
+        rbu.add_field('description', value="")
+        rbu.add_field('authShowOrder', value="1", extended=True)
         return rbu
 
 
@@ -854,12 +898,13 @@ class DomainPatternsAdmin(GenericAdminClass):
             return self.core.list("admin/domain_patterns")
 
     def create(self, data):
-        self.log.debug("input data :")
-        self.log.debug(json.dumps(data, sort_keys=True, indent=2))
-        rbu = self.get_rbu()
-        rbu.copy(data)
-        rbu.check_required_fields()
+        self.debug(data)
+        self.check(data)
         return self.core.create("admin/domain_patterns", data)
+
+    def update(self, data):
+        self.debug(data)
+        return self.core.update("admin/domain_patterns", data)
 
     def delete(self, identifier):
         if identifier:
@@ -870,7 +915,7 @@ class DomainPatternsAdmin(GenericAdminClass):
         return self.core.delete("admin/domain_patterns", data)
 
     def get_rbu(self):
-        rbu = ResourceBuilder("domain_patterns", True)
+        rbu = ResourceBuilder("domain_patterns", required=True)
         rbu.add_field('identifier')
         rbu.add_field('description', value="")
         rbu.add_field('userFirstName', 'first_name', extended=True)
@@ -894,7 +939,13 @@ class LdapConnectionsAdmin(GenericAdminClass):
         return self.core.list("admin/ldap_connections")
 
     def create(self, data):
+        self.debug(data)
+        self.check(data)
         return self.core.create("admin/ldap_connections", data)
+
+    def update(self, data):
+        self.debug(data)
+        return self.core.update("admin/ldap_connections", data)
 
     def delete(self, identifier):
         if identifier:
@@ -906,8 +957,8 @@ class LdapConnectionsAdmin(GenericAdminClass):
 
     def get_rbu(self):
         rbu = ResourceBuilder("ldap_connection")
-        rbu.add_field('identifier')
-        rbu.add_field('providerUrl')
+        rbu.add_field('identifier', required=True)
+        rbu.add_field('providerUrl', required=True)
         rbu.add_field('securityPrincipal', "principal")
         rbu.add_field('securityCredentials', "credential")
         return rbu

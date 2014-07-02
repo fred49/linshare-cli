@@ -256,9 +256,13 @@ class VTable(object):
             self.sortby = k
             break
 
-    def load(self, data):
+    def load(self, data, filters=None):
         for row in data:
-            self.add_row(row)
+            if filters is not None:
+                if filters(row):
+                    self.add_row(row)
+            else:
+                self.add_row(row)
 
     def add_row(self, row):
         self._data.append(row)
@@ -300,8 +304,8 @@ class VTable(object):
 
         return "\n".join(out)
 
-    def print_table(self, json_obj, keys):
-        self.load(json_obj)
+    def print_table(self, json_obj, keys, filters=None):
+        self.load(json_obj, filters)
         out = self.get_string()
         print unicode(out)
 
@@ -309,13 +313,18 @@ class VTable(object):
 # -----------------------------------------------------------------------------
 class HTable(VeryPrettyTable):
 
-    def print_table(self, json_obj, keys):
+    def print_table(self, json_obj, keys, filters=None):
 
         for row in json_obj:
             data = []
             for key in keys:
                 data.append(row[key])
-            self.add_row(data)
+
+            if filters is not None:
+                if filters(row):
+                    self.add_row(data)
+            else:
+                self.add_row(data)
         out = self.get_string(
             fields=keys,
             #start=10,
