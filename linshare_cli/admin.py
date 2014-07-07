@@ -28,9 +28,10 @@ from __future__ import unicode_literals
 
 import linshare_cli.common as common
 from linshare_cli.core import AdminCli
-from argtoolbox import DefaultCompleter
+from argtoolbox import DefaultCompleter as Completer
 from linshare_cli.common import VTable
 from linshare_cli.common import HTable
+from linshare_cli.core import LinShareException
 import argtoolbox
 
 
@@ -43,6 +44,30 @@ class DefaultCommand(common.DefaultCommand):
     def __get_cli_object(self, args):
         return AdminCli(args.host, args.user, args.password, args.verbose,
                         args.debug, args.realm, args.application_name)
+
+    def _run(self, method, message_ok, err_suffix, *args):
+        try:
+            json_obj = method(*args)
+            self.log.info(message_ok, json_obj)
+            if self.debug:
+                self.pretty_json(json_obj)
+            return True
+        except LinShareException as ex:
+            self.log.debug("LinShareException : " + str(ex.args))
+            self.log.error(ex.args[1] + " : " + err_suffix)
+        return False
+
+    def _delete(self, method, message_ok, err_suffix, *args):
+        try:
+            if method(*args):
+                self.log.info(message_ok)
+                return True
+            else:
+                return False
+        except LinShareException as ex:
+            self.log.debug("LinShareException : " + str(ex.args))
+            self.log.error(ex.args[1] + " : " + err_suffix)
+        return False
 
 
 # -----------------------------------------------------------------------------
@@ -103,6 +128,7 @@ class DomainsListCommand(DefaultCommand):
                 return True
             return False
         table.print_table(json_obj, keys, filters)
+        return True
 
     def complete(self, args, prefix):
         super(DomainsListCommand, self).__call__(args)
@@ -121,8 +147,17 @@ class DomainsCreateCommand(DefaultCommand):
         super(DomainsCreateCommand, self).__call__(args)
         rbu = self.ls.domains.get_rbu()
         rbu.load_from_args(args)
-        json_obj = self.ls.domains.create(rbu.to_resource())
-        self.pretty_json(json_obj)
+        return self._run(
+            self.ls.domains.create,
+            "The following domain '%(identifier)s' was successfully created",
+            args.identifier,
+            rbu.to_resource())
+
+    def complete(self, args, prefix):
+        super(DomainsCreateCommand, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_type(self, args, prefix):
         """ Complete with available domain type."""
@@ -141,8 +176,67 @@ class DomainsCreateCommand(DefaultCommand):
 
 
 # -----------------------------------------------------------------------------
-class DomainProvidersCreateCommand(DefaultCommand):
+class DomainsUpdateCommand(DefaultCommand):
+    """ Update a domain."""
+
+    def __call__(self, args):
+        super(DomainsUpdateCommand, self).__call__(args)
+        resource = None
+        for model in self.ls.domains.list():
+            if model.get('identifier') == args.identifier:
+                resource = model
+                break
+        if resource is None:
+            raise ValueError("Domain idenfier not found")
+        rbu = self.ls.domains.get_rbu()
+        rbu.copy(resource)
+        rbu.load_from_args(args)
+        return self._run(
+            self.ls.domains.update,
+            "The following domain '%(identifier)s' was successfully updated",
+            args.identifier,
+            rbu.to_resource())
+
+    def complete(self, args, prefix):
+        super(DomainsUpdateCommand, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_role(self, args, prefix):
+        """ Complete with available role."""
+        super(DomainsUpdateCommand, self).__call__(args)
+        return self.ls.domains.options_role()
+
+    def complete_language(self, args, prefix):
+        """ Complete with available language."""
+        super(DomainsUpdateCommand, self).__call__(args)
+        return self.ls.domains.options_language()
+
+
+# -----------------------------------------------------------------------------
+class DomainsDeleteCommand(DefaultCommand):
     """ List all domains."""
+
+    def __call__(self, args):
+        super(DomainsDeleteCommand, self).__call__(args)
+        return self._delete(
+            self.ls.domains.delete,
+            "The following domain '" + args.identifier + "' was \
+successfully deleted",
+            args.identifier,
+            args.identifier)
+
+    def complete(self, args, prefix):
+        super(DomainsDeleteCommand, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+
+# -----------------------------------------------------------------------------
+class DomainProvidersCreateCommand(DefaultCommand):
+    """ Update a domain."""
 
     def __call__(self, args):
         super(DomainProvidersCreateCommand, self).__call__(args)
@@ -162,9 +256,12 @@ class DomainProvidersCreateCommand(DefaultCommand):
             "ldapConnectionId": args.ldap
         }]
         rbu.set_value("providers", providers)
-
-        json_obj = self.ls.domains.update(rbu.to_resource())
-        self.pretty_json(json_obj)
+        return self._run(
+            self.ls.domains.update,
+            "The following user provider for domain '%(identifier)s' was \
+successfully created",
+            args.identifier,
+            rbu.to_resource())
 
     def complete(self, args, prefix):
         super(DomainProvidersCreateCommand, self).__call__(args)
@@ -203,8 +300,12 @@ class DomainProvidersDeleteCommand(DefaultCommand):
         rbu.load_from_args(args)
         providers = []
         rbu.set_value("providers", providers)
-        json_obj = self.ls.domains.update(rbu.to_resource())
-        self.pretty_json(json_obj)
+        return self._run(
+            self.ls.domains.update,
+            "The following user provider '%(identifier)s' was successfully \
+deleted",
+            args.identifier,
+            rbu.to_resource())
 
     def complete(self, args, prefix):
         super(DomainProvidersDeleteCommand, self).__call__(args)
@@ -215,7 +316,7 @@ class DomainProvidersDeleteCommand(DefaultCommand):
 
 # -----------------------------------------------------------------------------
 class DomainProvidersUpdateCommand(DefaultCommand):
-    """ List all domains."""
+    """ Update a user provider."""
 
     def __call__(self, args):
         super(DomainProvidersUpdateCommand, self).__call__(args)
@@ -229,7 +330,6 @@ class DomainProvidersUpdateCommand(DefaultCommand):
         rbu = self.ls.domains.get_rbu()
         rbu.copy(resource)
         rbu.load_from_args(args)
-
         resource = rbu.to_resource()
         for i in resource['providers']:
             if args.ldap is not None:
@@ -238,9 +338,12 @@ class DomainProvidersUpdateCommand(DefaultCommand):
                 i['domainPatternId'] = args.dpattern
             if args.basedn is not None:
                 i['baseDn'] = args.basedn
-
-        json_obj = self.ls.domains.update(resource)
-        self.pretty_json(json_obj)
+        return self._run(
+            self.ls.domains.update,
+            "The following user provider '%(identifier)s' was successfully \
+updated",
+            args.identifier,
+            rbu.to_resource())
 
     def complete(self, args, prefix):
         super(DomainProvidersUpdateCommand, self).__call__(args)
@@ -257,57 +360,6 @@ class DomainProvidersUpdateCommand(DefaultCommand):
     def complete_dpattern(self, args, prefix):
         super(DomainProvidersUpdateCommand, self).__call__(args)
         json_obj = self.ls.domain_patterns.list()
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix))
-
-
-# -----------------------------------------------------------------------------
-class DomainsUpdateCommand(DefaultCommand):
-    """ List all domains."""
-
-    def __call__(self, args):
-        super(DomainsUpdateCommand, self).__call__(args)
-        resource = None
-        for model in self.ls.domains.list():
-            if model.get('identifier') == args.identifier:
-                resource = model
-                break
-        if resource is None:
-            raise ValueError("Domain idenfier not found")
-        rbu = self.ls.domains.get_rbu()
-        rbu.copy(resource)
-        rbu.load_from_args(args)
-        json_obj = self.ls.domains.update(rbu.to_resource())
-        self.pretty_json(json_obj)
-
-    def complete(self, args, prefix):
-        super(DomainsUpdateCommand, self).__call__(args)
-        json_obj = self.ls.domains.list()
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix))
-
-    def complete_role(self, args, prefix):
-        """ Complete with available role."""
-        super(DomainsUpdateCommand, self).__call__(args)
-        return self.ls.domains.options_role()
-
-    def complete_language(self, args, prefix):
-        """ Complete with available language."""
-        super(DomainsUpdateCommand, self).__call__(args)
-        return self.ls.domains.options_language()
-
-
-# -----------------------------------------------------------------------------
-class DomainsDeleteCommand(DefaultCommand):
-    """ List all domains."""
-
-    def __call__(self, args):
-        super(DomainsDeleteCommand, self).__call__(args)
-        self.ls.domains.delete(args.identifier)
-
-    def complete(self, args, prefix):
-        super(DomainsDeleteCommand, self).__call__(args)
-        json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
@@ -338,6 +390,7 @@ class LdapConnectionsListCommand(DefaultCommand):
                 return True
             return False
         table.print_table(json_obj, keys, filters)
+        return True
 
     def complete(self, args, prefix):
         super(LdapConnectionsListCommand, self).__call__(args)
@@ -354,8 +407,12 @@ class LdapConnectionsCreateCommand(DefaultCommand):
         super(LdapConnectionsCreateCommand, self).__call__(args)
         rbu = self.ls.ldap_connections.get_rbu()
         rbu.load_from_args(args)
-        json_obj = self.ls.ldap_connections.create(rbu.to_resource())
-        self.pretty_json(json_obj)
+        return self._run(
+            self.ls.ldap_connections.create,
+            "The following ldap connection '%(identifier)s' was successfully \
+created",
+            args.identifier,
+            rbu.to_resource())
 
 
 # -----------------------------------------------------------------------------
@@ -374,8 +431,12 @@ class LdapConnectionsUpdateCommand(DefaultCommand):
         rbu = self.ls.ldap_connections.get_rbu()
         rbu.copy(resource)
         rbu.load_from_args(args)
-        json_obj = self.ls.ldap_connections.update(rbu.to_resource())
-        self.pretty_json(json_obj)
+        return self._run(
+            self.ls.ldap_connections.update,
+            "The following ldap connection '%(identifier)s' was successfully \
+updated",
+            args.identifier,
+            rbu.to_resource())
 
     def complete(self, args, prefix):
         super(LdapConnectionsUpdateCommand, self).__call__(args)
@@ -390,7 +451,11 @@ class LdapConnectionsDeleteCommand(DefaultCommand):
 
     def __call__(self, args):
         super(LdapConnectionsDeleteCommand, self).__call__(args)
-        self.ls.ldap_connections.delete(args.identifier)
+        return self._delete(
+            self.ls.ldap_connections.delete,
+            "The following ldap '" + args.identifier + "' was successfully deleted",
+            args.identifier,
+            args.identifier)
 
     def complete(self, args, prefix):
         super(LdapConnectionsDeleteCommand, self).__call__(args)
@@ -425,12 +490,14 @@ class DomainPatternsListCommand(DefaultCommand):
                 return True
             return False
         table.print_table(json_obj, keys, filters)
+        return True
 
     def complete(self, args, prefix):
         super(DomainPatternsListCommand, self).__call__(args)
         json_obj = self.ls.domain_patterns.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
+
 
 # -----------------------------------------------------------------------------
 class DomainPatternsUpdateCommand(DefaultCommand):
@@ -448,8 +515,12 @@ class DomainPatternsUpdateCommand(DefaultCommand):
         rbu = self.ls.domain_patterns.get_rbu()
         rbu.copy(resource)
         rbu.load_from_args(args)
-        json_obj = self.ls.domain_patterns.update(rbu.to_resource())
-        self.pretty_json(json_obj)
+        return self._run(
+            self.ls.domain_patterns.update,
+            "The following domain pattern '%(identifier)s' was successfully \
+updated",
+            args.identifier,
+            rbu.to_resource())
 
     def complete(self, args, prefix):
         super(DomainPatternsUpdateCommand, self).__call__(args)
@@ -474,8 +545,12 @@ class DomainPatternsCreateCommand(DefaultCommand):
                     rbu.set_value('identifier', "")
                     break
         rbu.load_from_args(args)
-        json_obj = self.ls.domain_patterns.create(rbu.to_resource())
-        self.pretty_json(json_obj)
+        return self._run(
+            self.ls.domain_patterns.create,
+            "The following domain pattern '%(identifier)s' was successfully \
+created",
+            args.identifier,
+            rbu.to_resource())
 
     def complete(self, args, prefix):
         super(DomainPatternsCreateCommand, self).__call__(args)
@@ -490,11 +565,16 @@ class DomainPatternsDeleteCommand(DefaultCommand):
 
     def __call__(self, args):
         super(DomainPatternsDeleteCommand, self).__call__(args)
-        self.ls.domain_patterns.delete(args.identifier)
+        return self._delete(
+            self.ls.domain_patterns.delete,
+            "The following domain pattern '" + args.identifier + "' was \
+successfully deleted",
+            args.identifier,
+            args.identifier)
 
     def complete(self, args, prefix):
         super(DomainPatternsDeleteCommand, self).__call__(args)
-        json_obj = self.ls.domain_patterns.list(True)
+        json_obj = self.ls.domain_patterns.list(False)
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
@@ -506,14 +586,26 @@ class ThreadsListCommand(DefaultCommand):
 
     def __call__(self, args):
         super(ThreadsListCommand, self).__call__(args)
-
         json_obj = self.ls.threads.list()
-        d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
-        #self.pretty_json(json_obj)
-        self.format_date(json_obj, 'creationDate')
-        self.print_list(json_obj, d_format, "Threads")
-
-        #self.print_test(json_obj)
+        keys = self.ls.threads.get_rbu().get_keys(args.extended)
+        table = None
+        if args.vertical:
+            table = VTable(keys)
+        else:
+            table = HTable(keys)
+            # styles
+            table.align["name"] = "l"
+            table.padding_width = 1
+        table.sortby = "name"
+        table.reversesort = args.reverse
+        def filters(row):
+            if not args.identifiers:
+                return True
+            if row.get('name') in args.identifiers:
+                return True
+            return False
+        table.print_table(json_obj, keys, filters)
+        return True
 
 
 # -----------------------------------------------------------------------------
@@ -522,16 +614,29 @@ class ThreadMembersListCommand(DefaultCommand):
 
     def __call__(self, args):
         super(ThreadMembersListCommand, self).__call__(args)
-
         json_obj = self.ls.thread_members.list(args.uuid)
-
-        d_format = "{firstName:11s}{lastName:10s}{admin:<7}{readonly:<9}{id}"
-        #self.pretty_json(json_obj)
-        self.print_list(json_obj, d_format, "Thread members")
+        keys = self.ls.thread_members.get_rbu().get_keys(args.extended)
+        table = None
+        if args.vertical:
+            table = VTable(keys)
+        else:
+            table = HTable(keys)
+            # styles
+            table.align["name"] = "l"
+            table.padding_width = 1
+        table.sortby = "name"
+        table.reversesort = args.reverse
+        def filters(row):
+            if not args.identifiers:
+                return True
+            if row.get('name') in args.identifiers:
+                return True
+            return False
+        table.print_table(json_obj, keys, filters)
+        return True
 
     def complete(self, args, prefix):
         super(ThreadMembersListCommand, self).__call__(args)
-
         json_obj = self.ls.threads.list()
         return (v.get('uuid')
                 for v in json_obj if v.get('uuid').startswith(prefix))
@@ -544,13 +649,26 @@ class UsersListCommand(DefaultCommand):
 
     def __call__(self, args):
         super(UsersListCommand, self).__call__(args)
-
         json_obj = self.ls.users.list()
-        d_format = "{firstName:11s}{lastName:10s}{domain:<20}{mail}"
-        #print "%(firstName)-10s %(lastName)-10s\t %(domain)s %(mail)s" % f
-        #self.pretty_json(json_obj)
-        self.print_list(json_obj, d_format, "Users")
-
+        keys = self.ls.users.get_rbu().get_keys(args.extended)
+        table = None
+        if args.vertical:
+            table = VTable(keys)
+        else:
+            table = HTable(keys)
+            # styles
+            table.align["mail"] = "l"
+            table.padding_width = 1
+        table.sortby = "mail"
+        table.reversesort = args.reverse
+        def filters(row):
+            if not args.identifiers:
+                return True
+            if row.get('mail') in args.identifiers:
+                return True
+            return False
+        table.print_table(json_obj, keys, filters)
+        return True
 
 
 ###############################################################################
@@ -565,7 +683,7 @@ def add_domains_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser(
         'list', help="list domains.")
     parser_tmp2.add_argument('identifiers', nargs="*",
-                             help="").completer = DefaultCompleter()
+                             help="").completer = Completer()
     parser_tmp2.add_argument('--extended', action="store_true",
                              help="extended format")
     parser_tmp2.add_argument('-r', '--reverse', action="store_true",
@@ -579,43 +697,45 @@ def add_domains_parser(subparsers, name, desc):
     # command : create
     parser_tmp2 = subparsers2.add_parser(
         'create', help="create domain.")
-    parser_tmp2.add_argument('--label', action="store", help="",
-                             required=True)
+    parser_tmp2.add_argument('--label', action="store", help="")
     parser_tmp2.add_argument('identifier', action="store", help="")
     parser_tmp2.add_argument(
         '--type', dest="domain_type", action="store", help="",
-        required=True).completer = DefaultCompleter("complete_type")
+        required=True).completer = Completer("complete_type")
     parser_tmp2.add_argument('--description', action="store", help="")
     parser_tmp2.add_argument(
         '--role', dest="role", action="store",
-        help="").completer = DefaultCompleter("complete_role")
+        help="").completer = Completer("complete_role")
     parser_tmp2.add_argument(
         '--language', dest="language", action="store",
-        help="").completer = DefaultCompleter("complete_language")
+        help="").completer = Completer("complete_language")
+    parser_tmp2.add_argument(
+        '--parent', dest="parent_id", action="store",
+        help="TODO").completer = Completer()
     parser_tmp2.add_argument(
         '--mime-policy', dest="mime_policy", action="store",
-        help="TODO").completer = DefaultCompleter("complete_mime")
+        help="TODO").completer = Completer("complete_mime")
     parser_tmp2.add_argument(
         '--domain-policy', dest="domain_policy", action="store",
-        help="TODO").completer = DefaultCompleter("complete_policy")
+        help="TODO").completer = Completer("complete_policy")
     parser_tmp2.add_argument(
         '--mail-config', dest="mail_config", action="store",
-        help="TODO").completer = DefaultCompleter("complete_mail")
+        help="TODO").completer = Completer("complete_mail")
     parser_tmp2.set_defaults(__func__=DomainsCreateCommand())
 
     # command : update
     parser_tmp2 = subparsers2.add_parser(
         'update', help="update domain.")
     parser_tmp2.add_argument(
-        'identifier', action="store", help="").completer = DefaultCompleter()
+        'identifier', action="store", help="").completer = Completer()
     parser_tmp2.add_argument('--label', action="store", help="")
     parser_tmp2.add_argument('--description', action="store", help="")
     parser_tmp2.add_argument(
         '--role', dest="role", action="store",
-        help="").completer = DefaultCompleter("complete_role")
+        help="").completer = Completer("complete_role")
     parser_tmp2.add_argument(
         '--language', dest="language", action="store",
-        help="").completer = DefaultCompleter("complete_language")
+        help="").completer = Completer("complete_language")
     parser_tmp2.set_defaults(__func__=DomainsUpdateCommand())
 
     # command : delete
@@ -623,7 +743,7 @@ def add_domains_parser(subparsers, name, desc):
         'delete', help="delete domain.")
     parser_tmp2.add_argument(
         'identifier', action="store",
-        help="").completer = DefaultCompleter()
+        help="").completer = Completer()
     parser_tmp2.set_defaults(__func__=DomainsDeleteCommand())
 
     # command : set provider
@@ -631,15 +751,16 @@ def add_domains_parser(subparsers, name, desc):
         'setup', help="add user provider.")
     parser_tmp2.add_argument(
         'identifier', action="store",
-        help="domain identifier").completer = DefaultCompleter()
+        help="domain identifier").completer = Completer()
     parser_tmp2.add_argument('--basedn', action="store", help="",
                              required=True)
     parser_tmp2.add_argument(
         '--ldap', dest="ldap", action="store", help="ldap identifier",
-        required=True).completer = DefaultCompleter("complete_ldap")
+        required=True).completer = Completer("complete_ldap")
     parser_tmp2.add_argument(
-        '--dpattern', dest="dpattern", action="store", help="domain pattern identifier",
-        required=True).completer = DefaultCompleter("complete_dpattern")
+        '--dpattern', dest="dpattern", action="store",
+        help="domain pattern identifier",
+        required=True).completer = Completer("complete_dpattern")
     parser_tmp2.set_defaults(__func__=DomainProvidersCreateCommand())
 
     # command : update provider
@@ -647,14 +768,15 @@ def add_domains_parser(subparsers, name, desc):
         'updateup', help="update user provider.")
     parser_tmp2.add_argument(
         'identifier', action="store",
-        help="domain identifier").completer = DefaultCompleter()
+        help="domain identifier").completer = Completer()
     parser_tmp2.add_argument('--basedn', action="store", help="")
     parser_tmp2.add_argument(
         '--ldap', dest="ldap", action="store",
-        help="ldap identifier").completer = DefaultCompleter("complete_ldap")
+        help="ldap identifier").completer = Completer("complete_ldap")
     parser_tmp2.add_argument(
         '--dpattern', dest="dpattern", action="store",
-        help="domain pattern identifier").completer = DefaultCompleter("complete_dpattern")
+        help="domain pattern identifier").completer = Completer(
+            "complete_dpattern")
     parser_tmp2.set_defaults(__func__=DomainProvidersUpdateCommand())
 
     # command : del provider
@@ -662,7 +784,7 @@ def add_domains_parser(subparsers, name, desc):
         'delup', help="add user provider.")
     parser_tmp2.add_argument(
         'identifier', action="store",
-        help="domain identifier").completer = DefaultCompleter()
+        help="domain identifier").completer = Completer()
     parser_tmp2.set_defaults(__func__=DomainProvidersDeleteCommand())
 
 
@@ -678,7 +800,7 @@ def add_ldap_connections_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser(
         'list', help="list ldap connections.")
     parser_tmp2.add_argument('identifiers', nargs="*",
-                             help="").completer = DefaultCompleter()
+                             help="").completer = Completer()
     parser_tmp2.add_argument('-r', '--reverse', action="store_true",
                              help="reverse order while sorting")
     parser_tmp2.add_argument('-t', '--vertical', action="store_true",
@@ -691,7 +813,7 @@ def add_ldap_connections_parser(subparsers, name, desc):
     parser_tmp2.add_argument('--identifier',
                              action="store",
                              help="",
-                             required=True).completer = DefaultCompleter()
+                             required=True).completer = Completer()
     parser_tmp2.set_defaults(__func__=LdapConnectionsDeleteCommand())
 
     # command : create
@@ -708,7 +830,7 @@ def add_ldap_connections_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser(
         'update', help="update ldap connections.")
     parser_tmp2.add_argument(
-        'identifier', action="store", help="").completer = DefaultCompleter()
+        'identifier', action="store", help="").completer = Completer()
     parser_tmp2.add_argument('--provider-url', action="store", help="")
     parser_tmp2.add_argument('--principal', action="store", help="")
     parser_tmp2.add_argument('--credential', action="store", help="")
@@ -727,7 +849,7 @@ def add_domain_patterns_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser(
         'list', help="list domain patterns.")
     parser_tmp2.add_argument('identifiers', nargs="*",
-                             help="").completer = DefaultCompleter()
+                             help="").completer = Completer()
     parser_tmp2.add_argument('--extended', action="store_true",
                              help="extended format")
     parser_tmp2.add_argument('-r', '--reverse', action="store_true",
@@ -743,46 +865,40 @@ def add_domain_patterns_parser(subparsers, name, desc):
         'create', help="create domain pattern.")
     parser_tmp2.add_argument('identifier', action="store", help="")
     parser_tmp2.add_argument('--model', action="store",
-                             help="").completer = DefaultCompleter()
+                             help="").completer = Completer()
     parser_tmp2.add_argument('--completion-page-size', action="store",
-                             type=int, help="", required=True)
+                             type=int, help="")
     parser_tmp2.add_argument('--completion-size-limit', action="store",
-                             type=int, help="", required=True)
+                             type=int, help="")
     parser_tmp2.add_argument('--search-page-size', action="store",
-                             type=int, help="", required=True)
+                             type=int, help="")
     parser_tmp2.add_argument('--search-size-limit', action="store",
-                             type=int, help="", required=True)
-    parser_tmp2.add_argument('--ldap-uid', action="store", help="",
-                             required=True)
-    parser_tmp2.add_argument('--first-name', action="store", help="",
-                             required=True)
-    parser_tmp2.add_argument('--last-name', action="store", help="",
-                             required=True)
-    parser_tmp2.add_argument('--mail', action="store", help="", required=True)
-    parser_tmp2.add_argument('--description', action="store", help="",
-                             required=True)
-    parser_tmp2.add_argument('--auth-command', action="store", help="",
-                             required=True)
-    parser_tmp2.add_argument('--search-user-command', action="store", help="",
-                             required=True)
+                             type=int, help="")
+    parser_tmp2.add_argument('--ldap-uid', action="store", help="")
+    parser_tmp2.add_argument('--first-name', action="store", help="")
+    parser_tmp2.add_argument('--last-name', action="store", help="")
+    parser_tmp2.add_argument('--mail', action="store", help="")
+    parser_tmp2.add_argument('--description', action="store", help="")
+    parser_tmp2.add_argument('--auth-command', action="store", help="")
+    parser_tmp2.add_argument('--search-user-command', action="store", help="")
     parser_tmp2.add_argument('--auto-complete-command-on-all-attributes',
-                             action="store", help="", required=True)
+                             action="store", help="")
     parser_tmp2.add_argument('--auto-complete-command-on-first-and-last-name',
-                             action="store", help="", required=True)
+                             action="store", help="")
     parser_tmp2.set_defaults(__func__=DomainPatternsCreateCommand())
 
     # command : delete
     parser_tmp2 = subparsers2.add_parser(
         'delete', help="delete domain pattern.")
     parser_tmp2.add_argument('identifier', action="store",
-                             help="").completer = DefaultCompleter()
+                             help="").completer = Completer()
     parser_tmp2.set_defaults(__func__=DomainPatternsDeleteCommand())
 
     # command : update
     parser_tmp2 = subparsers2.add_parser(
         'update', help="update domain patterns.")
     parser_tmp2.add_argument(
-        'identifier', action="store", help="").completer = DefaultCompleter()
+        'identifier', action="store", help="").completer = Completer()
     parser_tmp2.add_argument('--completion-page-size', action="store",
                              type=int, help="")
     parser_tmp2.add_argument('--completion-size-limit', action="store",
@@ -797,7 +913,7 @@ def add_domain_patterns_parser(subparsers, name, desc):
     parser_tmp2.add_argument('--mail', action="store", help="")
     parser_tmp2.add_argument('--description', action="store", help="")
     parser_tmp2.add_argument('--model', action="store",
-                             help="").completer = DefaultCompleter()
+                             help="").completer = Completer()
     parser_tmp2.add_argument('--auth-command', action="store", help="")
     parser_tmp2.add_argument('--search-user-command', action="store", help="")
     parser_tmp2.add_argument('--auto-complete-command-on-all-attributes',
@@ -818,6 +934,14 @@ def add_threads_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser(
         'list',
         help="list threads from linshare")
+    parser_tmp2.add_argument('identifiers', nargs="*",
+                             help="").completer = Completer()
+    parser_tmp2.add_argument('--extended', action="store_true",
+                             help="extended format")
+    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
+                             help="reverse order while sorting")
+    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
+                             help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=ThreadsListCommand())
 
 
@@ -837,7 +961,13 @@ def add_thread_members_parser(subparsers, name, desc):
         '--uuid',
         action="store",
         dest="uuid",
-        required=True).completer = DefaultCompleter()
+        required=True).completer = Completer()
+    parser_tmp2.add_argument('--extended', action="store_true",
+                             help="extended format")
+    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
+                             help="reverse order while sorting")
+    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
+                             help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=ThreadMembersListCommand())
 
 
@@ -851,6 +981,14 @@ def add_users_parser(subparsers, name, desc):
     subparsers2 = parser_tmp.add_subparsers()
     parser_tmp2 = subparsers2.add_parser('list',
                                          help="list users from linshare")
+    parser_tmp2.add_argument('identifiers', nargs="*",
+                             help="").completer = Completer()
+    parser_tmp2.add_argument('--extended', action="store_true",
+                             help="extended format")
+    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
+                             help="reverse order while sorting")
+    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
+                             help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=UsersListCommand())
 
 

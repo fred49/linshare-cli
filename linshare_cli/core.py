@@ -305,13 +305,12 @@ class CoreCli(object):
             # doRequest
             resultq = urllib2.urlopen(request)
             code = resultq.getcode()
-
             if self.verbose or self.debug:
                 self.log.info("http return code : " + str(code))
-
             if code == 200:
                 jObj = self.get_json_result(resultq)
-
+            if code == 204:
+                jObj = True
         except urllib2.HTTPError as ex:
             code = "-1"
             msg = "Http error : " + ex.msg + " (" + str(ex.code) + ")"
@@ -319,22 +318,18 @@ class CoreCli(object):
                 self.log.info(msg)
             else:
                 self.log.debug(msg)
-
             if ex.code != 405:
                 jObj = self.get_json_result(ex)
                 code = jObj.get('errCode')
                 msg = jObj.get('message')
                 self.log.debug("Server error code : " + str(code))
                 self.log.debug("Server error message : " + str(msg))
-
             # request end
             endtime = datetime.datetime.now()
             self.last_req_time = str(endtime - starttime)
             raise LinShareException(code, msg)
-
         # request end
         endtime = datetime.datetime.now()
-
         self.last_req_time = str(endtime - starttime)
         return jObj
 
@@ -844,7 +839,12 @@ class DomainAdmins(GenericAdminClass):
 
     def create(self, data):
         self.debug(data)
+        if data.get('label') is None:
+            data['label'] = data.get('identifier')
         self.check(data)
+        if data.get('type') in ["GUESTDOMAIN", "SUBDOMAIN"]:
+            if data.get('parent') is None:
+                raise ValueError("parent identifier is required for GuestDomain or SubDomain")
         return self.core.create("admin/domains", data)
 
     def update(self, data):
@@ -877,7 +877,7 @@ class DomainAdmins(GenericAdminClass):
         rbu.add_field('label', required=True)
         rbu.add_field('policy', value={"identifier": "DefaultDomainPolicy"}, hidden=True)
         rbu.add_field('type', "domain_type", value="TOPDOMAIN")
-        rbu.add_field('parent', "parent_id", extended=True)
+        rbu.add_field('parent', "parent_id")
         rbu.add_field('language', value="ENGLISH")
         rbu.add_field('userRole', "role", value="SIMPLE")
         rbu.add_field('mailConfigUuid', value="946b190d-4c95-485f-bfe6-d288a2de1edd", extended=True)
@@ -969,6 +969,14 @@ class ThreadsAdmin(GenericAdminClass):
     def list(self):
         return self.core.list("admin/threads")
 
+    def get_rbu(self):
+        rbu = ResourceBuilder("threads")
+        rbu.add_field('name', required=True)
+        rbu.add_field('domain')
+        rbu.add_field('creationDate')
+        rbu.add_field('modificationDate')
+        return rbu
+
 
 # -----------------------------------------------------------------------------
 class ThreadsMembersAdmin(GenericAdminClass):
@@ -977,6 +985,10 @@ class ThreadsMembersAdmin(GenericAdminClass):
         url = "admin/thread_members/%s" % threadUuid
         return self.core.list(url)
 
+    def get_rbu(self):
+        rbu = ResourceBuilder("thread_members")
+        return rbu
+
 
 # -----------------------------------------------------------------------------
 class UsersAdmin(GenericAdminClass):
@@ -984,6 +996,26 @@ class UsersAdmin(GenericAdminClass):
     def list(self):
         return self.core.list("users")
 
+    def get_rbu(self):
+        #"canCreateGuest": null,
+        #"canUpload": null,
+        #"comment": null,
+        #"expirationDate": null,
+        #"guest": false,
+        #"owner": null,
+        #"restricted": null,
+        #"restrictedContacts": [],
+        rbu = ResourceBuilder("users")
+        rbu.add_field('firstName', required=True)
+        rbu.add_field('lastName', required=True)
+        rbu.add_field('mail', required=True)
+        rbu.add_field('uuid')
+        rbu.add_field('domain')
+        rbu.add_field('role')
+        rbu.add_field('locale')
+        rbu.add_field('creationDate')
+        rbu.add_field('modificationDate')
+        return rbu
 
 # -----------------------------------------------------------------------------
 class AdminCli(CoreCli):
