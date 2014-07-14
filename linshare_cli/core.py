@@ -318,7 +318,7 @@ class CoreCli(object):
                 self.log.info(msg)
             else:
                 self.log.debug(msg)
-            if ex.code != 405:
+            if ex.code == 400:
                 jObj = self.get_json_result(ex)
                 code = jObj.get('errCode')
                 msg = jObj.get('message')
