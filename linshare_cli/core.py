@@ -996,6 +996,32 @@ class UsersAdmin(GenericAdminClass):
     def list(self):
         return self.core.list("users")
 
+    def search(self, firstname=None, lastname=None, mail=None):
+        criteria = {
+                "firstName": firstname,
+                "lastName": lastname,
+                "mail": mail
+        }
+        return self.core.create("admin/users/search", criteria)
+
+    def autocomplete(self, pattern):
+        if not pattern:
+            raise ValueError("missing mandatory parameter : pattern")
+        return self.core.list("admin/users/autocomplete/%s" % pattern)
+
+    def internals(self, pattern):
+        if not pattern:
+            raise ValueError("missing mandatory parameter : pattern")
+        return self.core.list("admin/users/search/internals/%s" % pattern)
+
+    def guests(self, pattern):
+        if not pattern:
+            raise ValueError("missing mandatory parameter : pattern")
+        return self.core.list("admin/users/search/guests/%s" % pattern)
+
+    def inconsistents(self):
+        return self.core.list("admin/users/inconsistent")
+
     def get_rbu(self):
         #"canCreateGuest": null,
         #"canUpload": null,
