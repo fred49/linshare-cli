@@ -70,11 +70,6 @@ class LinShareCliProgram(BasicProgram):
             'host',
             required=True))
 
-        section_server.add_element(Element(
-            'realm',
-            desc=argparse.SUPPRESS,
-            default="Name Of Your LinShare Realm"))
-
         section_server.add_element(Element('user', required=True))
 
         section_server.add_element(Element(
@@ -84,10 +79,8 @@ class LinShareCliProgram(BasicProgram):
             hooks=[Base64ElementHook(warning=True), ]))
 
         section_server.add_element(Element(
-            'application_name',
-            default="linshare",
-            conf_hidden=True,
-            desc="Default value is 'linshare' (ex: http:/x.x.x.x/linshare)"))
+            'base_url',
+            desc="Default value is 'linshare/webservice/rest/admin'"))
 
         section_server.add_element(Element(
             'nocache',
@@ -169,21 +162,14 @@ section 'server-4'""")
             **self.config.server.host.get_arg_parse_arguments())
 
         self.parser.add_argument(
-            '-r',
-            '--realm',
-            action="store",
-            **self.config.server.realm.get_arg_parse_arguments())
-
-        self.parser.add_argument(
             '--nocache',
             action="store_true",
             **self.config.server.nocache.get_arg_parse_arguments())
 
         self.parser.add_argument(
-            '-a',
-            '--appname',
+            '--base-url',
             action="store",
-            **self.config.server.application_name.get_arg_parse_arguments())
+            **self.config.server.base_url.get_arg_parse_arguments())
 
         # Adding all others parsers.
         subparsers = self.parser.add_subparsers()

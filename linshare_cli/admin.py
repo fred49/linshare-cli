@@ -35,6 +35,8 @@ from linshare_cli.core import LinShareException
 import argtoolbox
 
 
+# pylint: disable-msg=C0111
+# pylint: disable-msg=R0903
 # -----------------------------------------------------------------------------
 class DefaultCommand(common.DefaultCommand):
     """ Default command object use by the serer API. If you want to add a new
@@ -42,8 +44,11 @@ class DefaultCommand(common.DefaultCommand):
     """
 
     def __get_cli_object(self, args):
-        return AdminCli(args.host, args.user, args.password, args.verbose,
-                        args.debug, args.realm, args.application_name)
+        cli = AdminCli(args.host, args.user, args.password, args.verbose,
+                       args.debug)
+        if args.base_url:
+            cli.base_url = args.base_url
+        return cli
 
     def _run(self, method, message_ok, err_suffix, *args):
         try:

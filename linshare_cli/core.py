@@ -43,6 +43,8 @@ from ordereddict import OrderedDict
 from progressbar import ProgressBar, FileTransferSpeed, Bar, ETA, Percentage
 import hashlib
 
+# pylint: disable-msg=C0111
+# pylint: disable-msg=R0903
 # -----------------------------------------------------------------------------
 class LinShareException(Exception):
     pass
@@ -177,17 +179,18 @@ def cli_get_cache(user_function):
 class CoreCli(object):
 
     def __init__(self, host, user, password, verbose=False, debug=0,
-                 realm="Name Of Your LinShare Realm",
-                 application_name="linshare"):
+                 realm="Name Of Your LinShare Realm"):
         classname = str(self.__class__.__name__.lower())
         self.log = logging.getLogger('linshare-cli.' + classname)
         self.verbose = verbose
         self.debug = debug
         self.password = password
+        self.host = host
         self.user = user
         self.last_req_time = None
         self.cache_time = 60
         self.nocache = False
+        self.base_url = ""
 
         if not host:
             raise ValueError("invalid host : host url is not set !")
@@ -196,13 +199,8 @@ class CoreCli(object):
         if not password:
             raise ValueError("invalid password : password is not set ! ")
 
-        if not application_name:
-            application_name = "linshare"
         if not realm:
             realm = "Name Of Your LinShare Realm"
-
-        self.root_url = host + "/" + application_name
-        self.root_url += "/" + "webservice/rest/"
 
         self.debuglevel = 0
         # 0 : debug off
@@ -247,7 +245,14 @@ class CoreCli(object):
         urllib2.install_opener(urllib2.build_opener(*handlers))
 
     def getFullUrl(self, url_frament):
-        return self.root_url + url_frament
+        root_url = self.host
+        if root_url [-1] != "/":
+                root_url += "/"
+        root_url += self.base_url
+        if root_url [-1] != "/":
+                root_url += "/"
+        root_url += url_frament
+        return root_url
 
     def auth(self):
         url = self.getFullUrl("authentication/authorized")
@@ -336,7 +341,7 @@ class CoreCli(object):
     @cli_get_cache
     def list(self, url):
         """ List ressources store into LinShare."""
-        url = self.root_url + url
+        url = self.getFullUrl(url)
         self.log.debug("list url : " + url)
 
         # Building request
@@ -353,7 +358,7 @@ class CoreCli(object):
 
     def delete(self, url, data=None):
         """Delete one ressource store into LinShare."""
-        url = self.root_url + url
+        url = self.getFullUrl(url)
         self.log.debug("delete url : " + url)
 
         # Building request
@@ -375,7 +380,7 @@ class CoreCli(object):
         return ret
 
     def options(self, url):
-        url = self.root_url + url
+        url = self.getFullUrl(url)
         self.log.debug("options url : " + url)
 
         # Building request
@@ -394,7 +399,7 @@ class CoreCli(object):
 
     def create(self, url, data):
         """ create ressources store into LinShare."""
-        url = self.root_url + url
+        url = self.getFullUrl(url)
         self.log.debug("create url : " + url)
 
         # Building request
@@ -412,7 +417,7 @@ class CoreCli(object):
 
     def update(self, url, data):
         """ update ressources store into LinShare."""
-        url = self.root_url + url
+        url = self.getFullUrl(url)
         self.log.debug("update url : " + url)
 
         # Building request
@@ -431,7 +436,7 @@ class CoreCli(object):
 
     def upload(self, file_path, url, description=None):
         self.last_req_time = None
-        url = self.root_url + url
+        url = self.getFullUrl(url)
         self.log.debug("upload url : " + url)
 
         # Generating datas and headers
@@ -526,7 +531,7 @@ because its size is less or equal to zero." % {"filename": str(file_name)}
         """ download a file from LinShare using its rest api.
 This method could throw exceptions like urllib2.HTTPError."""
         self.last_req_time = None
-        url = self.root_url + url
+        url = self.getFullUrl(url)
         self.log.debug("download url : " + url)
 
         # Building request
@@ -736,7 +741,7 @@ class Shares(object):
 
     def share(self, uuid, mail):
 
-        url = self.core.root_url + "shares/sharedocument/%s/%s" % (mail, uuid)
+        url = self.core.getFullUrl("shares/sharedocument/%s/%s" % (mail, uuid))
         self.log.debug("share url : " + url)
 
         # Building request
@@ -799,6 +804,7 @@ class Users(object):
 class UserCli(CoreCli):
     def __init__(self, *args, **kwargs):
         super(UserCli, self).__init__(*args, **kwargs)
+        self.base_url = "linshare/webservice/rest"
         self.documents = Documents(self)
         self.rshares = ReceivedShares(self)
         self.shares = Shares(self)
@@ -835,7 +841,7 @@ class GenericAdminClass(object):
 class DomainAdmins(GenericAdminClass):
 
     def list(self):
-        return self.core.list("admin/domains")
+        return self.core.list("domains")
 
     def create(self, data):
         self.debug(data)
@@ -845,11 +851,11 @@ class DomainAdmins(GenericAdminClass):
         if data.get('type') in ["GUESTDOMAIN", "SUBDOMAIN"]:
             if data.get('parent') is None:
                 raise ValueError("parent identifier is required for GuestDomain or SubDomain")
-        return self.core.create("admin/domains", data)
+        return self.core.create("domains", data)
 
     def update(self, data):
         self.debug(data)
-        return self.core.update("admin/domains", data)
+        return self.core.update("domains", data)
 
     def delete(self, identifier):
         if identifier:
@@ -857,17 +863,17 @@ class DomainAdmins(GenericAdminClass):
         if not identifier:
             raise ValueError("identifier is required")
         data = {"identifier":  identifier}
-        return self.core.delete("admin/domains", data)
+        return self.core.delete("domains", data)
 
     def options_language(self):
-        return self.core.options("admin/enums/language")
+        return self.core.options("enums/language")
 
     def options_role(self):
-        my_list = self.core.options("admin/enums/role")
+        my_list = self.core.options("enums/role")
         return filter(lambda x: x not in ["SUPERADMIN", "SYSTEM"], my_list)
 
     def options_type(self):
-        my_list = self.core.options("admin/enums/domain_type")
+        my_list = self.core.options("enums/domain_type")
         return filter(lambda x: x != "ROOTDOMAIN", my_list)
 
 
@@ -892,18 +898,18 @@ class DomainPatternsAdmin(GenericAdminClass):
 
     def list(self, model=False):
         if model:
-            return self.core.list("admin/domain_patterns/models")
+            return self.core.list("domain_patterns/models")
         else:
-            return self.core.list("admin/domain_patterns")
+            return self.core.list("domain_patterns")
 
     def create(self, data):
         self.debug(data)
         self.check(data)
-        return self.core.create("admin/domain_patterns", data)
+        return self.core.create("domain_patterns", data)
 
     def update(self, data):
         self.debug(data)
-        return self.core.update("admin/domain_patterns", data)
+        return self.core.update("domain_patterns", data)
 
     def delete(self, identifier):
         if identifier:
@@ -911,7 +917,7 @@ class DomainPatternsAdmin(GenericAdminClass):
         if not identifier:
             raise ValueError("identifier is required")
         data = {"identifier":  identifier}
-        return self.core.delete("admin/domain_patterns", data)
+        return self.core.delete("domain_patterns", data)
 
     def get_rbu(self):
         rbu = ResourceBuilder("domain_patterns", required=True)
@@ -935,16 +941,16 @@ class DomainPatternsAdmin(GenericAdminClass):
 class LdapConnectionsAdmin(GenericAdminClass):
 
     def list(self):
-        return self.core.list("admin/ldap_connections")
+        return self.core.list("ldap_connections")
 
     def create(self, data):
         self.debug(data)
         self.check(data)
-        return self.core.create("admin/ldap_connections", data)
+        return self.core.create("ldap_connections", data)
 
     def update(self, data):
         self.debug(data)
-        return self.core.update("admin/ldap_connections", data)
+        return self.core.update("ldap_connections", data)
 
     def delete(self, identifier):
         if identifier:
@@ -952,7 +958,7 @@ class LdapConnectionsAdmin(GenericAdminClass):
         if not identifier:
             raise ValueError("identifier is required")
         data = {"identifier":  identifier}
-        return self.core.delete("admin/ldap_connections", data)
+        return self.core.delete("ldap_connections", data)
 
     def get_rbu(self):
         rbu = ResourceBuilder("ldap_connection")
@@ -967,7 +973,7 @@ class LdapConnectionsAdmin(GenericAdminClass):
 class ThreadsAdmin(GenericAdminClass):
 
     def list(self):
-        return self.core.list("admin/threads")
+        return self.core.list("threads")
 
     def get_rbu(self):
         rbu = ResourceBuilder("threads")
@@ -982,7 +988,7 @@ class ThreadsAdmin(GenericAdminClass):
 class ThreadsMembersAdmin(GenericAdminClass):
 
     def list(self, threadUuid):
-        url = "admin/thread_members/%s" % threadUuid
+        url = "thread_members/%s" % threadUuid
         return self.core.list(url)
 
     def get_rbu(self):
@@ -997,30 +1003,28 @@ class UsersAdmin(GenericAdminClass):
         return self.core.list("users")
 
     def search(self, firstname=None, lastname=None, mail=None):
-        criteria = {
-                "firstName": firstname,
-                "lastName": lastname,
-                "mail": mail
-        }
-        return self.core.create("admin/users/search", criteria)
+        criteria = {"firstName": firstname,
+                    "lastName": lastname,
+                    "mail": mail}
+        return self.core.create("users/search", criteria)
 
     def autocomplete(self, pattern):
         if not pattern:
             raise ValueError("missing mandatory parameter : pattern")
-        return self.core.list("admin/users/autocomplete/%s" % pattern)
+        return self.core.list("users/autocomplete/%s" % pattern)
 
     def internals(self, pattern):
         if not pattern:
             raise ValueError("missing mandatory parameter : pattern")
-        return self.core.list("admin/users/search/internals/%s" % pattern)
+        return self.core.list("users/search/internals/%s" % pattern)
 
     def guests(self, pattern):
         if not pattern:
             raise ValueError("missing mandatory parameter : pattern")
-        return self.core.list("admin/users/search/guests/%s" % pattern)
+        return self.core.list("users/search/guests/%s" % pattern)
 
     def inconsistents(self):
-        return self.core.list("admin/users/inconsistent")
+        return self.core.list("users/inconsistent")
 
     def get_rbu(self):
         #"canCreateGuest": null,
@@ -1047,6 +1051,7 @@ class UsersAdmin(GenericAdminClass):
 class AdminCli(CoreCli):
     def __init__(self, *args, **kwargs):
         super(AdminCli, self).__init__(*args, **kwargs)
+        self.base_url = "linshare/webservice/rest/admin"
         self.threads = ThreadsAdmin(self)
         self.thread_members = ThreadsMembersAdmin(self)
         self.users = UsersAdmin(self)

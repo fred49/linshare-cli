@@ -26,20 +26,14 @@
 
 from __future__ import unicode_literals
 
-import logging
 import urllib2
-import copy
-import os
-import locale
 import linshare_cli.common as common
 from linshare_cli.core import UserCli
 from linshare_cli.common import VTable
 from linshare_cli.common import HTable
 from argtoolbox import DefaultCompleter
-from argtoolbox import query_yes_no
 import argtoolbox
 from argparse import RawTextHelpFormatter
-from veryprettytable import VeryPrettyTable
 from operator import itemgetter
 
 
@@ -50,8 +44,11 @@ class DefaultCommand(common.DefaultCommand):
     """
 
     def __get_cli_object(self, args):
-        return UserCli(args.host, args.user, args.password, args.verbose,
-                       args.debug, args.realm, args.application_name)
+        cli = UserCli(args.host, args.user, args.password, args.verbose,
+                        args.debug)
+        if args.base_url:
+            cli.base_url = args.base_url
+        return cli
 
 
 # -----------------------------------------------------------------------------
