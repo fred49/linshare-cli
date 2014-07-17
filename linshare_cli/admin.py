@@ -33,6 +33,7 @@ from linshare_cli.common import VTable
 from linshare_cli.common import HTable
 from linshare_cli.core import LinShareException
 import argtoolbox
+import re
 
 
 # pylint: disable-msg=C0111
@@ -654,7 +655,11 @@ class UsersListCommand(DefaultCommand):
 
     def __call__(self, args):
         super(UsersListCommand, self).__call__(args)
-        json_obj = self.ls.users.list()
+        json_obj = self.ls.users.search(args.firstname, args.lastname,
+                                        args.mail)
+        self.format_date(json_obj, 'creationDate')
+        self.format_date(json_obj, 'modificationDate')
+        self.format_date(json_obj, 'expirationDate')
         keys = self.ls.users.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:
@@ -666,10 +671,12 @@ class UsersListCommand(DefaultCommand):
             table.padding_width = 1
         table.sortby = "mail"
         table.reversesort = args.reverse
+
         def filters(row):
             if not args.identifiers:
                 return True
-            if row.get('mail') in args.identifiers:
+            if re.search(r"^.*(" + "|".join(args.identifiers) + ").*$",
+                         row.get('uuid')):
                 return True
             return False
         table.print_table(json_obj, keys, filters)
@@ -988,6 +995,9 @@ def add_users_parser(subparsers, name, desc):
                                          help="list users from linshare")
     parser_tmp2.add_argument('identifiers', nargs="*",
                              help="").completer = Completer()
+    parser_tmp2.add_argument('-f', '--firstname', action="store")
+    parser_tmp2.add_argument('-l', '--lastname', action="store")
+    parser_tmp2.add_argument('-m', '--mail', action="store")
     parser_tmp2.add_argument('--extended', action="store_true",
                              help="extended format")
     parser_tmp2.add_argument('-r', '--reverse', action="store_true",

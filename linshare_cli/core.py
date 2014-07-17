@@ -832,7 +832,7 @@ class GenericAdminClass(object):
         self.log.debug("input data :")
         self.log.debug(json.dumps(data, sort_keys=True, indent=2))
 
-    def check(self, data):
+    def _check(self, data):
         rbu = self.get_rbu()
         rbu.copy(data)
         rbu.check_required_fields()
@@ -847,7 +847,7 @@ class DomainAdmins(GenericAdminClass):
         self.debug(data)
         if data.get('label') is None:
             data['label'] = data.get('identifier')
-        self.check(data)
+        self._check(data)
         if data.get('type') in ["GUESTDOMAIN", "SUBDOMAIN"]:
             if data.get('parent') is None:
                 raise ValueError("parent identifier is required for GuestDomain or SubDomain")
@@ -904,7 +904,7 @@ class DomainPatternsAdmin(GenericAdminClass):
 
     def create(self, data):
         self.debug(data)
-        self.check(data)
+        self._check(data)
         return self.core.create("domain_patterns", data)
 
     def update(self, data):
@@ -945,7 +945,7 @@ class LdapConnectionsAdmin(GenericAdminClass):
 
     def create(self, data):
         self.debug(data)
-        self.check(data)
+        self._check(data)
         return self.core.create("ldap_connections", data)
 
     def update(self, data):
@@ -999,9 +999,6 @@ class ThreadsMembersAdmin(GenericAdminClass):
 # -----------------------------------------------------------------------------
 class UsersAdmin(GenericAdminClass):
 
-    def list(self):
-        return self.core.list("users")
-
     def search(self, firstname=None, lastname=None, mail=None):
         criteria = {"firstName": firstname,
                     "lastName": lastname,
@@ -1027,24 +1024,24 @@ class UsersAdmin(GenericAdminClass):
         return self.core.list("users/inconsistent")
 
     def get_rbu(self):
-        #"canCreateGuest": null,
-        #"canUpload": null,
-        #"comment": null,
-        #"expirationDate": null,
-        #"guest": false,
-        #"owner": null,
-        #"restricted": null,
-        #"restrictedContacts": [],
         rbu = ResourceBuilder("users")
         rbu.add_field('firstName', required=True)
         rbu.add_field('lastName', required=True)
         rbu.add_field('mail', required=True)
         rbu.add_field('uuid')
         rbu.add_field('domain')
+        rbu.add_field('guest')
         rbu.add_field('role')
         rbu.add_field('locale')
         rbu.add_field('creationDate')
         rbu.add_field('modificationDate')
+        rbu.add_field('canUpload', extended=True)
+        rbu.add_field('canCreateGuest', extended=True)
+        rbu.add_field('restricted', extended=True)
+        rbu.add_field('expirationDate', extended=True)
+        rbu.add_field('comment', extended=True)
+        #rbu.add_field('owner', extended=True)
+        rbu.add_field('restrictedContacts', extended=True)
         return rbu
 
 # -----------------------------------------------------------------------------
