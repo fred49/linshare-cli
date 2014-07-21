@@ -46,6 +46,7 @@ from linshare_cli.admin import add_test_parser
 from linshare_cli.admin import add_domains_parser
 from linshare_cli.admin import add_ldap_connections_parser
 from linshare_cli.admin import add_domain_patterns_parser
+from linshare_cli.admin import add_functionalitites_parser
 import linshare_cli
 
 # if you want to debug argcomplete completion,
@@ -179,6 +180,7 @@ section 'server-4'""")
         add_ldap_connections_parser(subparsers, "ldap", "ldap connections")
         add_domain_patterns_parser(subparsers, "dpatterns", "domain patterns")
         add_test_parser(subparsers, self.config)
+        add_functionalitites_parser(subparsers, "funcs", "Functionalities")
 
 # if you need debug during class construction, config file loading,
 # you just need to export _LINSHARE_CLI_ADMIN_DEBUG=True

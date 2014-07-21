@@ -39,6 +39,7 @@ import poster
 import time
 #from datetime import datetime
 import datetime
+from operator import itemgetter
 from ordereddict import OrderedDict
 from progressbar import ProgressBar, FileTransferSpeed, Bar, ETA, Percentage
 import hashlib
@@ -301,7 +302,7 @@ class CoreCli(object):
             raise ValueError(msg)
         return jObj
 
-    def do_request(self, request):
+    def do_request(self, request, force_nocontent=False):
         # request start
         self.last_req_time = None
         jObj = None
@@ -313,7 +314,10 @@ class CoreCli(object):
             if self.verbose or self.debug:
                 self.log.info("http return code : " + str(code))
             if code == 200:
-                jObj = self.get_json_result(resultq)
+                if force_nocontent:
+                    jObj = resultq
+                else:
+                    jObj = self.get_json_result(resultq)
             if code == 204:
                 jObj = True
         except urllib2.HTTPError as ex:
@@ -356,6 +360,23 @@ class CoreCli(object):
                         "time": self.last_req_time})
         return ret
 
+    def get(self, url):
+        """ List ressources store into LinShare."""
+        url = self.getFullUrl(url)
+        self.log.debug("get url : " + url)
+
+        # Building request
+        request = urllib2.Request(url)
+        request.add_header('Content-Type', 'application/json; charset=UTF-8')
+        request.add_header('Accept', 'application/json')
+
+        ret = self.do_request(request)
+
+        self.log.debug("""get url : %(url)s : request time : %(time)s""",
+                       {"url": url,
+                        "time": self.last_req_time})
+        return ret
+
     def delete(self, url, data=None):
         """Delete one ressource store into LinShare."""
         url = self.getFullUrl(url)
@@ -393,6 +414,24 @@ class CoreCli(object):
         ret = self.do_request(request)
 
         self.log.debug("""options url : %(url)s : request time : %(time)s""",
+                       {"url": url,
+                        "time": self.last_req_time})
+        return ret
+
+    def head(self, url, **kwargs):
+        url = self.getFullUrl(url)
+        self.log.debug("head url : " + url)
+
+        # Building request
+        request = urllib2.Request(url)
+        request.add_header('Content-Type', 'application/json; charset=UTF-8')
+        request.add_header('Accept', 'application/json')
+
+        request.get_method = lambda: 'HEAD'
+
+        ret = self.do_request(request, **kwargs)
+
+        self.log.debug("""head url : %(url)s : request time : %(time)s""",
                        {"url": url,
                         "time": self.last_req_time})
         return ret
@@ -1045,6 +1084,42 @@ class UsersAdmin(GenericAdminClass):
         return rbu
 
 # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+class FunctionalityAdmin(GenericAdminClass):
+
+    def list(self, domainId=None):
+        if domainId is None:
+            domainId="LinShareRootDomain"
+        json_obj = self.core.list("functionalities?domainId=" + domainId)
+        return filter(lambda x: x.get('displayable') ==  True, json_obj)
+
+    def get(self, funcId, domainId=None):
+        if domainId is None:
+            domainId="LinShareRootDomain"
+        json_obj = self.core.get("functionalities/"+ funcId +"?domainId=" + domainId)
+        if json_obj.get('displayable') ==  True:
+            return json_obj
+        else:
+            return None
+
+    def get_rbu(self):
+        rbu = ResourceBuilder("functionality")
+        #rbu.add_field('functionalities')
+        rbu.add_field('identifier')
+        rbu.add_field('type')
+        rbu.add_field('parentAllowParametersUpdate')
+        rbu.add_field('system')
+        rbu.add_field('displayable')
+
+        rbu.add_field('parameters', extended=True)
+        rbu.add_field('parentIdentifier', extended=True)
+        rbu.add_field('domain', extended=True)
+
+        #rbu.add_field('firstName', required=True)
+        #rbu.add_field('canUpload', extended=True)
+        return rbu
+
+# -----------------------------------------------------------------------------
 class AdminCli(CoreCli):
     def __init__(self, *args, **kwargs):
         super(AdminCli, self).__init__(*args, **kwargs)
@@ -1055,4 +1130,4 @@ class AdminCli(CoreCli):
         self.domains = DomainAdmins(self)
         self.ldap_connections = LdapConnectionsAdmin(self)
         self.domain_patterns = DomainPatternsAdmin(self)
-
+        self.funcs = FunctionalityAdmin(self)

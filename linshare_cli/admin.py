@@ -683,6 +683,94 @@ class UsersListCommand(DefaultCommand):
         return True
 
 
+# -------------------------- Functionalities ------------------------------------------
+# -----------------------------------------------------------------------------
+class FunctionalityListCommand(DefaultCommand):
+    """ List all functionalities."""
+
+    def __call__(self, args):
+        super(FunctionalityListCommand, self).__call__(args)
+        json_obj = self.ls.funcs.list(args.domain)
+
+        keys = self.ls.funcs.get_rbu().get_keys(args.extended)
+        table = None
+        if args.vertical:
+            table = VTable(keys)
+        else:
+            table = HTable(keys)
+            # styles
+            table.align["identifier"] = "l"
+            table.padding_width = 1
+        table.sortby = "identifier"
+        table.reversesort = args.reverse
+
+        def filters(row):
+            if not args.identifiers:
+                return True
+            if re.search(r"^.*(" + "|".join(args.identifiers) + ").*$",
+                         row.get('identifier')):
+                return True
+            return False
+        table.print_table(json_obj, keys, filters)
+        return True
+
+    def complete(self, args, prefix):
+        super(FunctionalityListCommand, self).__call__(args)
+        json_obj = self.ls.funcs.list()
+        #json_obj = self.ls.funcs.list(args.domain)
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_domain(self, args, prefix):
+        super(FunctionalityListCommand, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+# -----------------------------------------------------------------------------
+class FunctionalityDisplayCommand(DefaultCommand):
+    """ List all functionalities."""
+
+    def __call__(self, args):
+        super(FunctionalityDisplayCommand, self).__call__(args)
+        json_obj = self.ls.funcs.get(args.identifier, args.domain)
+        identifier = json_obj.get('identifier')
+
+        print "----------------------------------------------"
+        print "Name : %s " % identifier
+        print "Current domain : %s " % json_obj.get('domain')
+        print "Activation policy : %s " % json_obj.get('activationPolicy')
+        print "Configuration policy : %s " % json_obj.get('configurationPolicy')
+        for param in json_obj.get('parameters'):
+            f_type = param.get('type')
+            print "Type : %s " % f_type
+            if  f_type == "INTEGER":
+                print "Value : %s " % param.get('integer')
+            elif  f_type == "STRING":
+                print "Value : %s " % param.get('string')
+            if  f_type == "UNIT_SIZE":
+                print "Value : " + str(param.get('integer')) + " " + param.get('string')
+            elif  f_type == "UNIT_TIME":
+                print "Value : " + str(param.get('integer')) + " " + param.get('string')
+            elif  f_type == "BOOLEAN":
+                print "Value : %s " % param.get('bool')
+
+        print "----------------------------------------------"
+        return True
+
+    def complete(self, args, prefix):
+        super(FunctionalityDisplayCommand, self).__call__(args)
+        json_obj = self.ls.funcs.list(args.domain)
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_domain(self, args, prefix):
+        super(FunctionalityDisplayCommand, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+
 ###############################################################################
 ###  domains
 ###############################################################################
@@ -1005,6 +1093,43 @@ def add_users_parser(subparsers, name, desc):
     parser_tmp2.add_argument('-t', '--vertical', action="store_true",
                              help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=UsersListCommand())
+
+
+###############################################################################
+###  functionalities
+###############################################################################
+def add_functionalitites_parser(subparsers, name, desc):
+    """Add all domain sub commands."""
+    parser_tmp = subparsers.add_parser(name, help=desc)
+    subparsers2 = parser_tmp.add_subparsers()
+
+    # command : list
+    parser_tmp2 = subparsers2.add_parser(
+        'list', help="list functionalities.")
+    parser_tmp2.add_argument('identifiers', nargs="*",
+                             help="").completer = Completer()
+    parser_tmp2.add_argument('-d', '--domain', action="store",
+                             help="").completer = Completer('complete_domain')
+    parser_tmp2.add_argument('--extended', action="store_true",
+                             help="extended format")
+    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
+                             help="reverse order while sorting")
+    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
+                             help="use vertical output mode")
+    parser_tmp2.set_defaults(__func__=FunctionalityListCommand())
+
+    # command : display
+    parser_tmp2 = subparsers2.add_parser(
+        'display', help="display a functionality.")
+    parser_tmp2.add_argument('identifier', action="store",
+                             help="").completer = Completer()
+    parser_tmp2.add_argument('-d', '--domain', action="store",
+                             help="").completer = Completer('complete_domain')
+    parser_tmp2.add_argument('--extended', action="store_true",
+                             help="extended format")
+    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
+                             help="use vertical output mode")
+    parser_tmp2.set_defaults(__func__=FunctionalityDisplayCommand())
 
 
 ###############################################################################
