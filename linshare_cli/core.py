@@ -258,19 +258,17 @@ class CoreCli(object):
     def auth(self):
         url = self.getFullUrl("authentication/authorized")
         self.log.debug("list url : " + url)
-
         # Building request
         request = urllib2.Request(url)
-
+        request.add_header('Content-Type', 'application/json; charset=UTF-8')
+        request.add_header('Accept', 'application/json')
         # doRequest
         try:
             resultq = urllib2.urlopen(request)
-
             code = resultq.getcode()
             if code == 200:
                 self.log.debug("auth url : ok")
                 return True
-
         except urllib2.HTTPError as e:
             if e.code == 401:
                 self.log.error(e.msg + " (" + str(e.code) + ")")
