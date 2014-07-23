@@ -37,9 +37,7 @@ import cookielib
 import json
 import poster
 import time
-#from datetime import datetime
 import datetime
-from operator import itemgetter
 from ordereddict import OrderedDict
 from progressbar import ProgressBar, FileTransferSpeed, Bar, ETA, Percentage
 import hashlib
@@ -124,14 +122,14 @@ def cli_get_cache(user_function):
 
     def get_data(func, cachefile, *args):
         res = log_exec_time(func, *args)
-        with open(cachefile, 'wb') as f:
-            json.dump(res, f)
+        with open(cachefile, 'wb') as fde:
+            json.dump(res, fde)
         return res
 
     def _load_data(cachefile):
         if os.path.isfile(cachefile):
-            with open(cachefile, 'rb') as f:
-                res = json.load(f)
+            with open(cachefile, 'rb') as fde:
+                res = json.load(fde)
             return res
         else:
             raise ValueError("no file found.")
@@ -141,34 +139,30 @@ def cli_get_cache(user_function):
 
     def decorating_function(*args):
         cli = args[0]
-        url = cli.getFullUrl(args[1])
+        url = cli.get_full_url(args[1])
         cli.log.debug("cache url : " + url)
         key = hashlib.sha256(url + "|" + cli.user).hexdigest()
         cli.log.debug("key: " + key)
         cachefile = cachedir + "/" + key
-
         cache_time = cli.cache_time
         nocache = cli.nocache
-
         res = None
         if nocache:
             log.debug("cache disabled.")
             return log_exec_time(user_function, *args)
-
         if os.path.isfile(cachefile):
             file_time = os.stat(cachefile).st_mtime
-            a = "{da:%Y-%m-%d %H:%M:%S}"
+            form = "{da:%Y-%m-%d %H:%M:%S}"
             log.debug("cached data : " + str(
-                a.format(da=datetime.datetime.fromtimestamp(file_time))))
-
+                form.format(da=datetime.datetime.fromtimestamp(file_time))))
             if time.time() - cache_time > file_time:
                 log.debug("refreshing cached data.")
                 res = get_data(user_function, cachefile, *args)
             if not res:
                 try:
                     res = load_data(cachefile)
-                except ValueError as e:
-                    log.debug("error : " + str(e))
+                except ValueError as ex:
+                    log.debug("error : " + str(ex))
         if not res:
             res = get_data(user_function, cachefile, *args)
         return res
@@ -192,17 +186,14 @@ class CoreCli(object):
         self.cache_time = 60
         self.nocache = False
         self.base_url = ""
-
         if not host:
             raise ValueError("invalid host : host url is not set !")
         if not user:
             raise ValueError("invalid user : " + str(user))
         if not password:
             raise ValueError("invalid password : password is not set ! ")
-
         if not realm:
             realm = "Name Of Your LinShare Realm"
-
         self.debuglevel = 0
         # 0 : debug off
         # 1 : debug on
@@ -217,7 +208,6 @@ class CoreCli(object):
 
             if self.debuglevel >= 3:
                 httpdebuglevel = 1
-
         # We declare all the handlers useful here.
         auth_handler = urllib2.HTTPBasicAuthHandler()
         # we convert unicode objects to utf8 strings because
@@ -230,7 +220,6 @@ class CoreCli(object):
                 passwd=password.encode('utf8'))
         except UnicodeEncodeError:
             self.log.error("the program was not able to compute the basic authentication token.")
-
         handlers = [
             poster.streaminghttp.StreamingHTTPSHandler(
                 debuglevel=httpdebuglevel),
@@ -241,22 +230,21 @@ class CoreCli(object):
                 debuglevel=httpdebuglevel),
             poster.streaminghttp.StreamingHTTPRedirectHandler(),
             urllib2.HTTPCookieProcessor(cookielib.CookieJar())]
-
         # Setting handlers
         urllib2.install_opener(urllib2.build_opener(*handlers))
 
-    def getFullUrl(self, url_frament):
+    def get_full_url(self, url_frament):
         root_url = self.host
-        if root_url [-1] != "/":
-                root_url += "/"
+        if root_url[-1] != "/":
+            root_url += "/"
         root_url += self.base_url
-        if root_url [-1] != "/":
-                root_url += "/"
+        if root_url[-1] != "/":
+            root_url += "/"
         root_url += url_frament
         return root_url
 
     def auth(self):
-        url = self.getFullUrl("authentication/authorized")
+        url = self.get_full_url("authentication/authorized")
         self.log.debug("list url : " + url)
         # Building request
         request = urllib2.Request(url)
@@ -269,11 +257,11 @@ class CoreCli(object):
             if code == 200:
                 self.log.debug("auth url : ok")
                 return True
-        except urllib2.HTTPError as e:
-            if e.code == 401:
-                self.log.error(e.msg + " (" + str(e.code) + ")")
+        except urllib2.HTTPError as ex:
+            if ex.code == 401:
+                self.log.error(ex.msg + " (" + str(ex.code) + ")")
             else:
-                self.log.error(e.msg + " (" + str(e.code) + ")")
+                self.log.error(ex.msg + " (" + str(ex.code) + ")")
         return False
 
     def add_auth_header(self, request):
@@ -283,14 +271,14 @@ class CoreCli(object):
         #request.add_header("Cookie", "JSESSIONID=")
 
     def get_json_result(self, resultq):
-        jObj  = None
+        json_obj = None
         result = resultq.read()
         content_type = resultq.headers.getheader('Content-Type')
         if content_type == "application/json":
-            jObj = json.loads(result)
+            json_obj = json.loads(result)
             if self.debuglevel >= 2:
                 self.log.debug("the result is : ")
-                self.log.debug(json.dumps(jObj, sort_keys=True, indent=2))
+                self.log.debug(json.dumps(json_obj, sort_keys=True, indent=2))
         else:
             self.log.debug(str(result))
             msg = "Wrong content type in the http response : "
@@ -298,12 +286,12 @@ class CoreCli(object):
                 msg += content_type
             self.log.error(msg)
             raise ValueError(msg)
-        return jObj
+        return json_obj
 
     def do_request(self, request, force_nocontent=False):
         # request start
         self.last_req_time = None
-        jObj = None
+        json_obj = None
         starttime = datetime.datetime.now()
         try:
             # doRequest
@@ -313,11 +301,11 @@ class CoreCli(object):
                 self.log.info("http return code : " + str(code))
             if code == 200:
                 if force_nocontent:
-                    jObj = resultq
+                    json_obj = resultq
                 else:
-                    jObj = self.get_json_result(resultq)
+                    json_obj = self.get_json_result(resultq)
             if code == 204:
-                jObj = True
+                json_obj = True
         except urllib2.HTTPError as ex:
             code = "-1"
             msg = "Http error : " + ex.msg + " (" + str(ex.code) + ")"
@@ -326,9 +314,9 @@ class CoreCli(object):
             else:
                 self.log.debug(msg)
             if ex.code == 400:
-                jObj = self.get_json_result(ex)
-                code = jObj.get('errCode')
-                msg = jObj.get('message')
+                json_obj = self.get_json_result(ex)
+                code = json_obj.get('errCode')
+                msg = json_obj.get('message')
                 self.log.debug("Server error code : " + str(code))
                 self.log.debug("Server error message : " + str(msg))
             # request end
@@ -338,21 +326,19 @@ class CoreCli(object):
         # request end
         endtime = datetime.datetime.now()
         self.last_req_time = str(endtime - starttime)
-        return jObj
+        return json_obj
 
     @cli_get_cache
     def list(self, url):
         """ List ressources store into LinShare."""
-        url = self.getFullUrl(url)
+        url = self.get_full_url(url)
         self.log.debug("list url : " + url)
-
         # Building request
         request = urllib2.Request(url)
         request.add_header('Content-Type', 'application/json; charset=UTF-8')
         request.add_header('Accept', 'application/json')
-
+        # Do request
         ret = self.do_request(request)
-
         self.log.debug("""list url : %(url)s : request time : %(time)s""",
                        {"url": url,
                         "time": self.last_req_time})
@@ -360,16 +346,14 @@ class CoreCli(object):
 
     def get(self, url):
         """ List ressources store into LinShare."""
-        url = self.getFullUrl(url)
+        url = self.get_full_url(url)
         self.log.debug("get url : " + url)
-
         # Building request
         request = urllib2.Request(url)
         request.add_header('Content-Type', 'application/json; charset=UTF-8')
         request.add_header('Accept', 'application/json')
-
+        # Do request
         ret = self.do_request(request)
-
         self.log.debug("""get url : %(url)s : request time : %(time)s""",
                        {"url": url,
                         "time": self.last_req_time})
@@ -377,58 +361,49 @@ class CoreCli(object):
 
     def delete(self, url, data=None):
         """Delete one ressource store into LinShare."""
-        url = self.getFullUrl(url)
+        url = self.get_full_url(url)
         self.log.debug("delete url : " + url)
-
         # Building request
         request = urllib2.Request(url)
         if data:
             # Building request
             post_data = json.dumps(data).encode("UTF-8")
             request = urllib2.Request(url, post_data)
-            request.add_header('Content-Type', 'application/json; charset=UTF-8')
+            request.add_header('Content-Type',
+                               'application/json; charset=UTF-8')
             request.add_header('Accept', 'application/json')
-
         request.get_method = lambda: 'DELETE'
-
         ret = self.do_request(request)
-
         self.log.debug("""delete url : %(url)s : request time : %(time)s""",
                        {"url": url,
                         "time": self.last_req_time})
         return ret
 
     def options(self, url):
-        url = self.getFullUrl(url)
+        url = self.get_full_url(url)
         self.log.debug("options url : " + url)
-
         # Building request
         request = urllib2.Request(url)
         request.add_header('Content-Type', 'application/json; charset=UTF-8')
         request.add_header('Accept', 'application/json')
-
         request.get_method = lambda: 'OPTIONS'
-
+        # Do request
         ret = self.do_request(request)
-
         self.log.debug("""options url : %(url)s : request time : %(time)s""",
                        {"url": url,
                         "time": self.last_req_time})
         return ret
 
     def head(self, url, **kwargs):
-        url = self.getFullUrl(url)
+        url = self.get_full_url(url)
         self.log.debug("head url : " + url)
-
         # Building request
         request = urllib2.Request(url)
         request.add_header('Content-Type', 'application/json; charset=UTF-8')
         request.add_header('Accept', 'application/json')
-
         request.get_method = lambda: 'HEAD'
-
+        # Do request
         ret = self.do_request(request, **kwargs)
-
         self.log.debug("""head url : %(url)s : request time : %(time)s""",
                        {"url": url,
                         "time": self.last_req_time})
@@ -436,17 +411,15 @@ class CoreCli(object):
 
     def create(self, url, data):
         """ create ressources store into LinShare."""
-        url = self.getFullUrl(url)
+        url = self.get_full_url(url)
         self.log.debug("create url : " + url)
-
         # Building request
         post_data = json.dumps(data).encode("UTF-8")
         request = urllib2.Request(url, post_data)
         request.add_header('Content-Type', 'application/json; charset=UTF-8')
         request.add_header('Accept', 'application/json')
-
+        # Do request
         ret = self.do_request(request)
-
         self.log.debug("""post url : %(url)s : request time : %(time)s""",
                        {"url": url,
                         "time": self.last_req_time})
@@ -454,18 +427,16 @@ class CoreCli(object):
 
     def update(self, url, data):
         """ update ressources store into LinShare."""
-        url = self.getFullUrl(url)
+        url = self.get_full_url(url)
         self.log.debug("update url : " + url)
-
         # Building request
         post_data = json.dumps(data).encode("UTF-8")
         request = urllib2.Request(url, post_data)
         request.add_header('Content-Type', 'application/json; charset=UTF-8')
         request.add_header('Accept', 'application/json')
         request.get_method = lambda: 'PUT'
-
+        # Do request
         ret = self.do_request(request)
-
         self.log.debug("""put url : %(url)s : request time : %(time)s""",
                        {"url": url,
                         "time": self.last_req_time})
@@ -473,72 +444,57 @@ class CoreCli(object):
 
     def upload(self, file_path, url, description=None):
         self.last_req_time = None
-        url = self.getFullUrl(url)
+        url = self.get_full_url(url)
         self.log.debug("upload url : " + url)
-
         # Generating datas and headers
         file_size = os.path.getsize(file_path)
-
         self.log.debug("file_path is : " + file_path)
         file_name = os.path.basename(file_path)
         self.log.debug("file_name is : " + file_name)
-
         if file_size <= 0:
             msg = "The file '%(filename)s' can not be uploaded \
 because its size is less or equal to zero." % {"filename": str(file_name)}
             raise LinShareException("-1", msg)
-
         widgets = [FileTransferSpeed(), ' <<<', Bar(), '>>> ',
                    Percentage(), ' ', ETA()]
         pbar = ProgressBar(widgets=widgets, maxval=file_size)
         stream = FileWithCallback(file_path, 'rb', pbar.update,
-                                    file_size, file_path)
-
-
-        p = poster.encode.MultipartParam("file", filename=file_name,
-                                         fileobj=stream)
-        params = [p,]
+                                  file_size, file_path)
+        post = poster.encode.MultipartParam("file", filename=file_name,
+                                            fileobj=stream)
+        params = [post,]
         if description:
             params.append(("description", description))
         datagen, headers = poster.encode.multipart_encode(params)
-
         # Building request
         request = urllib2.Request(url, datagen, headers)
         request.add_header('Accept', 'application/json')
-
         # request start
         pbar.start()
         starttime = datetime.datetime.now()
-
         resultq = None
         try:
             # doRequest
             resultq = urllib2.urlopen(request)
             code = resultq.getcode()
-
             if self.verbose or self.debug:
                 self.log.info("http return code : " + str(code))
-
             if code == 200:
-                jObj = self.get_json_result(resultq)
-
+                json_obj = self.get_json_result(resultq)
         except urllib2.HTTPError as ex:
-
             if self.verbose:
                 self.log.info("Http error : " + ex.msg + " (" + str(ex.code) + ")")
             else:
                 self.log.debug("Http error : " + ex.msg + " (" + str(ex.code) + ")")
-            jObj = self.get_json_result(ex)
-            code = jObj.get('errCode')
-            msg = jObj.get('message')
+            json_obj = self.get_json_result(ex)
+            code = json_obj.get('errCode')
+            msg = json_obj.get('message')
             self.log.debug("Server error code : " + str(code))
             self.log.debug("Server error message : " + str(msg))
-
             # request end
             endtime = datetime.datetime.now()
             pbar.finish()
             self.last_req_time = str(endtime - starttime)
-
             if ex.code == 502:
                 self.log.warn(
                     """The file '%(filename)s' was uploaded
@@ -552,23 +508,20 @@ because its size is less or equal to zero." % {"filename": str(file_name)}
                     {"filename": file_name,
                      "filepath": file_path})
             raise LinShareException(code, msg)
-
-
         # request end
         endtime = datetime.datetime.now()
         pbar.finish()
-
         self.last_req_time = str(endtime - starttime)
         self.log.debug("upload url : %(url)s : request time : %(time)s",
                        {"url": url,
                         "time": self.last_req_time})
-        return jObj
+        return json_obj
 
     def download(self, uuid, url):
         """ download a file from LinShare using its rest api.
 This method could throw exceptions like urllib2.HTTPError."""
         self.last_req_time = None
-        url = self.getFullUrl(url)
+        url = self.get_full_url(url)
         self.log.debug("download url : " + url)
 
         # Building request
@@ -608,7 +561,7 @@ This method could throw exceptions like urllib2.HTTPError."""
                        Percentage(), ' ', ETA()]
             pbar = ProgressBar(widgets=widgets, maxval=file_size)
             stream = FileWithCallback(file_name, 'w', pbar.update,
-                                        file_size, file_name)
+                                      file_size, file_name)
             pbar.start()
 
             chunk_size = 8192
@@ -777,30 +730,24 @@ class Shares(object):
         self.log = logging.getLogger('linshare-cli.' + classname)
 
     def share(self, uuid, mail):
-
-        url = self.core.getFullUrl("shares/sharedocument/%s/%s" % (mail, uuid))
+        url = self.core.get_full_url("shares/sharedocument/%s/%s" % (mail, uuid))
         self.log.debug("share url : " + url)
-
         # Building request
         request = urllib2.Request(url)
-
         # request start
         starttime = datetime.datetime.now()
-
         try:
             # doRequest
-                resultq = urllib2.urlopen(request)
-        except urllib2.HTTPError as e:
-                print e
-                print e.code
-                print url
-                raise e
-
+            resultq = urllib2.urlopen(request)
+        except urllib2.HTTPError as ex:
+            print ex
+            print ex.code
+            print url
+            raise ex
         # request end
         endtime = datetime.datetime.now()
         code = resultq.getcode()
         msg = resultq.msg
-
         self.core.last_req_time = str(endtime - starttime)
         self.log.debug("share url : %(url)s : request time : %(time)s",
                        {"url": url,
@@ -823,8 +770,8 @@ class ThreadsMembers(object):
     def __init__(self, corecli):
         self.core = corecli
 
-    def list(self, threadUuid):
-        url = "thread_members/%s" % threadUuid
+    def list(self, thread_uuid):
+        url = "thread_members/%s" % thread_uuid
         return self.core.list(url)
 
 
@@ -1024,8 +971,8 @@ class ThreadsAdmin(GenericAdminClass):
 # -----------------------------------------------------------------------------
 class ThreadsMembersAdmin(GenericAdminClass):
 
-    def list(self, threadUuid):
-        url = "thread_members/%s" % threadUuid
+    def list(self, thread_uuid):
+        url = "thread_members/%s" % thread_uuid
         return self.core.list(url)
 
     def get_rbu(self):
@@ -1085,17 +1032,18 @@ class UsersAdmin(GenericAdminClass):
 # -----------------------------------------------------------------------------
 class FunctionalityAdmin(GenericAdminClass):
 
-    def list(self, domainId=None):
-        if domainId is None:
-            domainId="LinShareRootDomain"
-        json_obj = self.core.list("functionalities?domainId=" + domainId)
-        return filter(lambda x: x.get('displayable') ==  True, json_obj)
+    def list(self, domain_id=None):
+        if domain_id is None:
+            domain_id = "LinShareRootDomain"
+        json_obj = self.core.list("functionalities?domainId=" + domain_id)
+        return filter(lambda x: x.get('displayable') == True, json_obj)
 
-    def get(self, funcId, domainId=None):
-        if domainId is None:
-            domainId="LinShareRootDomain"
-        json_obj = self.core.get("functionalities/"+ funcId +"?domainId=" + domainId)
-        if json_obj.get('displayable') ==  True:
+    def get(self, func_id, domain_id=None):
+        if domain_id is None:
+            domain_id = "LinShareRootDomain"
+        json_obj = self.core.get("functionalities/"+ func_id +"?domainId=" +
+                                 domain_id)
+        if json_obj.get('displayable') == True:
             return json_obj
         else:
             return None
