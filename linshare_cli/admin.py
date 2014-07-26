@@ -32,6 +32,7 @@ from argtoolbox import DefaultCompleter as Completer
 from linshare_cli.common import VTable
 from linshare_cli.common import HTable
 from linshare_cli.core import LinShareException
+from ordereddict import OrderedDict
 import argtoolbox
 import re
 
@@ -116,7 +117,7 @@ class DomainsListCommand(DefaultCommand):
         keys = self.ls.domains.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:
-            table = VTable(keys)
+            table = VTable(keys, debug=self.debug)
         else:
             table = HTable(keys)
             # styles
@@ -381,7 +382,7 @@ class LdapConnectionsListCommand(DefaultCommand):
         keys = self.ls.ldap_connections.get_rbu().get_keys()
         table = None
         if args.vertical:
-            table = VTable(keys)
+            table = VTable(keys, debug=self.debug)
         else:
             table = HTable(keys)
             # styles
@@ -481,7 +482,7 @@ class DomainPatternsListCommand(DefaultCommand):
         keys = self.ls.domain_patterns.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:
-            table = VTable(keys)
+            table = VTable(keys, debug=self.debug)
         else:
             table = HTable(keys)
             # styles
@@ -596,7 +597,7 @@ class ThreadsListCommand(DefaultCommand):
         keys = self.ls.threads.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:
-            table = VTable(keys)
+            table = VTable(keys, debug=self.debug)
         else:
             table = HTable(keys)
             # styles
@@ -624,7 +625,7 @@ class ThreadMembersListCommand(DefaultCommand):
         keys = self.ls.thread_members.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:
-            table = VTable(keys)
+            table = VTable(keys, debug=self.debug)
         else:
             table = HTable(keys)
             # styles
@@ -663,7 +664,7 @@ class UsersListCommand(DefaultCommand):
         keys = self.ls.users.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:
-            table = VTable(keys)
+            table = VTable(keys, debug=self.debug)
         else:
             table = HTable(keys)
             # styles
@@ -695,7 +696,7 @@ class FunctionalityListCommand(DefaultCommand):
         keys = self.ls.funcs.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:
-            table = VTable(keys)
+            table = VTable(keys, debug=self.debug)
         else:
             table = HTable(keys)
             # styles
@@ -716,8 +717,7 @@ class FunctionalityListCommand(DefaultCommand):
 
     def complete(self, args, prefix):
         super(FunctionalityListCommand, self).__call__(args)
-        json_obj = self.ls.funcs.list()
-        #json_obj = self.ls.funcs.list(args.domain)
+        json_obj = self.ls.funcs.list(args.domain)
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
@@ -734,29 +734,58 @@ class FunctionalityDisplayCommand(DefaultCommand):
     def __call__(self, args):
         super(FunctionalityDisplayCommand, self).__call__(args)
         json_obj = self.ls.funcs.get(args.identifier, args.domain)
-        identifier = json_obj.get('identifier')
-
-        print "----------------------------------------------"
-        print "Name : %s " % identifier
-        print "Current domain : %s " % json_obj.get('domain')
-        print "Activation policy : %s " % json_obj.get('activationPolicy')
-        print "Configuration policy : %s " % json_obj.get('configurationPolicy')
-        for param in json_obj.get('parameters'):
-            f_type = param.get('type')
-            print "Type : %s " % f_type
-            if  f_type == "INTEGER":
-                print "Value : %s " % param.get('integer')
-            elif  f_type == "STRING":
-                print "Value : %s " % param.get('string')
-            if  f_type == "UNIT_SIZE":
-                print "Value : " + str(param.get('integer')) + " " + param.get('string')
-            elif  f_type == "UNIT_TIME":
-                print "Value : " + str(param.get('integer')) + " " + param.get('string')
-            elif  f_type == "BOOLEAN":
-                print "Value : %s " % param.get('bool')
-
-        print "----------------------------------------------"
+        row = OrderedDict()
+        row['Identifier'] = json_obj.get('identifier')
+        row['Domain'] = json_obj.get('domain')
+        row['Activation Policy'] = self.format_policy(
+            json_obj.get('activationPolicy'))
+        row['Configuration Policy'] = self.format_policy(
+            json_obj.get('configurationPolicy'))
+        dpolicy = self.format_policy(json_obj.get('delegationPolicy'))
+        if dpolicy is not None:
+            row['Delegation Policy'] = dpolicy
+        param = self.format_parameters(json_obj)
+        if param:
+            cpt = 0
+            for i in param:
+                cpt += 1
+                if cpt > 1:
+                    row['Parameters' + str(cpt)] = i
+                else:
+                    row['Parameters'] = i
+        table = VTable(row.keys(), debug=self.debug)
+        table.sortby = "Identifier"
+        table.add_row(row)
+        out = table.get_string()
+        print unicode(out)
         return True
+
+    def format_policy(self, row):
+        if row is None:
+            return row
+        d_format = "Status : {status!s:13s} | Policy : {policy:10s}"
+        return unicode(d_format).format(**row)
+
+    def format_parameters(self, json_obj):
+        ret = []
+        for param in json_obj.get('parameters'):
+            row = {}
+            f_type = param.get('type')
+            row['type'] = f_type
+            if  f_type == "INTEGER":
+                row['value'] = param.get('integer')
+            elif  f_type == "STRING":
+                row['value'] = param.get('string')
+            if  f_type == "UNIT_SIZE":
+                row['value'] = str(param.get('integer')) + " " + param.get('string')
+            elif  f_type == "UNIT_TIME":
+                row['value'] = str(param.get('integer')) + " " + param.get('string')
+            elif  f_type == "BOOLEAN":
+                row['value'] = param.get('bool')
+            if row:
+                d_format = "Type   : {type!s:13s} | Value  : {value!s}"
+                ret.append(unicode(d_format).format(**row))
+        return ret
 
     def complete(self, args, prefix):
         super(FunctionalityDisplayCommand, self).__call__(args)

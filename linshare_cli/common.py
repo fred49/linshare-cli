@@ -247,7 +247,10 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 # -----------------------------------------------------------------------------
 class VTable(object):
 
-    def __init__(self, keys = [], reverse = False):
+    def __init__(self, keys = [], reverse = False, debug=0):
+        self.debug = debug
+        classname = str(self.__class__.__name__.lower())
+        self.log = logging.getLogger('linshare-cli.' + classname)
         self.keys = keys
         self._data = []
         self._maxlengthkey = 0
@@ -265,6 +268,10 @@ class VTable(object):
                 self.add_row(row)
 
     def add_row(self, row):
+        if self.debug >= 2:
+            self.log.debug(row)
+        if not isinstance(row, dict):
+            raise ValueError("every row should be a dict")
         self._data.append(row)
         self.update_max_lengthkey(row)
 
