@@ -1048,21 +1048,24 @@ class FunctionalityAdmin(GenericAdminClass):
         else:
             return None
 
+    def update(self, data):
+        self.debug(data)
+        return self.core.update("functionalities", data)
+
+    def options_policies(self):
+        return self.core.options("enums/policies")
+
     def get_rbu(self):
         rbu = ResourceBuilder("functionality")
         #rbu.add_field('functionalities')
-        rbu.add_field('identifier')
+        rbu.add_field('identifier', required=True)
         rbu.add_field('type')
         rbu.add_field('parentAllowParametersUpdate')
         rbu.add_field('system')
         rbu.add_field('displayable')
-
         rbu.add_field('parameters', extended=True)
         rbu.add_field('parentIdentifier', extended=True)
-        rbu.add_field('domain', extended=True)
-
-        #rbu.add_field('firstName', required=True)
-        #rbu.add_field('canUpload', extended=True)
+        rbu.add_field('domain', extended=True, required=True)
         return rbu
 
 # -----------------------------------------------------------------------------

@@ -34,6 +34,7 @@ from linshare_cli.common import HTable
 from linshare_cli.core import LinShareException
 from ordereddict import OrderedDict
 import argtoolbox
+import argparse
 import re
 
 
@@ -800,6 +801,102 @@ class FunctionalityDisplayCommand(DefaultCommand):
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
 
+# -----------------------------------------------------------------------------
+class FunctionalityUpdateCommand(DefaultCommand):
+    """ List all functionalities."""
+
+    def __call__(self, args):
+        super(FunctionalityUpdateCommand, self).__call__(args)
+        resource = None
+        for model in self.ls.funcs.list():
+            if model.get('identifier') == args.identifier:
+                resource = model
+                break
+        if resource is None:
+            raise ValueError("Functionality not found")
+        self.pretty_json(resource)
+
+        if args.domain:
+            resource['domain'] = args.domain
+
+        policy = None
+        if args.activation_policy:
+            policy = resource.get('activationPolicy')
+        elif args.configuration_policy:
+            policy = resource.get('configurationPolicy')
+        elif args.delegation_policy:
+            policy = resource.get('delegationPolicy')
+        if policy:
+            if args.policy is not None:
+                policy['policy'] = args.policy
+            if args.status is not None:
+                policy['status'] = args.status
+
+        param = self.get_param(args, resource)
+        if param:
+            f_type = param.get('type')
+            if args.value is not None:
+                if  f_type == "INTEGER":
+                    param['integer'] = args.value
+                elif  f_type == "STRING":
+                    param['string'] = args.value
+                elif  f_type == "UNIT_SIZE":
+                    param['integer'] = args.value
+                elif  f_type == "UNIT_TIME":
+                    param['integer'] = args.value
+                elif  f_type == "BOOLEAN":
+                    param['bool'] = args.status
+            if args.unit is not None:
+                if  f_type == "UNIT_SIZE":
+                    param['string'] = args.unit
+                elif  f_type == "UNIT_TIME":
+                    param['string'] = args.unit
+
+        #self.pretty_json(resource)
+        #return True
+        return self._run(
+            self.ls.funcs.update,
+            "The following functinality '%(identifier)s' was successfully updated",
+            args.identifier,
+            resource)
+        #json_obj = self.ls.funcs.get(args.identifier, args.domain)
+        #keys = self.ls.funcs.get_rbu().get_keys()
+
+
+    def get_param(self, args, resource):
+        args.param = 1
+        pmax = len(resource.get('parameters'))
+        if args.param < 1 or args.param > pmax:
+            raise ValueError("invalid value for param.")
+        return resource['parameters'][args.param - 1]
+
+
+    def complete(self, args, prefix):
+        super(FunctionalityUpdateCommand, self).__call__(args)
+        json_obj = self.ls.funcs.list(args.domain)
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_domain(self, args, prefix):
+        super(FunctionalityUpdateCommand, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_unit(self, args, prefix):
+        """ Complete with available units."""
+        super(FunctionalityUpdateCommand, self).__call__(args)
+        if args.identifier is None:
+            return ["error-identier-not-set",]
+        json_obj = self.ls.funcs.get(args.identifier, args.domain)
+        param = self.get_param(args, json_obj)
+        return param.get("select")
+
+    def complete_policies(self, args, prefix):
+        """ Complete with available policies."""
+        return "MANDATORY FORBIDDEN ALLOWED".split()
+
+
 ###############################################################################
 ###  domains
 ###############################################################################
@@ -1075,7 +1172,7 @@ def add_threads_parser(subparsers, name, desc):
 
 
 ###############################################################################
-###  threads
+###  thread members
 ###############################################################################
 def add_thread_members_parser(subparsers, name, desc):
     """Add all thread member sub commands."""
@@ -1156,9 +1253,69 @@ def add_functionalitites_parser(subparsers, name, desc):
                              help="").completer = Completer('complete_domain')
     parser_tmp2.add_argument('--extended', action="store_true",
                              help="extended format")
-    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
-                             help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=FunctionalityDisplayCommand())
+
+    # command : update
+    parser_tmp2 = subparsers2.add_parser(
+        'update', help="update a functionality.")
+    parser_tmp2.add_argument('identifier', action="store",
+                             help="").completer = Completer()
+    parser_tmp2.add_argument('-d', '--domain', action="store",
+                             help="Completion available").completer = Completer('complete_domain')
+        #return "".split()
+    policy_group = parser_tmp2.add_argument_group('Choose the policy to update')
+    group = policy_group.add_mutually_exclusive_group()
+    group.add_argument(
+        '-a',
+        '--activation-policy',
+        action="store_true",
+        help="activation policy")
+
+    group.add_argument(
+        '-c',
+        '--configuration-policy',
+        action="store_true",
+        help="configuration policy")
+
+    group.add_argument(
+        '-g',
+        '--delegation-policy',
+        action="store_true",
+        help="delegation policy")
+    parser_tmp2.add_argument(
+        '-p',
+        '--policy',
+        action="store",
+        help="MANDATORY, FORBIDDEN, ALLOWED"
+        ).completer = Completer('complete_policies')
+    status_group = parser_tmp2.add_argument_group('Status')
+    group = status_group.add_mutually_exclusive_group()
+    group.add_argument(
+        '--disable',
+        default=None,
+        action="store_false",
+        dest="status")
+    group.add_argument(
+        '--enable',
+        default=None,
+        action="store_true",
+        dest="status")
+
+    parser_tmp2.add_argument(
+        '-v',
+        '--value',
+        action="store")
+    parser_tmp2.add_argument(
+        '--param',
+        action="store",
+        default=1,
+        help=argparse.SUPPRESS)
+    parser_tmp2.add_argument(
+        '-u',
+        '--unit',
+        action="store").completer = Completer('complete_unit')
+
+    parser_tmp2.set_defaults(__func__=FunctionalityUpdateCommand())
 
 
 ###############################################################################
