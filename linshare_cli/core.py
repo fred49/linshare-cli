@@ -1043,14 +1043,15 @@ class FunctionalityAdmin(GenericAdminClass):
             domain_id = "LinShareRootDomain"
         json_obj = self.core.get("functionalities/"+ func_id +"?domainId=" +
                                  domain_id)
-        if json_obj.get('displayable') == True:
-            return json_obj
-        else:
-            return None
+        return json_obj
 
     def update(self, data):
         self.debug(data)
         return self.core.update("functionalities", data)
+
+    def reset(self, data):
+        self.debug(data)
+        return self.core.delete("functionalities", data)
 
     def options_policies(self):
         return self.core.options("enums/policies")
@@ -1061,8 +1062,6 @@ class FunctionalityAdmin(GenericAdminClass):
         rbu.add_field('identifier', required=True)
         rbu.add_field('type')
         rbu.add_field('parentAllowParametersUpdate')
-        rbu.add_field('system')
-        rbu.add_field('displayable')
         rbu.add_field('parameters', extended=True)
         rbu.add_field('parentIdentifier', extended=True)
         rbu.add_field('domain', extended=True, required=True)

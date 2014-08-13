@@ -734,29 +734,44 @@ class FunctionalityDisplayCommand(DefaultCommand):
 
     def __call__(self, args):
         super(FunctionalityDisplayCommand, self).__call__(args)
+        table = HTable()
+        table.field_names = ["Name", "Values"]
+        # styles
+        table.align["Name"] = "l"
+        table.align["Values"] = "l"
+        table.padding_width = 1
         json_obj = self.ls.funcs.get(args.identifier, args.domain)
-        row = OrderedDict()
-        row['Identifier'] = json_obj.get('identifier')
-        row['Domain'] = json_obj.get('domain')
-        row['Activation Policy'] = self.format_policy(
-            json_obj.get('activationPolicy'))
-        row['Configuration Policy'] = self.format_policy(
-            json_obj.get('configurationPolicy'))
-        dpolicy = self.format_policy(json_obj.get('delegationPolicy'))
-        if dpolicy is not None:
-            row['Delegation Policy'] = dpolicy
+        if self.debug:
+            self.pretty_json(json_obj)
+        if not json_obj.get('displayable'):
+            print "You can not modify this functionality in this domain"
+            return True
+        table.add_row(['Identifier', json_obj.get('identifier')])
+        table.add_row(['Domain', json_obj.get('domain')])
+        apo = json_obj.get('activationPolicy')
+        if not apo.get('system') and apo.get('parentAllowUpdate'):
+            table.add_row(['Activation Policy',
+                           self.format_policy(apo)])
+        cpo = json_obj.get('configurationPolicy')
+        if not cpo.get('system') and cpo.get('parentAllowUpdate'):
+            table.add_row(['Configuration Policy',
+                           self.format_policy(cpo)])
+        dpo = json_obj.get('delegationPolicy')
+        if dpo is not None:
+            if not dpo.get('system') and dpo.get('parentAllowUpdate'):
+                table.add_row(['Delegation Policy',
+                               self.format_policy(dpo)])
         param = self.format_parameters(json_obj)
         if param:
             cpt = 0
-            for i in param:
+            for param in param:
                 cpt += 1
                 if cpt > 1:
-                    row['Parameters' + str(cpt)] = i
+                    name = u'Parameters' + str(cpt)
                 else:
-                    row['Parameters'] = i
-        table = VTable(row.keys(), debug=self.debug)
-        table.sortby = "Identifier"
-        table.add_row(row)
+                    name = u'Parameters'
+                if json_obj.get('parentAllowParametersUpdate'):
+                    table.add_row([name, param])
         out = table.get_string()
         print unicode(out)
         return True
@@ -814,7 +829,8 @@ class FunctionalityUpdateCommand(DefaultCommand):
                 break
         if resource is None:
             raise ValueError("Functionality not found")
-        self.pretty_json(resource)
+        if self.debug:
+            self.pretty_json(resource)
 
         if args.domain:
             resource['domain'] = args.domain
@@ -895,6 +911,37 @@ class FunctionalityUpdateCommand(DefaultCommand):
     def complete_policies(self, args, prefix):
         """ Complete with available policies."""
         return "MANDATORY FORBIDDEN ALLOWED".split()
+
+
+# -----------------------------------------------------------------------------
+class FunctionalityResetCommand(DefaultCommand):
+    """ Reset a functionality."""
+
+    def __call__(self, args):
+        super(FunctionalityResetCommand, self).__call__(args)
+        json_obj = self.ls.funcs.get(args.identifier, args.domain)
+        if self.debug:
+            self.pretty_json(json_obj)
+        name = json_obj.get('identifier')
+        name += " (domain : " + json_obj.get('domain') + ")"
+        return self._delete(
+            self.ls.funcs.reset,
+            "The funtionality " + name + " was successfully reseted.",
+            name,
+            json_obj)
+
+    def complete(self, args, prefix):
+        super(FunctionalityResetCommand, self).__call__(args)
+        json_obj = self.ls.funcs.list(args.domain)
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_domain(self, args, prefix):
+        super(FunctionalityResetCommand, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
 
 
 ###############################################################################
@@ -1317,6 +1364,14 @@ def add_functionalitites_parser(subparsers, name, desc):
 
     parser_tmp2.set_defaults(__func__=FunctionalityUpdateCommand())
 
+    # command : reset
+    parser_tmp2 = subparsers2.add_parser(
+        'reset', help="reset a functionality.")
+    parser_tmp2.add_argument('identifier', action="store",
+                             help="").completer = Completer()
+    parser_tmp2.add_argument('domain', action="store",
+                             help="").completer = Completer('complete_domain')
+    parser_tmp2.set_defaults(__func__=FunctionalityResetCommand())
 
 ###############################################################################
 ### test
