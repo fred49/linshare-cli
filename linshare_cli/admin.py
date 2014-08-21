@@ -32,7 +32,6 @@ from argtoolbox import DefaultCompleter as Completer
 from linshare_cli.common import VTable
 from linshare_cli.common import HTable
 from linshare_cli.core import LinShareException
-from ordereddict import OrderedDict
 import argtoolbox
 import argparse
 import re
@@ -693,7 +692,6 @@ class FunctionalityListCommand(DefaultCommand):
     def __call__(self, args):
         super(FunctionalityListCommand, self).__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
-
         keys = self.ls.funcs.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:

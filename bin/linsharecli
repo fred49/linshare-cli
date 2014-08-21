@@ -193,6 +193,10 @@ PROG = LinShareCliProgram(
     force_debug_to_file=os.getenv('_LINSHARE_CLI_USER_DEBUG_FILE', False),
     desc="""An user cli for LinShare, using its REST API.
 
+    In order to enable auto complete support, or generate the default
+    configuration file associated with the current program,
+    look at the argtoolboxtool program.
+
 
 Advanced documentation :
 ------------------------
