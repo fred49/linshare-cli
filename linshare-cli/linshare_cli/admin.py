@@ -27,11 +27,11 @@
 from __future__ import unicode_literals
 
 import linshare_cli.common as common
-from linshare_api.core import AdminCli
+from linshare_api.admin import AdminCli
+from linshare_api.core import LinShareException
 from argtoolbox import DefaultCompleter as Completer
 from linshare_cli.common import VTable
 from linshare_cli.common import HTable
-from linshare_api.core import LinShareException
 import argtoolbox
 import argparse
 import re
