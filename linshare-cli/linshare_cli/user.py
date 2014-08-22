@@ -28,7 +28,7 @@ from __future__ import unicode_literals
 
 import urllib2
 import linshare_cli.common as common
-from linshare_cli.core import UserCli
+from linshare_api.core import UserCli
 from linshare_cli.common import VTable
 from linshare_cli.common import HTable
 from argtoolbox import DefaultCompleter

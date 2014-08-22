@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 
 
-# This file is part of Linshare user cli.
+# This file is part of Linshare cli.
 #
-# LinShare user cli is free software: you can redistribute it and/or modify
+# LinShare cli is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# LinShare user cli is distributed in the hope that it will be useful,
+# LinShare cli is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with LinShare user cli.  If not, see <http://www.gnu.org/licenses/>.
+# along with LinShare cli.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright 2013 Frédéric MARTIN
 #
@@ -27,11 +27,11 @@
 from __future__ import unicode_literals
 
 import linshare_cli.common as common
-from linshare_cli.core import AdminCli
+from linshare_api.core import AdminCli
 from argtoolbox import DefaultCompleter as Completer
 from linshare_cli.common import VTable
 from linshare_cli.common import HTable
-from linshare_cli.core import LinShareException
+from linshare_api.core import LinShareException
 import argtoolbox
 import argparse
 import re
