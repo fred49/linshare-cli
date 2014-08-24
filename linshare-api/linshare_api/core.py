@@ -42,8 +42,8 @@ from ordereddict import OrderedDict
 from progressbar import ProgressBar, FileTransferSpeed, Bar, ETA, Percentage
 import hashlib
 
-# pylint: disable-msg=C0111
-# pylint: disable-msg=R0903
+# pylint: disable=C0111
+# Missing docstring
 # -----------------------------------------------------------------------------
 class LinShareException(Exception):
     pass
@@ -173,6 +173,7 @@ def cli_get_cache(user_function):
 # -----------------------------------------------------------------------------
 class CoreCli(object):
 
+    # pylint: disable=R0902
     def __init__(self, host, user, password, verbose=False, debug=0,
                  realm="Name Of Your LinShare Realm"):
         classname = str(self.__class__.__name__.lower())
@@ -219,7 +220,9 @@ class CoreCli(object):
                 user=user.encode('utf8'),
                 passwd=password.encode('utf8'))
         except UnicodeEncodeError:
-            self.log.error("the program was not able to compute the basic authentication token.")
+            self.log.error(
+                "the program was not able to compute "
+                + "the basic authentication token.")
         handlers = [
             poster.streaminghttp.StreamingHTTPSHandler(
                 debuglevel=httpdebuglevel),
@@ -231,6 +234,7 @@ class CoreCli(object):
             poster.streaminghttp.StreamingHTTPRedirectHandler(),
             urllib2.HTTPCookieProcessor(cookielib.CookieJar())]
         # Setting handlers
+        # pylint: disable=W0142
         urllib2.install_opener(urllib2.build_opener(*handlers))
 
     def get_full_url(self, url_frament):
@@ -483,9 +487,11 @@ because its size is less or equal to zero." % {"filename": str(file_name)}
                 json_obj = self.get_json_result(resultq)
         except urllib2.HTTPError as ex:
             if self.verbose:
-                self.log.info("Http error : " + ex.msg + " (" + str(ex.code) + ")")
+                self.log.info(
+                    "Http error : " + ex.msg + " (" + str(ex.code) + ")")
             else:
-                self.log.debug("Http error : " + ex.msg + " (" + str(ex.code) + ")")
+                self.log.debug(
+                    "Http error : " + ex.msg + " (" + str(ex.code) + ")")
             json_obj = self.get_json_result(ex)
             code = json_obj.get('errCode')
             msg = json_obj.get('message')
@@ -594,7 +600,8 @@ class ResourceBuilder(object):
         self._fields = OrderedDict()
         self._required = required
 
-    def add_field(self, field, arg=None, value=None, extended=False, hidden=False, e_type=str, required=None):
+    def add_field(self, field, arg=None, value=None, extended=False,
+                  hidden=False, e_type=str, required=None):
         if required is None:
             required = self._required
         if arg is None:

@@ -34,8 +34,8 @@ import json
 from linshare_api.core import CoreCli
 from linshare_api.core import ResourceBuilder
 
-# -----------------------------------------------------------------------------
-# ADMIN API
+# pylint: disable=C0111
+# Missing docstring
 # -----------------------------------------------------------------------------
 class GenericAdminClass(object):
     def __init__(self, corecli):
@@ -43,6 +43,7 @@ class GenericAdminClass(object):
         self.log = logging.getLogger('linshare-cli.rbu')
 
     def get_rbu(self):
+        # pylint: disable=R0201
         rbu = ResourceBuilder("generic")
         return rbu
 
@@ -71,7 +72,8 @@ class DomainAdmins(GenericAdminClass):
         self._check(data)
         if data.get('type') in ["GUESTDOMAIN", "SUBDOMAIN"]:
             if data.get('parent') is None:
-                raise ValueError("parent identifier is required for GuestDomain or SubDomain")
+                raise ValueError(
+                    "parent identifier is required for GuestDomain / SubDomain")
         return self.core.create("domains", data)
 
     def update(self, data):
@@ -90,25 +92,30 @@ class DomainAdmins(GenericAdminClass):
         return self.core.options("enums/language")
 
     def options_role(self):
-        my_list = self.core.options("enums/role")
-        return filter(lambda x: x not in ["SUPERADMIN", "SYSTEM"], my_list)
+        # pylint: disable=R0201
+        return ['ADMIN', 'SIMPLE']
 
     def options_type(self):
-        my_list = self.core.options("enums/domain_type")
-        return filter(lambda x: x != "ROOTDOMAIN", my_list)
+        # pylint: disable=R0201
+        return ['GUESTDOMAIN', 'SUBDOMAIN', 'TOPDOMAIN']
 
 
     def get_rbu(self):
         rbu = ResourceBuilder("domains")
         rbu.add_field('identifier', required=True)
         rbu.add_field('label', required=True)
-        rbu.add_field('policy', value={"identifier": "DefaultDomainPolicy"}, hidden=True)
+        rbu.add_field('policy', value={"identifier": "DefaultDomainPolicy"},
+                      hidden=True)
         rbu.add_field('type', "domain_type", value="TOPDOMAIN")
         rbu.add_field('parent', "parent_id")
         rbu.add_field('language', value="ENGLISH")
         rbu.add_field('userRole', "role", value="SIMPLE")
-        rbu.add_field('mailConfigUuid', value="946b190d-4c95-485f-bfe6-d288a2de1edd", extended=True)
-        rbu.add_field('mimePolicyUuid', value="3d6d8800-e0f7-11e3-8ec0-080027c0eef0", extended=True)
+        rbu.add_field('mailConfigUuid',
+                      value="946b190d-4c95-485f-bfe6-d288a2de1edd",
+                      extended=True)
+        rbu.add_field('mimePolicyUuid',
+                      value="3d6d8800-e0f7-11e3-8ec0-080027c0eef0",
+                      extended=True)
         rbu.add_field('description', value="")
         rbu.add_field('authShowOrder', value="1", extended=True)
         rbu.add_field('providers', value=[], extended=True)
@@ -200,6 +207,7 @@ class ThreadsAdmin(GenericAdminClass):
         rbu = ResourceBuilder("threads")
         rbu.add_field('name', required=True)
         rbu.add_field('domain')
+        rbu.add_field('uuid')
         rbu.add_field('creationDate')
         rbu.add_field('modificationDate')
         return rbu
@@ -261,11 +269,9 @@ class UsersAdmin(GenericAdminClass):
         rbu.add_field('restricted', extended=True)
         rbu.add_field('expirationDate', extended=True)
         rbu.add_field('comment', extended=True)
-        #rbu.add_field('owner', extended=True)
         rbu.add_field('restrictedContacts', extended=True)
         return rbu
 
-# -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 class FunctionalityAdmin(GenericAdminClass):
 
@@ -273,7 +279,7 @@ class FunctionalityAdmin(GenericAdminClass):
         if domain_id is None:
             domain_id = "LinShareRootDomain"
         json_obj = self.core.list("functionalities?domainId=" + domain_id)
-        return filter(lambda x: x.get('displayable') == True, json_obj)
+        return [row for row in json_obj if row.get('displayable') == True]
 
     def get(self, func_id, domain_id=None):
         if domain_id is None:
@@ -295,7 +301,6 @@ class FunctionalityAdmin(GenericAdminClass):
 
     def get_rbu(self):
         rbu = ResourceBuilder("functionality")
-        #rbu.add_field('functionalities')
         rbu.add_field('identifier', required=True)
         rbu.add_field('type')
         rbu.add_field('parentAllowParametersUpdate')
@@ -306,6 +311,7 @@ class FunctionalityAdmin(GenericAdminClass):
 
 # -----------------------------------------------------------------------------
 class AdminCli(CoreCli):
+    # pylint: disable=R0902
     def __init__(self, *args, **kwargs):
         super(AdminCli, self).__init__(*args, **kwargs)
         self.base_url = "linshare/webservice/rest/admin"

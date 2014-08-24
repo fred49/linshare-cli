@@ -41,7 +41,7 @@ from argtoolbox import Element
 from argtoolbox import Base64ElementHook
 from argtoolbox import SectionHook
 from linshare_cli.admin.thread import add_parser as add_threads_parser
-from linshare_cli.admin.tmember import add_parser as add_threads_parser
+from linshare_cli.admin.tmember import add_parser as add_thread_members_parser
 from linshare_cli.admin.user import add_parser as add_users_parser
 from linshare_cli.admin.core import add_parser as add_test_parser
 from linshare_cli.admin.domain import add_parser as add_domains_parser
@@ -176,6 +176,7 @@ section 'server-4'""")
         # Adding all others parsers.
         subparsers = self.parser.add_subparsers()
         add_threads_parser(subparsers, "threads", "threads management")
+        add_thread_members_parser(subparsers, "tmembers", "thread member management")
         add_users_parser(subparsers, "users", "users")
         add_domains_parser(subparsers, "domains", "domains")
         add_ldap_connections_parser(subparsers, "ldap", "ldap connections")

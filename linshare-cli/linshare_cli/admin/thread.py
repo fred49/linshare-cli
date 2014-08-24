@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with LinShare cli.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Copyright 2013 Frédéric MARTIN
+# Copyright 2014 Frédéric MARTIN
 #
 # Contributors list :
 #
@@ -26,8 +26,8 @@
 
 from __future__ import unicode_literals
 
-from linshare_cli.common import VTable
-from linshare_cli.common import HTable
+from linshare_cli.common.core import VTable
+from linshare_cli.common.core import HTable
 from linshare_cli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
 
@@ -39,6 +39,8 @@ class ThreadsListCommand(DefaultCommand):
     def __call__(self, args):
         super(ThreadsListCommand, self).__call__(args)
         json_obj = self.ls.threads.list()
+        self.format_date(json_obj, 'creationDate')
+        self.format_date(json_obj, 'modificationDate')
         keys = self.ls.threads.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:

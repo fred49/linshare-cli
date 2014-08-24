@@ -26,7 +26,7 @@
 
 from __future__ import unicode_literals
 
-import linshare_cli.common as common
+import linshare_cli.common.core as common
 from linshare_api.user import UserCli
 import argtoolbox
 

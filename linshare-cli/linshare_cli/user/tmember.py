@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with LinShare cli.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Copyright 2013 Frédéric MARTIN
+# Copyright 2014 Frédéric MARTIN
 #
 # Contributors list :
 #

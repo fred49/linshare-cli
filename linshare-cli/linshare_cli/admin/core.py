@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with LinShare cli.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Copyright 2013 Frédéric MARTIN
+# Copyright 2014 Frédéric MARTIN
 #
 # Contributors list :
 #
@@ -26,7 +26,7 @@
 
 from __future__ import unicode_literals
 
-import linshare_cli.common as common
+import linshare_cli.common.core as common
 from linshare_api.admin import AdminCli
 from linshare_api.core import LinShareException
 import argtoolbox

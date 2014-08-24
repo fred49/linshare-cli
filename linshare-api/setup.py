@@ -30,20 +30,20 @@ with codecs.open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name = 'linshare_api',
+    name='linshare_api',
     version=find_version('linshare_api', '__init__.py'),
-    description = 'LinShare api.',
+    description='LinShare api.',
     long_description=long_description,
 
     # The project URL.
-    url = 'https://github.com/fred49/linshare-api',
+    url='https://github.com/fred49/linshare-api',
 
     # Author details
-    author = 'Frederic MARTIN',
-    author_email = 'frederic.martin.fma@gmail.com',
+    author='Frederic MARTIN',
+    author_email='frederic.martin.fma@gmail.com',
 
     # Choose your license
-    license = "GPL3",
+    license="GPL3",
 
     classifiers=[
         # How mature is this project? Common values are
@@ -75,10 +75,7 @@ setup(
 
     # List run-time dependencies here.  These will be installed by pip when your
     # project is installed.
-    install_requires = ['argtoolbox==0.0.8',
-                        'poster',
+    install_requires=['poster',
                         'progressbar',
-                        'veryprettytable',
-                        'hurry.filesize',
                         ],
 )

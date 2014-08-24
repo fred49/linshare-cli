@@ -28,8 +28,8 @@ from __future__ import unicode_literals
 
 import urllib2
 from linshare_cli.user.core import DefaultCommand
-from linshare_cli.common import VTable
-from linshare_cli.common import HTable
+from linshare_cli.common.core import VTable
+from linshare_cli.common.core import HTable
 from argtoolbox import DefaultCompleter
 from argparse import RawTextHelpFormatter
 from operator import itemgetter

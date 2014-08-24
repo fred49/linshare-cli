@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with LinShare cli.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Copyright 2013 Frédéric MARTIN
+# Copyright 2014 Frédéric MARTIN
 #
 # Contributors list :
 #
@@ -26,8 +26,8 @@
 
 from __future__ import unicode_literals
 
-from linshare_cli.common import VTable
-from linshare_cli.common import HTable
+from linshare_cli.common.core import VTable
+from linshare_cli.common.core import HTable
 from linshare_cli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
 
@@ -73,7 +73,7 @@ def add_parser(subparsers, name, desc):
 
     subparsers2 = parser_tmp.add_subparsers()
     parser_tmp2 = subparsers2.add_parser(
-        'listmembers',
+        'list',
         help="list thread members.")
     parser_tmp2.add_argument(
         '-u',
