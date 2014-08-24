@@ -30,60 +30,61 @@ from linshare_cli.common import VTable
 from linshare_cli.common import HTable
 from linshare_cli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
-import re
 
 
 # -----------------------------------------------------------------------------
-class UsersListCommand(DefaultCommand):
-    """ List all users store into LinShare."""
+class ThreadMembersListCommand(DefaultCommand):
+    """ List all thread members store from a thread."""
 
     def __call__(self, args):
-        super(UsersListCommand, self).__call__(args)
-        json_obj = self.ls.users.search(args.firstname, args.lastname,
-                                        args.mail)
-        self.format_date(json_obj, 'creationDate')
-        self.format_date(json_obj, 'modificationDate')
-        self.format_date(json_obj, 'expirationDate')
-        keys = self.ls.users.get_rbu().get_keys(args.extended)
+        super(ThreadMembersListCommand, self).__call__(args)
+        json_obj = self.ls.thread_members.list(args.uuid)
+        keys = self.ls.thread_members.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:
             table = VTable(keys, debug=self.debug)
         else:
             table = HTable(keys)
             # styles
-            table.align["mail"] = "l"
+            table.align["name"] = "l"
             table.padding_width = 1
-        table.sortby = "mail"
+        table.sortby = "name"
         table.reversesort = args.reverse
-
         def filters(row):
             if not args.identifiers:
                 return True
-            if re.search(r"^.*(" + "|".join(args.identifiers) + ").*$",
-                         row.get('uuid')):
+            if row.get('name') in args.identifiers:
                 return True
             return False
         table.print_table(json_obj, keys, filters)
         return True
 
+    def complete(self, args, prefix):
+        super(ThreadMembersListCommand, self).__call__(args)
+        json_obj = self.ls.threads.list()
+        return (v.get('uuid')
+                for v in json_obj if v.get('uuid').startswith(prefix))
+
 
 # -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc):
-    """Add all user sub commands."""
+    """Add all thread member sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
-    parser_tmp2 = subparsers2.add_parser('list',
-                                         help="list users from linshare")
-    parser_tmp2.add_argument('identifiers', nargs="*",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('-f', '--firstname', action="store")
-    parser_tmp2.add_argument('-l', '--lastname', action="store")
-    parser_tmp2.add_argument('-m', '--mail', action="store")
+    parser_tmp2 = subparsers2.add_parser(
+        'listmembers',
+        help="list thread members.")
+    parser_tmp2.add_argument(
+        '-u',
+        '--uuid',
+        action="store",
+        dest="uuid",
+        required=True).completer = Completer()
     parser_tmp2.add_argument('--extended', action="store_true",
                              help="extended format")
     parser_tmp2.add_argument('-r', '--reverse', action="store_true",
                              help="reverse order while sorting")
     parser_tmp2.add_argument('-t', '--vertical', action="store_true",
                              help="use vertical output mode")
-    parser_tmp2.set_defaults(__func__=UsersListCommand())
+    parser_tmp2.set_defaults(__func__=ThreadMembersListCommand())

@@ -40,12 +40,12 @@ from argtoolbox import SimpleSection
 from argtoolbox import Element
 from argtoolbox import Base64ElementHook
 from argtoolbox import SectionHook
-from linshare_cli.user import add_document_parser
-from linshare_cli.user import add_share_parser
-from linshare_cli.user import add_received_share_parser
-from linshare_cli.user import add_threads_parser
-from linshare_cli.user import add_users_parser
-from linshare_cli.user import add_test_parser
+from linshare_cli.user.document import add_parser as add_document_parser
+from linshare_cli.user.share import add_parser as add_share_parser
+from linshare_cli.user.rshare import add_parser as add_received_share_parser
+from linshare_cli.user.thread import add_parser as add_threads_parser
+from linshare_cli.user.user import add_parser as add_users_parser
+from linshare_cli.user.core import add_parser as add_test_parser
 import linshare_cli
 
 # if you want to debug argcomplete completion,

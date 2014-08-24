@@ -26,10 +26,8 @@
 
 from __future__ import unicode_literals
 
-from linshare_cli.common import VTable
-from linshare_cli.common import HTable
-from linshare_cli.admin.core import DefaultCommand
-from argtoolbox import DefaultCompleter as Completer
+from linshare_cli.user.core import DefaultCommand
+from argtoolbox import DefaultCompleter
 
 
 # -----------------------------------------------------------------------------
@@ -38,43 +36,20 @@ class ThreadsListCommand(DefaultCommand):
 
     def __call__(self, args):
         super(ThreadsListCommand, self).__call__(args)
+
         json_obj = self.ls.threads.list()
-        keys = self.ls.threads.get_rbu().get_keys(args.extended)
-        table = None
-        if args.vertical:
-            table = VTable(keys, debug=self.debug)
-        else:
-            table = HTable(keys)
-            # styles
-            table.align["name"] = "l"
-            table.padding_width = 1
-        table.sortby = "name"
-        table.reversesort = args.reverse
-        def filters(row):
-            if not args.identifiers:
-                return True
-            if row.get('name') in args.identifiers:
-                return True
-            return False
-        table.print_table(json_obj, keys, filters)
-        return True
+        d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
+        #self.pretty_json(json_obj)
+        self.format_date(json_obj, 'creationDate')
+        self.print_list(json_obj, d_format, "Threads")
 
 
 # -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc):
-    """Add all thread sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
     parser_tmp2 = subparsers2.add_parser(
         'list',
         help="list threads from linshare")
-    parser_tmp2.add_argument('identifiers', nargs="*",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('--extended', action="store_true",
-                             help="extended format")
-    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
-                             help="reverse order while sorting")
-    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
-                             help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=ThreadsListCommand())

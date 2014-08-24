@@ -42,3 +42,4 @@
 build
 dist
 linshare_cli.egg-info
+linshare-api/linshare_api.egg-info

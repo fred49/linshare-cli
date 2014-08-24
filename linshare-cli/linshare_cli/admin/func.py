@@ -291,7 +291,7 @@ class FunctionalityResetCommand(DefaultCommand):
 
 
 # -----------------------------------------------------------------------------
-def add_functionalitites_parser(subparsers, name, desc):
+def add_parser(subparsers, name, desc):
     """Add all domain sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
