@@ -31,15 +31,41 @@ import logging
 import logging.handlers
 import urllib2
 import datetime
+import json
+
 from linshare_api.core import CoreCli
+from linshare_api.core import ResourceBuilder
 
 
 # pylint: disable=C0111
 # Missing docstring
 # -----------------------------------------------------------------------------
-class Documents(object):
+class GenericUserClass(object):
     def __init__(self, corecli):
+        #classname = str(self.__class__.__name__.lower())
         self.core = corecli
+        self.log = logging.getLogger('linshare-api.user.rbu')
+
+    def get_rbu(self):
+        # pylint: disable=R0201
+        rbu = ResourceBuilder("generic")
+        return rbu
+
+    def get_resource(self):
+        return self.get_rbu().to_resource()
+
+    def debug(self, data):
+        self.log.debug("input data :")
+        self.log.debug(json.dumps(data, sort_keys=True, indent=2))
+
+    def _check(self, data):
+        rbu = self.get_rbu()
+        rbu.copy(data)
+        rbu.check_required_fields()
+
+
+# -----------------------------------------------------------------------------
+class Documents(GenericUserClass):
 
     def list(self):
         """ List all documents store into LinShare."""
@@ -58,12 +84,22 @@ class Documents(object):
         url = "documents/%s" % uuid
         return self.core.delete(url)
 
+    def get_rbu(self):
+        rbu = ResourceBuilder("documents")
+        rbu.add_field('name')
+        rbu.add_field('size')
+        rbu.add_field('uuid')
+        rbu.add_field('creationDate')
+        rbu.add_field('modificationDate')
+        rbu.add_field('type', extended=True)
+        rbu.add_field('expirationDate', extended=True)
+        rbu.add_field('ciphered', extended=True)
+        rbu.add_field('description', extended=True)
+        return rbu
 
 
 # -----------------------------------------------------------------------------
-class ReceivedShares(object):
-    def __init__(self, corecli):
-        self.core = corecli
+class ReceivedShares(GenericUserClass):
 
     def list(self):
         return self.core.list("shares")
@@ -72,16 +108,27 @@ class ReceivedShares(object):
         url = "shares/%s/download" % uuid
         return self.core.download(uuid, url)
 
+    def get_rbu(self):
+        rbu = ResourceBuilder("rshares")
+        rbu.add_field('name')
+        rbu.add_field('size')
+        rbu.add_field('uuid')
+        rbu.add_field('creationDate')
+        rbu.add_field('modificationDate')
+        rbu.add_field('type', extended=True)
+        rbu.add_field('expirationDate', extended=True)
+        rbu.add_field('ciphered', extended=True)
+        rbu.add_field('description', extended=True)
+        rbu.add_field('message', extended=True)
+        rbu.add_field('downloaded', extended=True)
+        return rbu
+
 
 # -----------------------------------------------------------------------------
-class Shares(object):
+class Shares(GenericUserClass):
+
     # pylint: disable=R0903
     # Too few public methods (1/2)
-    def __init__(self, corecli):
-        self.core = corecli
-        classname = str(self.__class__.__name__.lower())
-        self.log = logging.getLogger('linshare-cli.' + classname)
-
     def share(self, uuid, mail):
         url = self.core.get_full_url(
             "shares/sharedocument/%s/%s" % (mail, uuid))
@@ -111,37 +158,50 @@ class Shares(object):
 
 
 # -----------------------------------------------------------------------------
-class Threads(object):
+class Threads(GenericUserClass):
+
     # pylint: disable=R0903
     # Too few public methods (1/2)
-    def __init__(self, corecli):
-        self.core = corecli
-
     def list(self):
         return self.core.list("threads")
 
+    def get_rbu(self):
+        rbu = ResourceBuilder("threads")
+        rbu.add_field('name', required=True)
+        rbu.add_field('domain')
+        rbu.add_field('uuid')
+        rbu.add_field('creationDate')
+        rbu.add_field('modificationDate')
+        return rbu
+
 
 # -----------------------------------------------------------------------------
-class ThreadsMembers(object):
+class ThreadsMembers(GenericUserClass):
+
     # pylint: disable=R0903
     # Too few public methods (1/2)
-    def __init__(self, corecli):
-        self.core = corecli
-
     def list(self, thread_uuid):
         url = "thread_members/%s" % thread_uuid
         return self.core.list(url)
 
 
 # -----------------------------------------------------------------------------
-class Users(object):
+class Users(GenericUserClass):
+
     # pylint: disable=R0903
     # Too few public methods (1/2)
-    def __init__(self, corecli):
-        self.core = corecli
-
     def list(self):
         return self.core.list("users")
+
+    def get_rbu(self):
+        rbu = ResourceBuilder("users")
+        rbu.add_field('firstName', required=True)
+        rbu.add_field('lastName', required=True)
+        rbu.add_field('mail', required=True)
+        rbu.add_field('uuid')
+        rbu.add_field('domain')
+        rbu.add_field('guest')
+        return rbu
 
 
 # -----------------------------------------------------------------------------

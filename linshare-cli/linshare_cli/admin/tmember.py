@@ -26,6 +26,8 @@
 
 from __future__ import unicode_literals
 
+from linshare_cli.common.filters import PartialOr
+from linshare_cli.common.formatters import DateFormatter
 from linshare_cli.common.core import VTable
 from linshare_cli.common.core import HTable
 from linshare_cli.admin.core import DefaultCommand
@@ -35,28 +37,15 @@ from argtoolbox import DefaultCompleter as Completer
 # -----------------------------------------------------------------------------
 class ThreadMembersListCommand(DefaultCommand):
     """ List all thread members store from a thread."""
+    IDENTIFIER = "name"
 
     def __call__(self, args):
         super(ThreadMembersListCommand, self).__call__(args)
-        json_obj = self.ls.thread_members.list(args.uuid)
-        keys = self.ls.thread_members.get_rbu().get_keys(args.extended)
-        table = None
-        if args.vertical:
-            table = VTable(keys, debug=self.debug)
-        else:
-            table = HTable(keys)
-            # styles
-            table.align["name"] = "l"
-            table.padding_width = 1
-        table.sortby = "name"
-        table.reversesort = args.reverse
-        def filters(row):
-            if not args.identifiers:
-                return True
-            if row.get('name') in args.identifiers:
-                return True
-            return False
-        table.print_table(json_obj, keys, filters)
+        cli = self.ls.thread_members
+        table = self.get_table(args, cli, self.IDENTIFIER)
+        table.show_table(
+            cli.list(args.uuid)
+        )
         return True
 
     def complete(self, args, prefix):

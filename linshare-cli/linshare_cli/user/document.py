@@ -28,59 +28,45 @@ from __future__ import unicode_literals
 
 import urllib2
 from linshare_cli.user.core import DefaultCommand
-from linshare_cli.common.core import VTable
-from linshare_cli.common.core import HTable
-from argtoolbox import DefaultCompleter
+from linshare_cli.common.filters import PartialOr
+from linshare_cli.common.filters import PartialDate
+from linshare_cli.common.formatters import DateFormatter
+from linshare_cli.common.formatters import SizeFormatter
 from argparse import RawTextHelpFormatter
 from operator import itemgetter
+from argtoolbox import DefaultCompleter as Completer
 
 
 # -----------------------------------------------------------------------------
 class DocumentsListCommand(DefaultCommand):
     """ List all documents store into LinShare."""
+    IDENTIFIER = "name"
 
     def __call__(self, args):
         super(DocumentsListCommand, self).__call__(args)
-
-        json_obj = self.ls.documents.list()
-
-        keys = []
-        keys.append('name')
-        keys.append('size')
-        keys.append('uuid')
-        keys.append('creationDate')
-
-        if args.extended:
-            keys.append('type')
-            keys.append('expirationDate')
-            keys.append('modificationDate')
-            keys.append('description')
-            keys.append('ciphered')
-
-        self.format_date(json_obj, 'creationDate')
-        self.format_filesize(json_obj, 'size')
-        self.format_date(json_obj, 'modificationDate')
-        self.format_date(json_obj, 'expirationDate')
-
-        table = None
-        if args.vertical:
-            table = VTable(keys)
-        else:
-            table = HTable(keys)
-            # styles
-            table.align["identifier"] = "l"
-            table.padding_width = 1
-
-        if args.size:
+        cli = self.ls.documents
+        table = self.get_table(args, cli, self.IDENTIFIER)
+        # No default sort.
+        table.sortby = None
+        json_obj = cli.list()
+        # sort by size
+        if args.sort_size:
             json_obj = sorted(json_obj, reverse=args.reverse,
-                              key=itemgetter("size_raw"))
+                              key=itemgetter("size"))
+        elif args.sort_name:
+            table.sortby = "name"
         else:
             table.sortby = "creationDate"
-        table.reversesort = args.reverse
-        if args.name:
-            table.sortby = "name"
-
-        table.print_table(json_obj, keys)
+        table.show_table(
+            json_obj,
+            filters=[PartialOr(self.IDENTIFIER, args.names, True),
+                     PartialDate("creationDate", args.cdate)],
+            formatters=[DateFormatter('creationDate'),
+                        DateFormatter('expirationDate'),
+                        SizeFormatter('size'),
+                        DateFormatter('modificationDate')]
+        )
+        return True
 
 
 # -----------------------------------------------------------------------------
@@ -250,34 +236,34 @@ def add_parser(subparsers, name, desc):
                              dest="mails",
                              required=True,
                              help="Recipient mails."
-                             ).completer = DefaultCompleter()
+                             ).completer = Completer()
 
 
     parser_tmp2 = subparsers2.add_parser(
         'download',
         help="download documents from linshare")
     parser_tmp2.set_defaults(__func__=DocumentsDownloadCommand())
-    parser_tmp2.add_argument('uuids', nargs='+').completer = DefaultCompleter()
+    parser_tmp2.add_argument('uuids', nargs='+').completer = Completer()
 
     parser_tmp2 = subparsers2.add_parser(
         'delete',
         help="delete documents from linshare")
     parser_tmp2.set_defaults(__func__=DocumentsDeleteCommand())
-    parser_tmp2.add_argument('uuids', nargs='+').completer = DefaultCompleter()
+    parser_tmp2.add_argument('uuids', nargs='+').completer = Completer()
 
     parser_tmp2 = subparsers2.add_parser(
         'list',
         formatter_class=RawTextHelpFormatter,
         help="list documents from linshare")
+    parser_tmp2.add_argument('names', nargs="*", help="")
+    parser_tmp2.add_argument('--date', action="store", dest="cdate")
     parser_tmp2.add_argument('-r', '--reverse', action="store_true",
                              help="reverse order while sorting")
-    parser_tmp2.add_argument('-c', '--creation-date', action="store_true",
-                             help="sort by creation date")
-    parser_tmp2.add_argument('-n', '--name', action="store_true",
+    parser_tmp2.add_argument('--sort-name', action="store_true",
                              help="sort by file name")
     parser_tmp2.add_argument('--extended', action="store_true",
                              help="extended format")
-    parser_tmp2.add_argument('--size', action="store_true",
+    parser_tmp2.add_argument('--sort-size', action="store_true",
                              help="sort by file size")
     #parser_tmp2.add_argument('--show-columns', action="store_true",
     #                    help="List all available fields in received data.")

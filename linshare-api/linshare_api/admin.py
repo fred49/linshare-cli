@@ -34,13 +34,14 @@ import json
 from linshare_api.core import CoreCli
 from linshare_api.core import ResourceBuilder
 
+
 # pylint: disable=C0111
 # Missing docstring
 # -----------------------------------------------------------------------------
 class GenericAdminClass(object):
     def __init__(self, corecli):
         self.core = corecli
-        self.log = logging.getLogger('linshare-cli.rbu')
+        self.log = logging.getLogger('linshare-api.admin.rbu')
 
     def get_rbu(self):
         # pylint: disable=R0201

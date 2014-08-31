@@ -26,41 +26,26 @@
 
 from __future__ import unicode_literals
 
-from linshare_cli.common.core import VTable
 from linshare_cli.common.core import HTable
+from linshare_cli.common.filters import PartialOr
 from linshare_cli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
-import re
 import argparse
 
 
 # -----------------------------------------------------------------------------
 class FunctionalityListCommand(DefaultCommand):
     """ List all functionalities."""
+    IDENTIFIER = "identifier"
 
     def __call__(self, args):
         super(FunctionalityListCommand, self).__call__(args)
-        json_obj = self.ls.funcs.list(args.domain)
-        keys = self.ls.funcs.get_rbu().get_keys(args.extended)
-        table = None
-        if args.vertical:
-            table = VTable(keys, debug=self.debug)
-        else:
-            table = HTable(keys)
-            # styles
-            table.align["identifier"] = "l"
-            table.padding_width = 1
-        table.sortby = "identifier"
-        table.reversesort = args.reverse
-
-        def filters(row):
-            if not args.identifiers:
-                return True
-            if re.search(r"^.*(" + "|".join(args.identifiers) + ").*$",
-                         row.get('identifier')):
-                return True
-            return False
-        table.print_table(json_obj, keys, filters)
+        cli = self.ls.funcs
+        table = self.get_table(args, cli, self.IDENTIFIER)
+        table.show_table(
+            cli.list(),
+            PartialOr(self.IDENTIFIER, args.identifiers, True)
+        )
         return True
 
     def complete(self, args, prefix):

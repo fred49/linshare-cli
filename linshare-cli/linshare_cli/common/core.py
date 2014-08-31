@@ -37,6 +37,8 @@ import locale
 import types
 from operator import itemgetter
 from veryprettytable import VeryPrettyTable
+from ordereddict import OrderedDict
+from hurry.filesize import size as filesize
 
 # -----------------------------------------------------------------------------
 #pylint: disable=R0921
@@ -119,10 +121,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
     def format_filesize(self, data, attr):
         """The current fied is replaced by a formatted date. The previous
         field is saved to a new field called 'field_raw'."""
-        from hurry.filesize import size
         for row in data:
             row[attr + u"_raw"] = row[attr]
-            row[attr] = size(row[attr])
+            row[attr] = filesize(row[attr])
 
     def getmaxlength(self, data):
         maxlength = {}
@@ -243,9 +244,57 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             self.print_list(json_obj, d_format, "Documents",
                             no_legend=no_legend)
 
+    def get_table(self, args, cli, first_column):
+        args.vertical = getattr(args, "vertical", False)
+        args.reverse = getattr(args, "reverse", False)
+        args.extended = getattr(args, "extended", False)
+        keys = cli.get_rbu().get_keys(args.extended)
+        table = None
+        if args.vertical:
+            table = VTable(keys, debug=self.debug)
+        else:
+            table = HTable(keys)
+            # styles
+            table.align[first_column] = "l"
+            table.padding_width = 1
+        table.sortby = first_column
+        table.reversesort = args.reverse
+        table.keys = keys
+        return table
 
 # -----------------------------------------------------------------------------
-class VTable(object):
+class BaseTable(object):
+
+    def filters(self, row, filters):
+        if filters is not None:
+            if isinstance(filters, list):
+                cpt = 0
+                for func in filters:
+                    if func.is_enable():
+                        cpt += 1
+                        if func(row):
+                            return True
+                if cpt == 0:
+                    return True
+            else:
+                if filters.is_enable():
+                    if filters(row):
+                        return True
+                else:
+                    return True
+        else:
+            return True
+
+    def formatters(self, row, formatters):
+        if formatters is not None:
+            if isinstance(formatters, list):
+                for func in formatters:
+                    func(row)
+            else:
+                formatters(row)
+
+# -----------------------------------------------------------------------------
+class VTable(BaseTable):
 
     def __init__(self, keys = [], reverse = False, debug=0):
         self.debug = debug
@@ -259,12 +308,15 @@ class VTable(object):
             self.sortby = k
             break
 
-    def load(self, data, filters=None):
+    def show_table(self, json_obj, filters=None, formatters=None):
+        self.load(json_obj, filters, formatters)
+        out = self.get_string()
+        print unicode(out)
+
+    def load(self, data, filters=None, formatters=None):
         for row in data:
-            if filters is not None:
-                if filters(row):
-                    self.add_row(row)
-            else:
+            if self.filters(row, filters):
+                self.formatters(row, formatters)
                 self.add_row(row)
 
     def add_row(self, row):
@@ -283,10 +335,9 @@ class VTable(object):
         max_length_line = 0
         records = []
         out = []
-
-        self._data = sorted(self._data, reverse=self.reversesort,
+        if self.sortby:
+            self._data = sorted(self._data, reverse=self.reversesort,
                             key=itemgetter(self.sortby))
-
         for row in self._data:
             record = []
             for k in self.keys:
@@ -294,49 +345,38 @@ class VTable(object):
                 dataa = None
                 column_data = row.get(k)
                 if isinstance(column_data, types.UnicodeType):
-                    dataa = { "key": k, "value": column_data}
+                    dataa = {"key": k, "value": column_data}
                 else:
-                    dataa = { "key": k, "value": str(column_data)}
+                    dataa = {"key": k, "value": str(column_data)}
                 t_record = unicode(t_format).format(**dataa)
                 record.append(t_record)
                 max_length_line = max(max_length_line, len(t_record))
             records.append("\n".join(record))
-        cptline=0
+        cptline = 0
         for record in records:
-            cptline+=1
+            cptline += 1
             header = "-[ RECORD " + str(cptline) + " ]-"
             header += "".join([ "-" for i in xrange(max_length_line - len(header)) ])
             out.append(header)
             out.append(record)
-
         return "\n".join(out)
-
-    def print_table(self, json_obj, keys, filters=None):
-        self.load(json_obj, filters)
-        out = self.get_string()
-        print unicode(out)
 
 
 # -----------------------------------------------------------------------------
-class HTable(VeryPrettyTable):
+class HTable(VeryPrettyTable, BaseTable):
 
-    def print_table(self, json_obj, keys, filters=None):
-
-        for row in json_obj:
-            data = []
-            for key in keys:
-                data.append(row[key])
-
-            if filters is not None:
-                if filters(row):
-                    self.add_row(data)
-            else:
-                self.add_row(data)
+    def show_table(self, json_obj, filters=None, formatters=None):
+        for json_row in json_obj:
+            data = OrderedDict()
+            for key in self.keys:
+                data[key] = json_row[key]
+            if self.filters(data, filters):
+                self.formatters(data, formatters)
+                self.add_row(data.values())
         out = self.get_string(
-            fields=keys,
+            fields=self.keys,
             #start=10,
             #end=10,
             #sortby=param
             )
         print unicode(out)
-

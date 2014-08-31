@@ -29,18 +29,42 @@ from __future__ import unicode_literals
 import urllib2
 from linshare_cli.user.core import DefaultCommand
 from argtoolbox import DefaultCompleter
+from linshare_cli.common.filters import PartialOr
+from linshare_cli.common.filters import PartialDate
+from linshare_cli.common.formatters import DateFormatter
+from linshare_cli.common.formatters import SizeFormatter
+from operator import itemgetter
 
 
 # -----------------------------------------------------------------------------
 class ReceivedSharesListCommand(DefaultCommand):
+    IDENTIFIER = "name"
 
     def __call__(self, args):
         super(ReceivedSharesListCommand, self).__call__(args)
-
-        json_obj = self.ls.rshares.list()
-        d_format = "{name:60s}{creationDate:30s}{uuid:30s}"
-        self.format_date(json_obj, 'creationDate')
-        self.print_list(json_obj, d_format, "Received Shares")
+        cli = self.ls.rshares
+        table = self.get_table(args, cli, self.IDENTIFIER)
+        # No default sort.
+        table.sortby = None
+        json_obj = cli.list()
+        # sort by size
+        if args.sort_size:
+            json_obj = sorted(json_obj, reverse=args.reverse,
+                              key=itemgetter("size"))
+        elif args.sort_name:
+            table.sortby = "name"
+        else:
+            table.sortby = "creationDate"
+        table.show_table(
+            json_obj,
+            filters=[PartialOr(self.IDENTIFIER, args.names, True),
+                     PartialDate("creationDate", args.cdate)],
+            formatters=[DateFormatter('creationDate'),
+                        DateFormatter('expirationDate'),
+                        SizeFormatter('size'),
+                        DateFormatter('modificationDate')]
+        )
+        return True
 
 
 # -----------------------------------------------------------------------------
@@ -88,3 +112,15 @@ def add_parser(subparsers, name, desc):
         'list',
         help="list received shares from linshare")
     parser_tmp2.set_defaults(__func__=ReceivedSharesListCommand())
+    parser_tmp2.add_argument('names', nargs="*", help="")
+    parser_tmp2.add_argument('--date', action="store", dest="cdate")
+    parser_tmp2.add_argument('--extended', action="store_true",
+                             help="extended format")
+    parser_tmp2.add_argument('--sort-name', action="store_true",
+                             help="sort by file name")
+    parser_tmp2.add_argument('--sort-size', action="store_true",
+                             help="sort by file size")
+    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
+                             help="reverse order while sorting")
+    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
+                             help="use vertical output mode")

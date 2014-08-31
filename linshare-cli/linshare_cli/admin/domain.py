@@ -26,8 +26,7 @@
 
 from __future__ import unicode_literals
 
-from linshare_cli.common.core import VTable
-from linshare_cli.common.core import HTable
+from linshare_cli.common.filters import PartialOr
 from linshare_cli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
 
@@ -35,31 +34,18 @@ from argtoolbox import DefaultCompleter as Completer
 # -----------------------------------------------------------------------------
 class DomainsListCommand(DefaultCommand):
     """ List all domains."""
+    IDENTIFIER = "identifier"
 
     def __call__(self, args):
         super(DomainsListCommand, self).__call__(args)
-        json_obj = self.ls.domains.list()
-        keys = self.ls.domains.get_rbu().get_keys(args.extended)
-        table = None
-        if args.vertical:
-            table = VTable(keys, debug=self.debug)
-        else:
-            table = HTable(keys)
-            # styles
-            table.align["identifier"] = "l"
-            table.padding_width = 1
-        table.sortby = "identifier"
-        table.reversesort = args.reverse
+        cli = self.ls.domains
+        table = self.get_table(args, cli, self.IDENTIFIER)
         if args.label:
             table.sortby = "label"
-        def filters(row):
-            """Return true if the current row matches the filter."""
-            if not args.identifiers:
-                return True
-            if row.get('identifier') in args.identifiers:
-                return True
-            return False
-        table.print_table(json_obj, keys, filters)
+        table.show_table(
+            cli.list(),
+            PartialOr(self.IDENTIFIER, args.identifiers, True)
+        )
         return True
 
     def complete(self, args, prefix):

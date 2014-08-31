@@ -27,20 +27,29 @@
 from __future__ import unicode_literals
 
 from linshare_cli.user.core import DefaultCommand
+from linshare_cli.common.filters import PartialOr
+from linshare_cli.common.formatters import DateFormatter
+from argtoolbox import DefaultCompleter as Completer
 
 
 # -----------------------------------------------------------------------------
 class UsersListCommand(DefaultCommand):
     """ List all users store into LinShare."""
+    IDENTIFIER = "mail"
 
     def __call__(self, args):
         super(UsersListCommand, self).__call__(args)
-
-        json_obj = self.ls.users.list()
-        d_format = "{firstName:11s}{lastName:10s}{domain:<20}{mail}"
-        #print "%(firstName)-10s %(lastName)-10s\t %(domain)s %(mail)s" % f
-        #self.pretty_json(json_obj)
-        self.print_list(json_obj, d_format, "Users")
+        cli = self.ls.users
+        table = self.get_table(args, cli, self.IDENTIFIER)
+        table.show_table(
+            cli.list(),
+            PartialOr(["mail", "lastName", "firstName"],
+                       args.pattern, True),
+            formatters=[DateFormatter('creationDate'),
+             DateFormatter('expirationDate'),
+             DateFormatter('modificationDate')]
+        )
+        return True
 
 
 # -----------------------------------------------------------------------------
@@ -50,4 +59,15 @@ def add_parser(subparsers, name, desc):
     subparsers2 = parser_tmp.add_subparsers()
     parser_tmp2 = subparsers2.add_parser('list',
                                          help="list users from linshare")
+    parser_tmp2.add_argument('pattern', nargs="*",
+                             help="").completer = Completer()
+    parser_tmp2.add_argument('-f', '--firstname', action="store")
+    parser_tmp2.add_argument('-l', '--lastname', action="store")
+    parser_tmp2.add_argument('-m', '--mail', action="store")
+    parser_tmp2.add_argument('--extended', action="store_true",
+                             help="extended format")
+    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
+                             help="reverse order while sorting")
+    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
+                             help="use vertical output mode")
     parser_tmp2.set_defaults(__func__=UsersListCommand())
