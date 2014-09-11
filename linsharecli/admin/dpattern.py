@@ -26,8 +26,8 @@
 
 from __future__ import unicode_literals
 
-from linshare_cli.common.filters import PartialOr
-from linshare_cli.admin.core import DefaultCommand
+from linsharecli.common.filters import PartialOr
+from linsharecli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
 
 

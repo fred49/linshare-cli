@@ -31,8 +31,8 @@ with codecs.open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name = 'linshare_cli',
-    version=find_version('linshare_cli', '__init__.py'),
+    name = 'linsharecli',
+    version=find_version('linsharecli', '__init__.py'),
     description = 'LinShare command line interface.',
     long_description=long_description,
 
@@ -77,7 +77,7 @@ setup(
     # List run-time dependencies here.  These will be installed by pip when your
     # project is installed.
     install_requires = ['argtoolbox==0.0.8',
-                        'linshare_api',
+                        'linshareapi',
                         'poster',
                         'progressbar',
                         'veryprettytable',

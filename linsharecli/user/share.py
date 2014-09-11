@@ -26,7 +26,7 @@
 
 from __future__ import unicode_literals
 
-from linshare_cli.user.core import DefaultCommand
+from linsharecli.user.core import DefaultCommand
 from argtoolbox import DefaultCompleter
 
 

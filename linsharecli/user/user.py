@@ -26,9 +26,9 @@
 
 from __future__ import unicode_literals
 
-from linshare_cli.common.filters import PartialOr
-from linshare_cli.common.formatters import DateFormatter
-from linshare_cli.admin.core import DefaultCommand
+from linsharecli.user.core import DefaultCommand
+from linsharecli.common.filters import PartialOr
+from linsharecli.common.formatters import DateFormatter
 from argtoolbox import DefaultCompleter as Completer
 
 
@@ -42,7 +42,7 @@ class UsersListCommand(DefaultCommand):
         cli = self.ls.users
         table = self.get_table(args, cli, self.IDENTIFIER)
         table.show_table(
-            cli.search(args.firstname, args.lastname, args.mail),
+            cli.list(),
             PartialOr(["mail", "lastName", "firstName"],
                        args.pattern, True),
             formatters=[DateFormatter('creationDate'),
@@ -54,7 +54,6 @@ class UsersListCommand(DefaultCommand):
 
 # -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc):
-    """Add all user sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()

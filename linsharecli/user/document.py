@@ -27,11 +27,11 @@
 from __future__ import unicode_literals
 
 import urllib2
-from linshare_cli.user.core import DefaultCommand
-from linshare_cli.common.filters import PartialOr
-from linshare_cli.common.filters import PartialDate
-from linshare_cli.common.formatters import DateFormatter
-from linshare_cli.common.formatters import SizeFormatter
+from linsharecli.user.core import DefaultCommand
+from linsharecli.common.filters import PartialOr
+from linsharecli.common.filters import PartialDate
+from linsharecli.common.formatters import DateFormatter
+from linsharecli.common.formatters import SizeFormatter
 from argparse import RawTextHelpFormatter
 from operator import itemgetter
 from argtoolbox import DefaultCompleter as Completer

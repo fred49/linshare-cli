@@ -40,13 +40,13 @@ from argtoolbox import SimpleSection
 from argtoolbox import Element
 from argtoolbox import Base64ElementHook
 from argtoolbox import SectionHook
-from linshare_cli.user.document import add_parser as add_document_parser
-from linshare_cli.user.share import add_parser as add_share_parser
-from linshare_cli.user.rshare import add_parser as add_received_share_parser
-from linshare_cli.user.thread import add_parser as add_threads_parser
-from linshare_cli.user.user import add_parser as add_users_parser
-from linshare_cli.user.core import add_parser as add_test_parser
-import linshare_cli
+from linsharecli.user.document import add_parser as add_document_parser
+from linsharecli.user.share import add_parser as add_share_parser
+from linsharecli.user.rshare import add_parser as add_received_share_parser
+from linsharecli.user.thread import add_parser as add_threads_parser
+from linsharecli.user.user import add_parser as add_users_parser
+from linsharecli.user.core import add_parser as add_test_parser
+import linsharecli
 
 # if you want to debug argcomplete completion,
 # you just need to export _ARC_DEBUG=True
@@ -188,7 +188,7 @@ section 'server-4'""")
 
 PROG = LinShareCliProgram(
     "linshare-cli",
-    version=linshare_cli.__version__,
+    version=linsharecli.__version__,
     force_debug=os.getenv('_LINSHARE_CLI_USER_DEBUG', False),
     force_debug_to_file=os.getenv('_LINSHARE_CLI_USER_DEBUG_FILE', False),
     desc="""An user cli for LinShare, using its REST API.

@@ -40,15 +40,15 @@ from argtoolbox import SimpleSection
 from argtoolbox import Element
 from argtoolbox import Base64ElementHook
 from argtoolbox import SectionHook
-from linshare_cli.admin.thread import add_parser as add_threads_parser
-from linshare_cli.admin.tmember import add_parser as add_thread_members_parser
-from linshare_cli.admin.user import add_parser as add_users_parser
-from linshare_cli.admin.core import add_parser as add_test_parser
-from linshare_cli.admin.domain import add_parser as add_domains_parser
-from linshare_cli.admin.ldap import add_parser as add_ldap_connections_parser
-from linshare_cli.admin.dpattern import add_parser as add_domain_patterns_parser
-from linshare_cli.admin.func import add_parser as add_functionalitites_parser
-import linshare_cli
+from linsharecli.admin.thread import add_parser as add_threads_parser
+from linsharecli.admin.tmember import add_parser as add_thread_members_parser
+from linsharecli.admin.user import add_parser as add_users_parser
+from linsharecli.admin.core import add_parser as add_test_parser
+from linsharecli.admin.domain import add_parser as add_domains_parser
+from linsharecli.admin.ldap import add_parser as add_ldap_connections_parser
+from linsharecli.admin.dpattern import add_parser as add_domain_patterns_parser
+from linsharecli.admin.func import add_parser as add_functionalitites_parser
+import linsharecli
 
 # if you want to debug argcomplete completion,
 # you just need to export _ARC_DEBUG=True
@@ -188,7 +188,7 @@ section 'server-4'""")
 # you just need to export _LINSHARE_CLI_ADMIN_DEBUG=True
 PROG = LinShareCliProgram(
     "linshare-admin-cli",
-    version=linshare_cli.__version__,
+    version=linsharecli.__version__,
     force_debug=os.getenv('_LINSHARE_CLI_ADMIN_DEBUG', False),
     force_debug_to_file=os.getenv('_LINSHARE_CLI_ADMIN_DEBUG_FILE', False),
     desc="""An user cli for LinShare, using its REST API.

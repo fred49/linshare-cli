@@ -26,9 +26,9 @@
 
 from __future__ import unicode_literals
 
-from linshare_cli.admin.core import DefaultCommand
-from linshare_cli.common.filters import PartialOr
-from linshare_cli.common.formatters import DateFormatter
+from linsharecli.admin.core import DefaultCommand
+from linsharecli.common.filters import PartialOr
+from linsharecli.common.formatters import DateFormatter
 from argtoolbox import DefaultCompleter as Completer
 
 

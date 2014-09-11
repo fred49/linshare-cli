@@ -26,30 +26,26 @@
 
 from __future__ import unicode_literals
 
-from linshare_cli.common.filters import PartialOr
-from linshare_cli.common.formatters import DateFormatter
-from linshare_cli.common.core import VTable
-from linshare_cli.common.core import HTable
-from linshare_cli.admin.core import DefaultCommand
-from argtoolbox import DefaultCompleter as Completer
+from linsharecli.user.core import DefaultCommand
+from argtoolbox import DefaultCompleter
 
 
 # -----------------------------------------------------------------------------
 class ThreadMembersListCommand(DefaultCommand):
     """ List all thread members store from a thread."""
-    IDENTIFIER = "name"
 
     def __call__(self, args):
         super(ThreadMembersListCommand, self).__call__(args)
-        cli = self.ls.thread_members
-        table = self.get_table(args, cli, self.IDENTIFIER)
-        table.show_table(
-            cli.list(args.uuid)
-        )
-        return True
+
+        json_obj = self.ls.thread_members.list(args.uuid)
+
+        d_format = "{firstName:11s}{lastName:10s}{admin:<7}{readonly:<9}{id}"
+        #self.pretty_json(json_obj)
+        self.print_list(json_obj, d_format, "Thread members")
 
     def complete(self, args, prefix):
         super(ThreadMembersListCommand, self).__call__(args)
+
         json_obj = self.ls.threads.list()
         return (v.get('uuid')
                 for v in json_obj if v.get('uuid').startswith(prefix))
@@ -57,23 +53,16 @@ class ThreadMembersListCommand(DefaultCommand):
 
 # -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc):
-    """Add all thread member sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
     parser_tmp2 = subparsers2.add_parser(
-        'list',
+        'listmembers',
         help="list thread members.")
     parser_tmp2.add_argument(
         '-u',
         '--uuid',
         action="store",
         dest="uuid",
-        required=True).completer = Completer()
-    parser_tmp2.add_argument('--extended', action="store_true",
-                             help="extended format")
-    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
-                             help="reverse order while sorting")
-    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
-                             help="use vertical output mode")
+        required=True).completer = DefaultCompleter()
     parser_tmp2.set_defaults(__func__=ThreadMembersListCommand())
