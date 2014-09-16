@@ -366,10 +366,17 @@ class VTable(BaseTable):
 class HTable(VeryPrettyTable, BaseTable):
 
     def show_table(self, json_obj, filters=None, formatters=None):
+        ignore_exceptions = {}
         for json_row in json_obj:
             data = OrderedDict()
             for key in self.keys:
-                data[key] = json_row[key]
+                try:
+                    data[key] = json_row[key]
+                except KeyError as ex:
+                    data[key] = None
+                    if not ignore_exceptions.get(key, None):
+                        ignore_exceptions[key] = True
+                        print "WARN: KeyError: " + str(ex)
             if self.filters(data, filters):
                 self.formatters(data, formatters)
                 self.add_row(data.values())
