@@ -294,6 +294,9 @@ def add_parser(subparsers, name, desc):
                              help="reverse order while sorting")
     parser_tmp2.add_argument('-t', '--vertical', action="store_true",
                              help="use vertical output mode")
+    parser_tmp2.add_argument('--csv', action="store_true", help="Csv output")
+    parser_tmp2.add_argument('--raw', action="store_true",
+                             help="Disable all formatters")
     parser_tmp2.set_defaults(__func__=FunctionalityListCommand())
 
     # command : display

@@ -111,6 +111,9 @@ def add_parser(subparsers, name, desc):
     parser_tmp2 = subparsers2.add_parser(
         'list',
         help="list received shares from linshare")
+    parser_tmp2.add_argument('--csv', action="store_true", help="Csv output")
+    parser_tmp2.add_argument('--raw', action="store_true",
+                             help="Disable all formatters")
     parser_tmp2.set_defaults(__func__=ReceivedSharesListCommand())
     parser_tmp2.add_argument('names', nargs="*", help="")
     parser_tmp2.add_argument('--date', action="store", dest="cdate")

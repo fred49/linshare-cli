@@ -248,6 +248,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         args.vertical = getattr(args, "vertical", False)
         args.reverse = getattr(args, "reverse", False)
         args.extended = getattr(args, "extended", False)
+        args.csv = getattr(args, "csv", False)
+        args.raw = getattr(args, "raw", False)
         keys = cli.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:
@@ -260,7 +262,10 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         table.sortby = first_column
         table.reversesort = args.reverse
         table.keys = keys
+        table.raw = args.raw
+        table.csv = args.csv
         return table
+
 
 # -----------------------------------------------------------------------------
 class BaseTable(object):
@@ -293,6 +298,10 @@ class BaseTable(object):
             else:
                 formatters(row)
 
+    def get_raw(self):
+        raise NotImplementedError()
+
+
 # -----------------------------------------------------------------------------
 class VTable(BaseTable):
 
@@ -301,7 +310,7 @@ class VTable(BaseTable):
         classname = str(self.__class__.__name__.lower())
         self.log = logging.getLogger('linshare-cli.' + classname)
         self.keys = keys
-        self._data = []
+        self._rows = []
         self._maxlengthkey = 0
         self.reversesort = reverse
         for k in keys:
@@ -310,13 +319,17 @@ class VTable(BaseTable):
 
     def show_table(self, json_obj, filters=None, formatters=None):
         self.load(json_obj, filters, formatters)
+        if self.csv:
+            print self.get_raw()
+            return
         out = self.get_string()
         print unicode(out)
 
     def load(self, data, filters=None, formatters=None):
         for row in data:
             if self.filters(row, filters):
-                self.formatters(row, formatters)
+                if not self.raw:
+                    self.formatters(row, formatters)
                 self.add_row(row)
 
     def add_row(self, row):
@@ -324,8 +337,22 @@ class VTable(BaseTable):
             self.log.debug(row)
         if not isinstance(row, dict):
             raise ValueError("every row should be a dict")
-        self._data.append(row)
+        self._rows.append(row)
         self.update_max_lengthkey(row)
+
+    def get_raw(self):
+        records = []
+        records.append(";".join(self.keys))
+        for row in self._rows:
+            record = []
+            for k in self.keys:
+                data = row.get(k)
+                if isinstance(data, types.UnicodeType):
+                    record.append(data)
+                else:
+                    record.append(str(data))
+            records.append(";".join(record))
+        return "\n".join(records)
 
     def update_max_lengthkey(self, row):
         for k, v in row.items():
@@ -336,9 +363,9 @@ class VTable(BaseTable):
         records = []
         out = []
         if self.sortby:
-            self._data = sorted(self._data, reverse=self.reversesort,
+            self._rows = sorted(self._rows, reverse=self.reversesort,
                             key=itemgetter(self.sortby))
-        for row in self._data:
+        for row in self._rows:
             record = []
             for k in self.keys:
                 t_format = u"{key:" + unicode(str(self._maxlengthkey)) + u"s} | {value:s}"
@@ -378,8 +405,12 @@ class HTable(VeryPrettyTable, BaseTable):
                         ignore_exceptions[key] = True
                         print "WARN: KeyError: " + str(ex)
             if self.filters(data, filters):
-                self.formatters(data, formatters)
+                if not self.raw:
+                    self.formatters(data, formatters)
                 self.add_row(data.values())
+        if self.csv:
+            print self.get_raw()
+            return
         out = self.get_string(
             fields=self.keys,
             #start=10,
@@ -387,3 +418,16 @@ class HTable(VeryPrettyTable, BaseTable):
             #sortby=param
             )
         print unicode(out)
+
+    def get_raw(self):
+        records = []
+        records.append(";".join(self.keys))
+        for row in self._rows:
+            record = []
+            for k in row:
+                if isinstance(k, types.UnicodeType):
+                    record.append(k)
+                else:
+                    record.append(str(k))
+            records.append(";".join(record))
+        return "\n".join(records)
