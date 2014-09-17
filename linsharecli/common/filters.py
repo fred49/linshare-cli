@@ -40,16 +40,23 @@ class Filter(object):
         self.values = values
 
     def is_enable(self):
-        if self.values is None or len(self.values) == 0:
+        if self.values is None:
             return False
+        elif isinstance(self.values, list):
+            if len(self.values) == 0:
+                return False
+            else:
+                for i in self.values:
+                    if i is not None:
+                        return True
         else:
             return True
 
     def get_val(self, row):
         if isinstance(self.prop, list):
-            vals = []
+            vals = {}
             for prop in self.prop:
-                vals.append(self._get_val(row, prop))
+                vals[prop] = self._get_val(row, prop)
             return vals
         else:
             return self._get_val(row, self.prop)
@@ -68,6 +75,8 @@ class PartialOr(Filter):
     def __init__(self, prop, values, ignorecase=False):
         super(PartialOr, self).__init__(prop, values)
         if self.is_enable():
+            if not isinstance(values, list):
+                raise ValueError("input values should be a list")
             pattern = r"^.*(" + "|".join(self.values) + ").*$"
             if ignorecase:
                 self.regex = re.compile(pattern, re.IGNORECASE)
@@ -78,8 +87,8 @@ class PartialOr(Filter):
         if not self.is_enable():
             return True
         vals = self.get_val(row)
-        if isinstance(vals, list):
-            for val in vals:
+        if isinstance(vals, dict):
+            for val in vals.values():
                 if self.regex.match(val):
                     return True
         else:
@@ -90,6 +99,36 @@ class PartialOr(Filter):
                 if self.regex.match(str(vals)):
                     return True
         return False
+
+
+# -----------------------------------------------------------------------------
+class PartialMultipleAnd(Filter):
+    """Get the current property into the current row, and match the result with
+     a list of values"""
+
+    def __init__(self, propvalues, ignorecase=False):
+        super(PartialMultipleAnd, self).__init__(propvalues.keys(), propvalues.values())
+        self.regex = {}
+        self.propvalues = propvalues
+        if self.is_enable():
+            for key, value in propvalues.items():
+                self.regex[key] = None
+                if value is not None:
+                    pattern = r"^.*" + value + ".*$"
+                    if ignorecase:
+                        self.regex[key] = re.compile(pattern, re.IGNORECASE)
+                    else:
+                        self.regex[key] = re.compile(pattern)
+
+    def __call__(self, row):
+        if not self.is_enable():
+            return True
+        vals = self.get_val(row)
+        for key, val in vals.items():
+            if self.regex[key]:
+                if not self.regex[key].match(val):
+                    return False
+        return True
 
 
 # -----------------------------------------------------------------------------
@@ -107,8 +146,8 @@ class PartialDate(Filter):
         if not self.is_enable():
             return True
         vals = self.get_val(row)
-        if isinstance(vals, list):
-            for val in vals:
+        if isinstance(vals, dict):
+            for val in vals.values():
                 if self.regex.match(val):
                     return True
         else:

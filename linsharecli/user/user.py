@@ -27,6 +27,7 @@
 from __future__ import unicode_literals
 
 from linsharecli.user.core import DefaultCommand
+from linsharecli.common.filters import PartialMultipleAnd
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import DateFormatter
 from argtoolbox import DefaultCompleter as Completer
@@ -43,8 +44,11 @@ class UsersListCommand(DefaultCommand):
         table = self.get_table(args, cli, self.IDENTIFIER)
         table.show_table(
             cli.list(),
-            PartialOr(["mail", "lastName", "firstName"],
-                       args.pattern, True),
+            [PartialMultipleAnd({"mail": args.mail,
+                                "firstName": args.firstname,
+                                "lastName": args.lastname},
+                                True),
+             PartialOr("uuid", args.uuid)],
             formatters=[DateFormatter('creationDate'),
              DateFormatter('expirationDate'),
              DateFormatter('modificationDate')]
@@ -64,6 +68,7 @@ def add_parser(subparsers, name, desc):
     parser_tmp2.add_argument('-f', '--firstname', action="store")
     parser_tmp2.add_argument('-l', '--lastname', action="store")
     parser_tmp2.add_argument('-m', '--mail', action="store")
+    parser_tmp2.add_argument('-u', '--uuid', action="append")
     parser_tmp2.add_argument('--extended', action="store_true",
                              help="extended format")
     parser_tmp2.add_argument('-r', '--reverse', action="store_true",

@@ -26,7 +26,6 @@
 
 from __future__ import unicode_literals
 
-from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import DateFormatter
 from linsharecli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
@@ -43,8 +42,6 @@ class UsersListCommand(DefaultCommand):
         table = self.get_table(args, cli, self.IDENTIFIER)
         table.show_table(
             cli.search(args.firstname, args.lastname, args.mail),
-            PartialOr(["mail", "lastName", "firstName"],
-                       args.pattern, True),
             formatters=[DateFormatter('creationDate'),
              DateFormatter('expirationDate'),
              DateFormatter('modificationDate')]
