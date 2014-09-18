@@ -53,13 +53,9 @@ called "server" :
 
 
 
-Each line which begins with "#" and ";" is a comment.
-
-"str" means that we are expecting a string. boolean (true, false) or integer can
-be expected.
-
+Each lines which begins with "#" or ";" are comments.
+"str" is the type of data we are expecting, str for string, bool for boolean (true, false) or int for integer.
 Every optional attributes, like host, are prefixed by ";".
-
 Mandatory attributes are not prefixed.
 
 
