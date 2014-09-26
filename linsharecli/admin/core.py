@@ -102,8 +102,33 @@ class TestCommand(argtoolbox.DefaultCommand):
 
 
 # -----------------------------------------------------------------------------
+class ListConfigCommand(DefaultCommand):
+    """"""
+
+    def __init__(self, config=None):
+        super(ListConfigCommand, self).__init__(config)
+        self.verbose = False
+        self.debug = False
+
+    def __call__(self, args):
+        self.verbose = args.verbose
+        self.debug = args.debug
+        seclist = self.config.file_parser.sections()
+        print
+        print "Available sections:"
+        print "==================="
+        print
+        for i in seclist:
+            if i.startswith("server-"):
+                print " - " + "-".join(i.split('-')[1:])
+        print ""
+
+
+# -----------------------------------------------------------------------------
 def add_parser(subparsers, config):
     """Add test commands."""
     parser_tmp = subparsers.add_parser('test', add_help=False)
     parser_tmp.add_argument('files', nargs='*')
     parser_tmp.set_defaults(__func__=TestCommand(config))
+    parser_tmp = subparsers.add_parser('list')
+    parser_tmp.set_defaults(__func__=ListConfigCommand(config))

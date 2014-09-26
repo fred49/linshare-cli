@@ -45,7 +45,7 @@ from linsharecli.user.share import add_parser as add_share_parser
 from linsharecli.user.rshare import add_parser as add_received_share_parser
 from linsharecli.user.thread import add_parser as add_threads_parser
 from linsharecli.user.user import add_parser as add_users_parser
-from linsharecli.user.core import add_parser as add_test_parser
+from linsharecli.user.core import add_parser as add_core_parser
 import linsharecli
 
 # if you want to debug argcomplete completion,
@@ -55,7 +55,6 @@ import linsharecli
 sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
 # Not use full ?
 #sys.stdin = codecs.getreader(locale.getpreferredencoding())(sys.stdin)
-
 
 # -----------------------------------------------------------------------------
 class LinShareCliProgram(BasicProgram):
@@ -183,7 +182,7 @@ section 'server-4'""")
                                   "rshares",
                                   "Alias of received_share command")
         add_users_parser(subparsers, "users", "users")
-        add_test_parser(subparsers, self.config)
+        add_core_parser(subparsers, self.config)
 
 
 PROG = LinShareCliProgram(
