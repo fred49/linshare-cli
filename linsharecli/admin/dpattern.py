@@ -41,7 +41,7 @@ class DomainPatternsListCommand(DefaultCommand):
         cli = self.ls.domain_patterns
         table = self.get_table(args, cli, self.IDENTIFIER)
         table.show_table(
-            cli.list(),
+            cli.list(args.model),
             PartialOr(self.IDENTIFIER, args.identifiers, True)
         )
         return True
