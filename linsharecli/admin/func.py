@@ -317,7 +317,6 @@ def add_parser(subparsers, name, desc):
                              help="").completer = Completer()
     parser_tmp2.add_argument('-d', '--domain', action="store",
                              help="Completion available").completer = Completer('complete_domain')
-        #return "".split()
     policy_group = parser_tmp2.add_argument_group('Choose the policy to update')
     group = policy_group.add_mutually_exclusive_group()
     group.add_argument(
