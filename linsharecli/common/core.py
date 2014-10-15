@@ -248,8 +248,6 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         args.vertical = getattr(args, "vertical", False)
         args.reverse = getattr(args, "reverse", False)
         args.extended = getattr(args, "extended", False)
-        args.csv = getattr(args, "csv", False)
-        args.raw = getattr(args, "raw", False)
         keys = cli.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:
@@ -262,8 +260,12 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         table.sortby = first_column
         table.reversesort = args.reverse
         table.keys = keys
-        table.raw = args.raw
-        table.csv = args.csv
+        table.csv = getattr(args, "csv", False)
+        table.raw = getattr(args, "raw", False)
+        table._pref_start = getattr(args, "start", 0)
+        table._pref_end = getattr(args, "end", 0)
+        table._pref_limit = getattr(args, "limit", 0)
+        table._pref_no_csv_headers = getattr(args, "no_header", False)
         return table
 
 
@@ -310,6 +312,8 @@ class VTable(BaseTable):
         classname = str(self.__class__.__name__.lower())
         self.log = logging.getLogger('linshare-cli.' + classname)
         self.keys = keys
+        self.start = None
+        self.end = None
         self._rows = []
         self._maxlengthkey = 0
         self.reversesort = reverse
@@ -319,6 +323,16 @@ class VTable(BaseTable):
 
     def show_table(self, json_obj, filters=None, formatters=None):
         self.load(json_obj, filters, formatters)
+        if self._pref_start > 0:
+            self.start = self._pref_start
+            limit = self._pref_limit
+            if limit > 0:
+                self.end = self.start + limit
+        elif self._pref_end > 0:
+            self.start = len(self._rows) - self._pref_end
+            limit = self._pref_limit
+            if limit > 0:
+                self.end = self.start + limit
         if self.csv:
             print self.get_raw()
             return
@@ -342,8 +356,16 @@ class VTable(BaseTable):
 
     def get_raw(self):
         records = []
-        records.append(";".join(self.keys))
-        for row in self._rows:
+        if self._pref_no_csv_headers:
+            records.append(";".join(self.keys))
+        source = self._rows
+        if self.start:
+            source = source[self.start:]
+            if self.end:
+                source = source[:self.end - self.start]
+        elif self.end:
+            source = source[:self.end]
+        for row in source:
             record = []
             for k in self.keys:
                 data = row.get(k)
@@ -365,7 +387,14 @@ class VTable(BaseTable):
         if self.sortby:
             self._rows = sorted(self._rows, reverse=self.reversesort,
                             key=itemgetter(self.sortby))
-        for row in self._rows:
+        source = self._rows
+        if self.start:
+            source = source[self.start:]
+            if self.end:
+                source = source[:self.end - self.start]
+        elif self.end:
+            source = source[:self.end]
+        for row in source:
             record = []
             for k in self.keys:
                 t_format = u"{key:" + unicode(str(self._maxlengthkey)) + u"s} | {value:s}"
@@ -408,21 +437,34 @@ class HTable(VeryPrettyTable, BaseTable):
                 if not self.raw:
                     self.formatters(data, formatters)
                 self.add_row(data.values())
+        if self._pref_start > 0:
+            self.start = self._pref_start
+            limit = self._pref_limit
+            if limit > 0:
+                self.end = self.start + limit
+        elif self._pref_end > 0:
+            self.start = len(self._rows) - self._pref_end
+            limit = self._pref_limit
+            if limit > 0:
+                self.end = self.start + limit
         if self.csv:
             print self.get_raw()
             return
-        out = self.get_string(
-            fields=self.keys,
-            #start=10,
-            #end=10,
-            #sortby=param
-            )
+        out = self.get_string(fields=self.keys)
         print unicode(out)
 
     def get_raw(self):
         records = []
-        records.append(";".join(self.keys))
-        for row in self._rows:
+        if self._pref_no_csv_headers:
+            records.append(";".join(self.keys))
+        source = self._rows
+        if self.start:
+            source = source[self.start:]
+            if self.end:
+                source = source[:self.end - self.start]
+        elif self.end:
+            source = source[:self.end]
+        for row in source:
             record = []
             for k in row:
                 if isinstance(k, types.UnicodeType):

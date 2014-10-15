@@ -270,6 +270,14 @@ def add_parser(subparsers, name, desc):
     parser_tmp2.add_argument('-t', '--vertical', action="store_true",
                              help="use vertical output mode")
     parser_tmp2.add_argument('--csv', action="store_true", help="Csv output")
+    parser_tmp2.add_argument('--no-headers', action="store_true",
+                             help="No headers for csv output")
     parser_tmp2.add_argument('--raw', action="store_true",
                              help="Disable all formatters")
+    parser_tmp2.add_argument('--start', action="store", type=int, default=0,
+                             help="Print all left rows after the first n rows.")
+    parser_tmp2.add_argument('--end', action="store", type=int, default=0,
+                             help="Print the last n rows.")
+    parser_tmp2.add_argument('--limit', action="store", type=int, default=0,
+                             help="Used to limit the number of row to print.")
     parser_tmp2.set_defaults(__func__=DocumentsListCommand())
