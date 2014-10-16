@@ -72,7 +72,7 @@ class DocumentsListCommand(DefaultCommand):
         if args.download:
             table.load(json_obj, filters, formatters)
             for row in table.get_raw():
-                self.download(row.get('uuid'))
+                self.download(row.get('uuid'), args.output_dir)
         else:
             table.show_table(json_obj, filters, formatters)
         return True
@@ -83,9 +83,9 @@ class DocumentsListCommand(DefaultCommand):
             if not os.path.isdir(directory):
                 os.makedirs(directory)
 
-    def download(self, uuid):
+    def download(self, uuid, directory):
         try:
-            file_name, req_time = self.ls.documents.download(uuid)
+            file_name, req_time = self.ls.documents.download(uuid, directory)
             self.log.info(
                 "The file '" + file_name +
                 "' was downloaded. (" + req_time + "s)")
