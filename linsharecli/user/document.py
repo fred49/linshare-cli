@@ -27,6 +27,8 @@
 from __future__ import unicode_literals
 
 import urllib2
+import os
+from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
@@ -42,13 +44,23 @@ class DocumentsListCommand(DefaultCommand):
     """ List all documents store into LinShare."""
     IDENTIFIER = "name"
 
+    @Time('linsharecli.document', label='Global time : %s')
     def __call__(self, args):
         super(DocumentsListCommand, self).__call__(args)
+        self.check_dir(args.output_dir)
         cli = self.ls.documents
         table = self.get_table(args, cli, self.IDENTIFIER)
         # No default sort.
         table.sortby = None
         json_obj = cli.list()
+        # Filters
+        filters = [PartialOr(self.IDENTIFIER, args.names, True),
+                 PartialDate("creationDate", args.cdate)]
+        # Formatters
+        formatters = [DateFormatter('creationDate'),
+                    DateFormatter('expirationDate'),
+                    SizeFormatter('size'),
+                    DateFormatter('modificationDate')]
         # sort by size
         if args.sort_size:
             json_obj = sorted(json_obj, reverse=args.reverse,
@@ -57,16 +69,29 @@ class DocumentsListCommand(DefaultCommand):
             table.sortby = "name"
         else:
             table.sortby = "creationDate"
-        table.show_table(
-            json_obj,
-            filters=[PartialOr(self.IDENTIFIER, args.names, True),
-                     PartialDate("creationDate", args.cdate)],
-            formatters=[DateFormatter('creationDate'),
-                        DateFormatter('expirationDate'),
-                        SizeFormatter('size'),
-                        DateFormatter('modificationDate')]
-        )
+        if args.download:
+            table.load(json_obj, filters, formatters)
+            for row in table.get_raw():
+                self.download(row.get('uuid'))
+        else:
+            table.show_table(json_obj, filters, formatters)
         return True
+
+
+    def check_dir(self, directory):
+        if directory:
+            if not os.path.isdir(directory):
+                os.makedirs(directory)
+
+    def download(self, uuid):
+        try:
+            file_name, req_time = self.ls.documents.download(uuid)
+            self.log.info(
+                "The file '" + file_name +
+                "' was downloaded. (" + req_time + "s)")
+        except urllib2.HTTPError as ex:
+            print "Error : "
+            print ex
 
 
 # -----------------------------------------------------------------------------
@@ -280,4 +305,6 @@ def add_parser(subparsers, name, desc):
                              help="Print the last n rows.")
     parser_tmp2.add_argument('--limit', action="store", type=int, default=0,
                              help="Used to limit the number of row to print.")
+    parser_tmp2.add_argument('-o', '--output-dir', action="store")
+    parser_tmp2.add_argument('-d', '--download', action="store_true")
     parser_tmp2.set_defaults(__func__=DocumentsListCommand())

@@ -50,7 +50,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
     def __init__(self, config=None):
         super(DefaultCommand, self).__init__(config)
         classname = str(self.__class__.__name__.lower())
-        self.log = logging.getLogger('linshare-cli.' + classname)
+        self.log = logging.getLogger('linsharecli.' + classname)
         self.verbose = False
         self.debug = False
         #pylint: disable=C0103
@@ -246,6 +246,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 
     def get_table(self, args, cli, first_column):
         args.vertical = getattr(args, "vertical", False)
+        if getattr(args, "download", False):
+            args.vertical = True
         args.reverse = getattr(args, "reverse", False)
         args.extended = getattr(args, "extended", False)
         keys = cli.get_rbu().get_keys(args.extended)
@@ -303,6 +305,12 @@ class BaseTable(object):
     def get_raw(self):
         raise NotImplementedError()
 
+    def get_csv(self):
+        raise NotImplementedError()
+
+    def load(self, data, filters=None, formatters=None):
+        raise NotImplementedError()
+
 
 # -----------------------------------------------------------------------------
 class VTable(BaseTable):
@@ -310,7 +318,7 @@ class VTable(BaseTable):
     def __init__(self, keys = [], reverse = False, debug=0):
         self.debug = debug
         classname = str(self.__class__.__name__.lower())
-        self.log = logging.getLogger('linshare-cli.' + classname)
+        self.log = logging.getLogger('linsharecli.' + classname)
         self.keys = keys
         self.start = None
         self.end = None
@@ -323,18 +331,8 @@ class VTable(BaseTable):
 
     def show_table(self, json_obj, filters=None, formatters=None):
         self.load(json_obj, filters, formatters)
-        if self._pref_start > 0:
-            self.start = self._pref_start
-            limit = self._pref_limit
-            if limit > 0:
-                self.end = self.start + limit
-        elif self._pref_end > 0:
-            self.start = len(self._rows) - self._pref_end
-            limit = self._pref_limit
-            if limit > 0:
-                self.end = self.start + limit
         if self.csv:
-            print self.get_raw()
+            print self.get_csv()
             return
         out = self.get_string()
         print unicode(out)
@@ -345,6 +343,16 @@ class VTable(BaseTable):
                 if not self.raw:
                     self.formatters(row, formatters)
                 self.add_row(row)
+        if self._pref_start > 0:
+            self.start = self._pref_start
+            limit = self._pref_limit
+            if limit > 0:
+                self.end = self.start + limit
+        elif self._pref_end > 0:
+            self.start = len(self._rows) - self._pref_end
+            limit = self._pref_limit
+            if limit > 0:
+                self.end = self.start + limit
 
     def add_row(self, row):
         if self.debug >= 2:
@@ -355,9 +363,6 @@ class VTable(BaseTable):
         self.update_max_lengthkey(row)
 
     def get_raw(self):
-        records = []
-        if self._pref_no_csv_headers:
-            records.append(";".join(self.keys))
         source = self._rows
         if self.start:
             source = source[self.start:]
@@ -365,7 +370,13 @@ class VTable(BaseTable):
                 source = source[:self.end - self.start]
         elif self.end:
             source = source[:self.end]
-        for row in source:
+        return source
+
+    def get_csv(self):
+        records = []
+        if self._pref_no_csv_headers:
+            records.append(";".join(self.keys))
+        for row in self.get_raw():
             record = []
             for k in self.keys:
                 data = row.get(k)
@@ -421,7 +432,7 @@ class VTable(BaseTable):
 # -----------------------------------------------------------------------------
 class HTable(VeryPrettyTable, BaseTable):
 
-    def show_table(self, json_obj, filters=None, formatters=None):
+    def load(self, json_obj, filters=None, formatters=None):
         ignore_exceptions = {}
         for json_row in json_obj:
             data = OrderedDict()
@@ -447,16 +458,16 @@ class HTable(VeryPrettyTable, BaseTable):
             limit = self._pref_limit
             if limit > 0:
                 self.end = self.start + limit
+
+    def show_table(self, json_obj, filters=None, formatters=None):
+        self.load(json_obj, filters, formatters)
         if self.csv:
-            print self.get_raw()
+            print self.get_csv()
             return
         out = self.get_string(fields=self.keys)
         print unicode(out)
 
     def get_raw(self):
-        records = []
-        if self._pref_no_csv_headers:
-            records.append(";".join(self.keys))
         source = self._rows
         if self.start:
             source = source[self.start:]
@@ -464,7 +475,13 @@ class HTable(VeryPrettyTable, BaseTable):
                 source = source[:self.end - self.start]
         elif self.end:
             source = source[:self.end]
-        for row in source:
+        return source
+
+    def get_csv(self):
+        records = []
+        if self._pref_no_csv_headers:
+            records.append(";".join(self.keys))
+        for row in self.get_raw():
             record = []
             for k in row:
                 if isinstance(k, types.UnicodeType):
