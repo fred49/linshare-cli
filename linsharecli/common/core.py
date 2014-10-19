@@ -248,6 +248,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         args.vertical = getattr(args, "vertical", False)
         if getattr(args, "download", False):
             args.vertical = True
+        if getattr(args, "delete", False):
+            args.vertical = True
         args.reverse = getattr(args, "reverse", False)
         args.extended = getattr(args, "extended", False)
         keys = cli.get_rbu().get_keys(args.extended)

@@ -69,7 +69,11 @@ class DocumentsListCommand(DefaultCommand):
             table.sortby = "name"
         else:
             table.sortby = "creationDate"
-        if args.download:
+        if args.delete:
+            table.load(json_obj, filters, formatters)
+            for row in table.get_raw():
+                self.delete(row.get('uuid'))
+        elif args.download:
             table.load(json_obj, filters, formatters)
             for row in table.get_raw():
                 self.download(row.get('uuid'), args.output_dir)
@@ -92,6 +96,19 @@ class DocumentsListCommand(DefaultCommand):
         except urllib2.HTTPError as ex:
             print "Error : "
             print ex
+
+    def delete(self, uuid):
+        try:
+            json_obj = self.ls.documents.delete(uuid)
+            file_name = json_obj.get('name')
+            self.log.info(
+                "The file '" + file_name +
+                "' (" + uuid + ")" +
+                " was deleted. (" + self.ls.last_req_time + "s)")
+        except urllib2.HTTPError as ex:
+            print "Error : "
+            print ex
+            return
 
 
 # -----------------------------------------------------------------------------
@@ -307,4 +324,5 @@ def add_parser(subparsers, name, desc):
                              help="Used to limit the number of row to print.")
     parser_tmp2.add_argument('-o', '--output-dir', action="store")
     parser_tmp2.add_argument('-d', '--download', action="store_true")
+    parser_tmp2.add_argument('-D', '--delete', action="store_true")
     parser_tmp2.set_defaults(__func__=DocumentsListCommand())
