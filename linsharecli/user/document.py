@@ -71,12 +71,30 @@ class DocumentsListCommand(DefaultCommand):
             table.sortby = "creationDate"
         if args.delete:
             table.load(json_obj, filters, formatters)
-            for row in table.get_raw():
-                self.delete(row.get('uuid'))
+            res = 0
+            rows = table.get_raw()
+            if len(rows) == 0:
+                self.log.warn("No documents were found.")
+            for row in rows:
+                res += self.delete(row.get('uuid'))
+            if res > 0:
+                if res == 1:
+                    self.log.warn("One document was not deleted.")
+                else:
+                    self.log.warn("%s documents were not deleted.", res)
         elif args.download:
             table.load(json_obj, filters, formatters)
-            for row in table.get_raw():
-                self.download(row.get('uuid'), args.output_dir)
+            res = 0
+            rows = table.get_raw()
+            if len(rows) == 0:
+                self.log.warn("No documents were found.")
+            for row in rows:
+                res += self.download(row.get('uuid'), args.output_dir)
+            if res > 0:
+                if res == 1:
+                    self.log.warn("One document was not downloaded.")
+                else:
+                    self.log.warn("%s documents were not downloaded.", res)
         else:
             table.show_table(json_obj, filters, formatters)
             self.log.info("Result count : %s", len(table.get_raw()))
@@ -93,9 +111,10 @@ class DocumentsListCommand(DefaultCommand):
             self.log.info(
                 "The file '" + file_name +
                 "' was downloaded. (" + req_time + "s)")
+            return 0
         except urllib2.HTTPError as ex:
-            print "Error : "
-            print ex
+            self.log.error("Download error : %s", ex)
+            return 1
 
     def delete(self, uuid):
         try:
@@ -105,10 +124,10 @@ class DocumentsListCommand(DefaultCommand):
                 "The file '" + file_name +
                 "' (" + uuid + ")" +
                 " was deleted. (" + self.ls.last_req_time + "s)")
+            return 1
         except urllib2.HTTPError as ex:
-            print "Error : "
-            print ex
-            return
+            self.log.error("Delete error : %s", ex)
+            return 1
 
 
 # -----------------------------------------------------------------------------
