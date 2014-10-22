@@ -79,8 +79,8 @@ class DocumentsListCommand(DefaultCommand):
                 self.download(row.get('uuid'), args.output_dir)
         else:
             table.show_table(json_obj, filters, formatters)
+            self.log.info("Result count : %s", len(table.get_raw()))
         return True
-
 
     def check_dir(self, directory):
         if directory:
