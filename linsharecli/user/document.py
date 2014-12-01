@@ -95,6 +95,9 @@ class DocumentsListCommand(DefaultCommand):
                     self.log.warn("One document was not downloaded.")
                 else:
                     self.log.warn("%s documents were not downloaded.", res)
+        elif args.count_only:
+            table.load(json_obj, filters, formatters)
+            self.log.info("Result count : %s", len(table.get_raw()))
         else:
             table.show_table(json_obj, filters, formatters)
             self.log.info("Result count : %s", len(table.get_raw()))
@@ -344,4 +347,6 @@ def add_parser(subparsers, name, desc):
     parser_tmp2.add_argument('-o', '--output-dir', action="store")
     parser_tmp2.add_argument('-d', '--download', action="store_true")
     parser_tmp2.add_argument('-D', '--delete', action="store_true")
+    parser_tmp2.add_argument('-c', '--count', action="store_true",
+                             dest="count_only")
     parser_tmp2.set_defaults(__func__=DocumentsListCommand())
