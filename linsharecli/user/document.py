@@ -141,12 +141,17 @@ class DocumentsUploadCommand(DefaultCommand):
     def __call__(self, args):
         super(DocumentsUploadCommand, self).__call__(args)
 
+        count = len(args.files)
+        position = 0
         for file_path in args.files:
+            position += 1
             json_obj = self.ls.documents.upload(file_path, args.description)
             if json_obj:
                 json_obj['time'] = self.ls.last_req_time
+                json_obj['position'] = position
+                json_obj['count'] = count
                 self.log.info(
-                    "The file '%(name)s' (%(uuid)s) was uploaded. (%(time)ss)",
+                    "%(position)s/%(count)s: The file '%(name)s' (%(uuid)s) was uploaded. (%(time)ss)",
                     json_obj)
 
 
