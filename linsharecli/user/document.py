@@ -26,8 +26,6 @@
 
 from __future__ import unicode_literals
 
-import urllib2
-import os
 from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.filters import PartialOr
@@ -35,23 +33,42 @@ from linsharecli.common.filters import PartialDate
 from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.formatters import SizeFormatter
 from argparse import RawTextHelpFormatter
-from operator import itemgetter
 from argtoolbox import DefaultCompleter as Completer
 
 
 # -----------------------------------------------------------------------------
-class DocumentsListCommand(DefaultCommand):
+class DocumentsCommand(DefaultCommand):
     """ List all documents store into LinShare."""
     IDENTIFIER = "name"
+    DEFAULT_SORT = "creationDate"
+    DEFAULT_SORT_SIZE = "size"
+    DEFAULT_TOTAL = "Documents found : %s"
+    DEFAULT_SORT_NAME = "name"
+    RESOURCE_IDENTIFIER = "uuid"
+    MSG_RS_NOT_FOUND = "No documents could be found."
+    MSG_RS_DELETED = "The document '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
+    MSG_RS_CAN_NOT_BE_DELETED = "The document '%(uuid)s' can not be deleted."
+    MSG_RS_CAN_NOT_BE_DELETED_M = "%s document(s) can not be deleted."
+    MSG_RS_DOWNLOADED = "The document '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
+    MSG_RS_CAN_NOT_BE_DOWNLOADED = "One document can not be downloaded."
+    MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%s documents can not be downloaded."
+
+    def complete(self, args, prefix):
+        super(DocumentsCommand, self).__call__(args)
+        json_obj = self.ls.documents.list()
+        return (
+            v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
+
+
+# -----------------------------------------------------------------------------
+class DocumentsListCommand(DocumentsCommand):
+    """ List all documents store into LinShare."""
 
     @Time('linsharecli.document', label='Global time : %s')
     def __call__(self, args):
         super(DocumentsListCommand, self).__call__(args)
-        self.check_dir(args.output_dir)
         cli = self.ls.documents
         table = self.get_table(args, cli, self.IDENTIFIER)
-        # No default sort.
-        table.sortby = None
         json_obj = cli.list()
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.names, True),
@@ -61,76 +78,7 @@ class DocumentsListCommand(DefaultCommand):
                     DateFormatter('expirationDate'),
                     SizeFormatter('size'),
                     DateFormatter('modificationDate')]
-        # sort by size
-        if args.sort_size:
-            json_obj = sorted(json_obj, reverse=args.reverse,
-                              key=itemgetter("size"))
-        elif args.sort_name:
-            table.sortby = "name"
-        else:
-            table.sortby = "creationDate"
-        if args.delete:
-            table.load(json_obj, filters, formatters)
-            res = 0
-            rows = table.get_raw()
-            if len(rows) == 0:
-                self.log.warn("No documents were found.")
-            for row in rows:
-                res += self.delete(row.get('uuid'))
-            if res > 0:
-                if res == 1:
-                    self.log.warn("One document was not deleted.")
-                else:
-                    self.log.warn("%s documents were not deleted.", res)
-        elif args.download:
-            table.load(json_obj, filters, formatters)
-            res = 0
-            rows = table.get_raw()
-            if len(rows) == 0:
-                self.log.warn("No documents were found.")
-            for row in rows:
-                res += self.download(row.get('uuid'), args.output_dir)
-            if res > 0:
-                if res == 1:
-                    self.log.warn("One document was not downloaded.")
-                else:
-                    self.log.warn("%s documents were not downloaded.", res)
-        elif args.count_only:
-            table.load(json_obj, filters, formatters)
-            self.log.info("Result count : %s", len(table.get_raw()))
-        else:
-            table.show_table(json_obj, filters, formatters)
-            self.log.info("Result count : %s", len(table.get_raw()))
-        return True
-
-    def check_dir(self, directory):
-        if directory:
-            if not os.path.isdir(directory):
-                os.makedirs(directory)
-
-    def download(self, uuid, directory):
-        try:
-            file_name, req_time = self.ls.documents.download(uuid, directory)
-            self.log.info(
-                "The file '" + file_name +
-                "' was downloaded. (" + req_time + "s)")
-            return 0
-        except urllib2.HTTPError as ex:
-            self.log.error("Download error : %s", ex)
-            return 1
-
-    def delete(self, uuid):
-        try:
-            json_obj = self.ls.documents.delete(uuid)
-            file_name = json_obj.get('name')
-            self.log.info(
-                "The file '" + file_name +
-                "' (" + uuid + ")" +
-                " was deleted. (" + self.ls.last_req_time + "s)")
-            return 1
-        except urllib2.HTTPError as ex:
-            self.log.error("Delete error : %s", ex)
-            return 1
+        return self._list(args, cli, table, json_obj, formatters, filters)
 
 
 # -----------------------------------------------------------------------------
@@ -138,6 +86,7 @@ class DocumentsUploadCommand(DefaultCommand):
     """ Upload a file to LinShare using its rest api. return the uploaded
     document uuid  """
 
+    @Time('linsharecli.document', label='Global time : %s')
     def __call__(self, args):
         super(DocumentsUploadCommand, self).__call__(args)
 
@@ -156,60 +105,29 @@ class DocumentsUploadCommand(DefaultCommand):
 
 
 # -----------------------------------------------------------------------------
-class DocumentsDownloadCommand(DefaultCommand):
+class DocumentsDownloadCommand(DocumentsCommand):
 
+    @Time('linsharecli.document', label='Global time : %s')
     def __call__(self, args):
         super(DocumentsDownloadCommand, self).__call__(args)
-
-        for uuid in args.uuids:
-            try:
-                file_name, req_time = self.ls.documents.download(uuid)
-                self.log.info(
-                    "The file '" + file_name +
-                    "' was downloaded. (" + req_time + "s)")
-            except urllib2.HTTPError as ex:
-                print "Error : "
-                print ex
-                return
-
-    def complete(self, args, prefix):
-        super(DocumentsDownloadCommand, self).__call__(args)
-
-        json_obj = self.ls.documents.list()
-        return (
-            v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
+        cli = self.ls.documents
+        self._download_all(args, cli, args.uuids)
 
 
 # -----------------------------------------------------------------------------
-class DocumentsDeleteCommand(DefaultCommand):
+class DocumentsDeleteCommand(DocumentsCommand):
 
+    @Time('linsharecli.document', label='Global time : %s')
     def __call__(self, args):
         super(DocumentsDeleteCommand, self).__call__(args)
-
-        for uuid in args.uuids:
-            try:
-                json_obj = self.ls.documents.delete(uuid)
-                file_name = json_obj.get('name')
-                self.log.info(
-                    "The file '" + file_name +
-                    "' (" + uuid + ")" +
-                    " was deleted. (" + self.ls.last_req_time + "s)")
-            except urllib2.HTTPError as ex:
-                print "Error : "
-                print ex
-                return
-
-    def complete(self, args, prefix):
-        super(DocumentsDeleteCommand, self).__call__(args)
-
-        json_obj = self.ls.documents.list()
-        return (
-            v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
+        cli = self.ls.documents
+        self._download_all(args, cli, args.uuids)
 
 
 # -----------------------------------------------------------------------------
 class DocumentsUploadAndSharingCommand(DefaultCommand):
 
+    @Time('linsharecli.document', label='Global time : %s')
     def __call__(self, args):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
 
@@ -349,8 +267,10 @@ def add_parser(subparsers, name, desc):
                              help="Print the last n rows.")
     parser_tmp2.add_argument('--limit', action="store", type=int, default=0,
                              help="Used to limit the number of row to print.")
-    parser_tmp2.add_argument('-o', '--output-dir', action="store")
+    parser_tmp2.add_argument('-o', '--output-dir', action="store",
+                             dest="directory")
     parser_tmp2.add_argument('-d', '--download', action="store_true")
+    parser_tmp2.add_argument('--dry-run', action="store_true")
     parser_tmp2.add_argument('-D', '--delete', action="store_true")
     parser_tmp2.add_argument('-c', '--count', action="store_true",
                              dest="count_only")
