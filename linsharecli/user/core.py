@@ -29,6 +29,7 @@ from __future__ import unicode_literals
 import os
 import urllib2
 import linsharecli.common.core as common
+from argtoolbox import DefaultCompleter as Completer
 from linshareapi.user import UserCli
 import argtoolbox
 from operator import itemgetter
@@ -196,8 +197,75 @@ class ListConfigCommand(DefaultCommand):
 
 # -----------------------------------------------------------------------------
 def add_parser(subparsers, config):
-    parser_tmp = subparsers.add_parser('test', add_help=False)
-    parser_tmp.add_argument('files', nargs='*')
-    parser_tmp.set_defaults(__func__=TestCommand(config))
-    parser_tmp = subparsers.add_parser('list')
-    parser_tmp.set_defaults(__func__=ListConfigCommand(config))
+    parser = subparsers.add_parser('test', add_help=False)
+    parser.add_argument('files', nargs='*')
+    parser.set_defaults(__func__=TestCommand(config))
+    parser = subparsers.add_parser('list')
+    parser.set_defaults(__func__=ListConfigCommand(config))
+
+# -----------------------------------------------------------------------------
+def add_list_parser_options(parser, download=True, delete=True):
+    parser.add_argument(
+        '-c', '--count', action="store_true", dest="count_only",
+        help="Just display number of results instead of results.")
+
+    # filters
+    filter_group = parser.add_argument_group('Filters')
+    filter_group.add_argument('--start', action="store", type=int, default=0,
+                        help="Print all left rows after the first n rows.")
+    filter_group.add_argument('--end', action="store", type=int, default=0,
+                        help="Print the last n rows.")
+    filter_group.add_argument('--limit', action="store", type=int, default=0,
+                        help="Used to limit the number of row to print.")
+    filter_group.add_argument('--date', action="store", dest="cdate",
+                              help="Filter on creation date")
+
+    # sort
+    sort_group = parser.add_argument_group('Sort')
+    sort_group.add_argument('-r', '--reverse', action="store_true",
+                        help="Reverse order while sorting")
+    sort_group.add_argument('--sort-name', action="store_true",
+                        help="Sort by name")
+    sort_group.add_argument('--sort-size', action="store_true",
+                        help="Sort by size")
+
+    # format
+    format_group = parser.add_argument_group('Format')
+    format_group.add_argument('--extended', action="store_true",
+                        help="Display results using extended format.")
+    format_group.add_argument('-t', '--vertical', action="store_true",
+                        help="Display results using vertical output mode")
+    format_group.add_argument('--csv', action="store_true", help="Csv output")
+    format_group.add_argument('--no-headers', action="store_true",
+                        help="Do not display csv headers.")
+    format_group.add_argument('--raw', action="store_true",
+                        help="Disable all data formatters (time, size, ...)")
+
+    # actions
+    if download or delete:
+        actions_group = parser.add_argument_group('Actions')
+        actions_group.add_argument('--dry-run', action="store_true")
+        if download and delete:
+            group = actions_group.add_mutually_exclusive_group()
+            if download:
+                group.add_argument('-d', '--download', action="store_true")
+            if delete:
+                group.add_argument('-D', '--delete', action="store_true")
+        else:
+            if download:
+                parser.add_argument('-o', '--output-dir', action="store",
+                                    dest="directory")
+                parser.add_argument('-d', '--download', action="store_true")
+            if delete:
+                parser.add_argument('-D', '--delete', action="store_true")
+
+# -----------------------------------------------------------------------------
+def add_delete_parser_options(parser):
+    parser.add_argument('uuids', nargs='+').completer = Completer()
+    parser.add_argument('--dry-run', action="store_true")
+
+# -----------------------------------------------------------------------------
+def add_download_parser_options(parser):
+    parser.add_argument('uuids', nargs='+').completer = Completer()
+    parser.add_argument('--dry-run', action="store_true")
+    parser.add_argument('-o', '--output-dir', action="store", dest="directory")

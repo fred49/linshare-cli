@@ -26,8 +26,13 @@
 
 from __future__ import unicode_literals
 
+import re
+
 from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
+from linsharecli.user.core import add_list_parser_options
+from linsharecli.user.core import add_delete_parser_options
+from linsharecli.user.core import add_download_parser_options
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
 from linsharecli.common.formatters import DateFormatter
@@ -89,7 +94,6 @@ class DocumentsUploadCommand(DefaultCommand):
     @Time('linsharecli.document', label='Global time : %s')
     def __call__(self, args):
         super(DocumentsUploadCommand, self).__call__(args)
-
         count = len(args.files)
         position = 0
         for file_path in args.files:
@@ -121,7 +125,7 @@ class DocumentsDeleteCommand(DocumentsCommand):
     def __call__(self, args):
         super(DocumentsDeleteCommand, self).__call__(args)
         cli = self.ls.documents
-        self._download_all(args, cli, args.uuids)
+        self._delete_all(args, cli, args.uuids)
 
 
 # -----------------------------------------------------------------------------
@@ -130,19 +134,15 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
     @Time('linsharecli.document', label='Global time : %s')
     def __call__(self, args):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
-
         for file_path in args.files:
             json_obj = self.ls.documents.upload(file_path)
             uuid = json_obj.get('uuid')
-
             json_obj['time'] = self.ls.last_req_time
             self.log.info(
                 "The file '%(name)s' (%(uuid)s) was uploaded. (%(time)ss)",
                 json_obj)
-
             for mail in args.mails:
                 code, msg, req_time = self.ls.shares.share(uuid, mail)
-
                 if code == 204:
                     self.log.info(
                         "The document '" + uuid +
@@ -156,7 +156,6 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
 
     def complete(self, args, prefix):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
-
         from argcomplete import warn
         if len(prefix) >= 3:
             json_obj = self.ls.users.list()
@@ -167,16 +166,14 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
 
     def complete2(self, args, prefix):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
-
         from argcomplete import warn
         if len(prefix) >= 3:
-            import re
             json_obj = self.ls.users.list()
             guesses = []
             mails = []
             cpt = 0
-            for v in json_obj:
-                mail = v.get('mail')
+            for user in json_obj:
+                mail = user.get('mail')
                 if re.match(".*" + prefix + ".*", mail):
                     guesses.append(mail)
                 if mail.startswith(prefix):
@@ -202,76 +199,56 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
 
 # -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc):
+    """This method adds to the input subparser, all parsers for document
+    methods"""
     parser_tmp = subparsers.add_parser(name, help=desc)
-
     subparsers2 = parser_tmp.add_subparsers()
 
-    parser_tmp2 = subparsers2.add_parser('upload',
-                                         help="upload documents to linshare")
-    parser_tmp2.set_defaults(__func__=DocumentsUploadCommand())
-    parser_tmp2.add_argument('--desc', action="store", dest="description",
-                             required=False, help="Optional description.")
-    parser_tmp2.add_argument('files', nargs='+')
+    # command : upload
+    parser = subparsers2.add_parser(
+        'upload',
+        help="upload documents to linshare")
+    parser.add_argument('--desc', action="store", dest="description",
+                        required=False, help="Optional description.")
+    parser.add_argument('files', nargs='+')
+    parser.set_defaults(__func__=DocumentsUploadCommand())
 
-    parser_tmp2 = subparsers2.add_parser('upshare',
-                                         help="upload and share documents")
-    parser_tmp2.set_defaults(__func__=DocumentsUploadAndSharingCommand())
-    parser_tmp2.add_argument('files', nargs='+')
-    parser_tmp2.add_argument('-m',
-                             '--mail',
-                             action="append",
-                             dest="mails",
-                             required=True,
-                             help="Recipient mails."
-                             ).completer = Completer()
+    # command : upshare
+    parser = subparsers2.add_parser(
+        'upshare',
+         help="upload and share documents")
+    parser.add_argument('files', nargs='+')
+    parser.add_argument(
+        '-m',
+        '--mail',
+        action="append",
+        dest="mails",
+        required=True,
+        help="Recipient mails."
+        ).completer = Completer()
+    parser.set_defaults(__func__=DocumentsUploadAndSharingCommand())
 
-
-    parser_tmp2 = subparsers2.add_parser(
+    # command : download
+    parser = subparsers2.add_parser(
         'download',
         help="download documents from linshare")
-    parser_tmp2.set_defaults(__func__=DocumentsDownloadCommand())
-    parser_tmp2.add_argument('uuids', nargs='+').completer = Completer()
+    add_download_parser_options(parser)
+    parser.set_defaults(__func__=DocumentsDownloadCommand())
 
-    parser_tmp2 = subparsers2.add_parser(
+    # command : delete
+    parser = subparsers2.add_parser(
         'delete',
         help="delete documents from linshare")
-    parser_tmp2.set_defaults(__func__=DocumentsDeleteCommand())
-    parser_tmp2.add_argument('uuids', nargs='+').completer = Completer()
+    add_delete_parser_options(parser)
+    parser.set_defaults(__func__=DocumentsDeleteCommand())
 
-    parser_tmp2 = subparsers2.add_parser(
+    # command : list
+    parser = subparsers2.add_parser(
         'list',
         formatter_class=RawTextHelpFormatter,
         help="list documents from linshare")
-    parser_tmp2.add_argument('names', nargs="*", help="")
-    parser_tmp2.add_argument('--date', action="store", dest="cdate")
-    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
-                             help="reverse order while sorting")
-    parser_tmp2.add_argument('--sort-name', action="store_true",
-                             help="sort by file name")
-    parser_tmp2.add_argument('--extended', action="store_true",
-                             help="extended format")
-    parser_tmp2.add_argument('--sort-size', action="store_true",
-                             help="sort by file size")
-    #parser_tmp2.add_argument('--show-columns', action="store_true",
-    #                    help="List all available fields in received data.")
-    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
-                             help="use vertical output mode")
-    parser_tmp2.add_argument('--csv', action="store_true", help="Csv output")
-    parser_tmp2.add_argument('--no-headers', action="store_true",
-                             help="No headers for csv output")
-    parser_tmp2.add_argument('--raw', action="store_true",
-                             help="Disable all formatters")
-    parser_tmp2.add_argument('--start', action="store", type=int, default=0,
-                             help="Print all left rows after the first n rows.")
-    parser_tmp2.add_argument('--end', action="store", type=int, default=0,
-                             help="Print the last n rows.")
-    parser_tmp2.add_argument('--limit', action="store", type=int, default=0,
-                             help="Used to limit the number of row to print.")
-    parser_tmp2.add_argument('-o', '--output-dir', action="store",
-                             dest="directory")
-    parser_tmp2.add_argument('-d', '--download', action="store_true")
-    parser_tmp2.add_argument('--dry-run', action="store_true")
-    parser_tmp2.add_argument('-D', '--delete', action="store_true")
-    parser_tmp2.add_argument('-c', '--count', action="store_true",
-                             dest="count_only")
-    parser_tmp2.set_defaults(__func__=DocumentsListCommand())
+    parser.add_argument(
+        'names', nargs="*",
+        help="Filter documents by their names")
+    add_list_parser_options(parser)
+    parser.set_defaults(__func__=DocumentsListCommand())
