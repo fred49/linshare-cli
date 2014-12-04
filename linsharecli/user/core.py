@@ -43,6 +43,7 @@ class DefaultCommand(common.DefaultCommand):
     command to the command line interface, your class should extend this one.
     """
 
+    IDENTIFIER = "name"
     DEFAULT_SORT = "creationDate"
     DEFAULT_SORT_SIZE = "size"
     DEFAULT_TOTAL = "Ressources found : %s"

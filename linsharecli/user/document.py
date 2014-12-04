@@ -44,12 +44,8 @@ from argtoolbox import DefaultCompleter as Completer
 # -----------------------------------------------------------------------------
 class DocumentsCommand(DefaultCommand):
     """ List all documents store into LinShare."""
-    IDENTIFIER = "name"
-    DEFAULT_SORT = "creationDate"
-    DEFAULT_SORT_SIZE = "size"
+
     DEFAULT_TOTAL = "Documents found : %s"
-    DEFAULT_SORT_NAME = "name"
-    RESOURCE_IDENTIFIER = "uuid"
     MSG_RS_NOT_FOUND = "No documents could be found."
     MSG_RS_DELETED = "The document '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DELETED = "The document '%(uuid)s' can not be deleted."
