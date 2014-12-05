@@ -47,10 +47,10 @@ class DocumentsCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Documents found : %s"
     MSG_RS_NOT_FOUND = "No documents could be found."
-    MSG_RS_DELETED = "The document '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
+    MSG_RS_DELETED = "%(position)s/%(count)s: The document '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DELETED = "The document '%(uuid)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%s document(s) can not be deleted."
-    MSG_RS_DOWNLOADED = "The document '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
+    MSG_RS_DOWNLOADED = "%(position)s/%(count)s: The document '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One document can not be downloaded."
     MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%s documents can not be downloaded."
 

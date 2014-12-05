@@ -50,10 +50,10 @@ class DefaultCommand(common.DefaultCommand):
     DEFAULT_SORT_NAME = "name"
     RESOURCE_IDENTIFIER = "uuid"
     MSG_RS_NOT_FOUND = "No resources could be found."
-    MSG_RS_DELETED = "The resource '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
+    MSG_RS_DELETED = "%(position)s/%(count)s: The resource '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DELETED = "The resource '%(uuid)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%s resource(s) can not be deleted."
-    MSG_RS_DOWNLOADED = "The resource '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
+    MSG_RS_DOWNLOADED = "%(position)s/%(count)s: The resource '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One resource can not be downloaded."
     MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%s resources can not be downloaded."
 
@@ -99,13 +99,16 @@ class DefaultCommand(common.DefaultCommand):
         return True
 
     def _download_all(self, args, cli, uuids):
+        count = len(uuids)
+        position = 0
         res = 0
         for uuid in uuids:
-            res += self._download(args, cli, uuid)
+            position += 1
+            res += self._download(args, cli, uuid, position, count)
         if res > 0:
             self.log.warn(self.MSG_RS_CAN_NOT_BE_DOWNLOADED_M, res)
 
-    def _download(self, args, cli, uuid):
+    def _download(self, args, cli, uuid, position=None, count=None):
         directory = getattr(args, "directory", None)
         if directory:
             if not os.path.isdir(directory):
@@ -114,6 +117,8 @@ class DefaultCommand(common.DefaultCommand):
             meta = {}
             meta['uuid'] = uuid
             meta['time'] = " -"
+            meta['position'] = position
+            meta['count'] = count
             if getattr(args, "dry_run", False):
                 json_obj = cli.get(uuid)
                 meta['name'] = json_obj.get('name')
@@ -128,17 +133,22 @@ class DefaultCommand(common.DefaultCommand):
             return 1
 
     def _delete_all(self, args, cli, uuids):
+        count = len(uuids)
+        position = 0
         res = 0
         for uuid in uuids:
-            res += self._delete(args, cli, uuid)
+            position += 1
+            res += self._delete(args, cli, uuid, position, count)
         if res > 0:
             self.log.warn(self.MSG_RS_CAN_NOT_BE_DELETED_M, res)
 
-    def _delete(self, args, cli, uuid):
+    def _delete(self, args, cli, uuid, position=None, count=None):
         try:
             meta = {}
             meta['uuid'] = uuid
             meta['time'] = " -"
+            meta['position'] = position
+            meta['count'] = count
             if getattr(args, "dry_run", False):
                 json_obj = cli.get(uuid)
             else:

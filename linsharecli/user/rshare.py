@@ -48,7 +48,7 @@ class ReceivedSharesListCommand(DefaultCommand):
     MSG_RS_DELETED = "The received share '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DELETED = "The received share '%(uuid)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%s received share(s) can not be deleted."
-    MSG_RS_DOWNLOADED = "The received share '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
+    MSG_RS_DOWNLOADED = "%(position)s/%(count)s: The received share '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One received share can not be downloaded."
     MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%s received shares can not be downloaded."
 
