@@ -256,6 +256,9 @@ def add_list_parser_options(parser, download=True, delete=True):
     if download or delete:
         actions_group = parser.add_argument_group('Actions')
         actions_group.add_argument('--dry-run', action="store_true")
+        if download:
+            actions_group.add_argument('-o', '--output-dir', action="store",
+                                    dest="directory")
         if download and delete:
             group = actions_group.add_mutually_exclusive_group()
             if download:
