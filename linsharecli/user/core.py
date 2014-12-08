@@ -59,7 +59,7 @@ class DefaultCommand(common.DefaultCommand):
 
     def __get_cli_object(self, args):
         cli = UserCli(args.host, args.user, args.password, args.verbose,
-                        args.debug)
+                      args.debug)
         if args.base_url:
             cli.base_url = args.base_url
         return cli
@@ -77,8 +77,9 @@ class DefaultCommand(common.DefaultCommand):
             table.sortby = self.DEFAULT_SORT
         _delete = getattr(args, 'delete', False)
         _download = getattr(args, 'download', False)
+        _create = getattr(args, 'create', False)
         _count_only = getattr(args, 'count_only', False)
-        if _delete or _download or _count_only:
+        if _delete or _download or _count_only or _create:
             table.load(json_obj, filters, formatters)
             rows = table.get_raw()
             if _count_only:
@@ -90,6 +91,8 @@ class DefaultCommand(common.DefaultCommand):
             uuids = [row.get(self.RESOURCE_IDENTIFIER) for row in rows]
             if _download:
                 self._download_all(args, cli, uuids)
+            elif _create:
+                self._create_all(args, cli, uuids)
             else:
                 self._delete_all(args, cli, uuids)
             self.log.info(self.DEFAULT_TOTAL, len(rows))
@@ -97,6 +100,9 @@ class DefaultCommand(common.DefaultCommand):
             table.show_table(json_obj, filters, formatters)
             self.log.info(self.DEFAULT_TOTAL, len(table.get_raw()))
         return True
+
+    def _create_all(self, args, cli, uuids):
+        self.log.warn("Not implemented yet !")
 
     def _download_all(self, args, cli, uuids):
         count = len(uuids)
@@ -222,43 +228,55 @@ def add_list_parser_options(parser, download=True, delete=True):
 
     # filters
     filter_group = parser.add_argument_group('Filters')
-    filter_group.add_argument('--start', action="store", type=int, default=0,
-                        help="Print all left rows after the first n rows.")
-    filter_group.add_argument('--end', action="store", type=int, default=0,
-                        help="Print the last n rows.")
-    filter_group.add_argument('--limit', action="store", type=int, default=0,
-                        help="Used to limit the number of row to print.")
-    filter_group.add_argument('--date', action="store", dest="cdate",
-                              help="Filter on creation date")
+    filter_group.add_argument(
+        '--start', action="store", type=int, default=0,
+        help="Print all left rows after the first n rows.")
+    filter_group.add_argument(
+        '--end', action="store", type=int, default=0,
+        help="Print the last n rows.")
+    filter_group.add_argument(
+        '--limit', action="store", type=int, default=0,
+        help="Used to limit the number of row to print.")
+    filter_group.add_argument(
+        '--date', action="store", dest="cdate",
+        help="Filter on creation date")
 
     # sort
     sort_group = parser.add_argument_group('Sort')
-    sort_group.add_argument('-r', '--reverse', action="store_true",
-                        help="Reverse order while sorting")
-    sort_group.add_argument('--sort-name', action="store_true",
-                        help="Sort by name")
-    sort_group.add_argument('--sort-size', action="store_true",
-                        help="Sort by size")
+    sort_group.add_argument(
+        '-r', '--reverse', action="store_true",
+        help="Reverse order while sorting")
+    sort_group.add_argument(
+        '--sort-name', action="store_true",
+        help="Sort by name")
+    sort_group.add_argument(
+        '--sort-size', action="store_true",
+        help="Sort by size")
 
     # format
     format_group = parser.add_argument_group('Format')
-    format_group.add_argument('--extended', action="store_true",
-                        help="Display results using extended format.")
-    format_group.add_argument('-t', '--vertical', action="store_true",
-                        help="Display results using vertical output mode")
+    format_group.add_argument(
+        '--extended', action="store_true",
+        help="Display results using extended format.")
+    format_group.add_argument(
+        '-t', '--vertical', action="store_true",
+        help="Display results using vertical output mode")
     format_group.add_argument('--csv', action="store_true", help="Csv output")
-    format_group.add_argument('--no-headers', action="store_true",
-                        help="Do not display csv headers.")
-    format_group.add_argument('--raw', action="store_true",
-                        help="Disable all data formatters (time, size, ...)")
+    format_group.add_argument(
+        '--no-headers', action="store_true",
+        help="Do not display csv headers.")
+    format_group.add_argument(
+        '--raw', action="store_true",
+        help="Disable all data formatters (time, size, ...)")
 
     # actions
     if download or delete:
         actions_group = parser.add_argument_group('Actions')
         actions_group.add_argument('--dry-run', action="store_true")
         if download:
-            actions_group.add_argument('-o', '--output-dir', action="store",
-                                    dest="directory")
+            actions_group.add_argument(
+                '-o', '--output-dir', action="store",
+                dest="directory")
         if download and delete:
             group = actions_group.add_mutually_exclusive_group()
             if download:

@@ -81,6 +81,42 @@ class DocumentsListCommand(DocumentsCommand):
                     DateFormatter('modificationDate')]
         return self._list(args, cli, table, json_obj, formatters, filters)
 
+    def _create_all(self, args, cli, uuids):
+        count = len(uuids)
+        position = 0
+        res = 0
+        for uuid in uuids:
+            position += 1
+            res += self._create(args, cli, uuid, position, count)
+        if res > 0:
+            self.log.warn("some file (%s) have not been shared.", res)
+
+    def _create(self, args, cli, uuid, position=None, count=None):
+        if args.mails is not None:
+            for mail in args.mails:
+                code, msg, req_time = self.ls.shares.share(uuid, mail)
+                if code == 204:
+                    self.log.info(
+                        "The document '" + uuid +
+                        "' was successfully shared with " + mail +
+                        " ( " + req_time + "s)")
+                else:
+                    self.log.warn("Trying to share document '" +
+                                  uuid + "' with " + mail)
+                    self.log.error("Unexpected return code : " +
+                                   str(code) + " : " + msg)
+        return 0
+
+    def complete_mail(self, args, prefix):
+        super(DocumentsListCommand, self).__call__(args)
+        from argcomplete import warn
+        if len(prefix) >= 3:
+            json_obj = self.ls.users.list()
+            return (v.get('mail')
+                    for v in json_obj if v.get('mail').startswith(prefix))
+        else:
+            warn("Completion need at least 3 characters.")
+
 
 # -----------------------------------------------------------------------------
 class DocumentsUploadCommand(DefaultCommand):
@@ -246,5 +282,14 @@ def add_parser(subparsers, name, desc):
     parser.add_argument(
         'names', nargs="*",
         help="Filter documents by their names")
+    parser.add_argument(
+        '-m',
+        '--mail',
+        action="append",
+        dest="mails",
+        # required=True,
+        help="Recipient mails."
+        ).completer = Completer("complete_mail")
+    parser.add_argument('--share', action="store_true", dest="create")
     add_list_parser_options(parser)
     parser.set_defaults(__func__=DocumentsListCommand())
