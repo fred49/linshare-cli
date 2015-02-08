@@ -28,7 +28,7 @@ from __future__ import unicode_literals
 
 from linsharecli.common.formatters import DateFormatter
 from linsharecli.admin.core import DefaultCommand
-from argtoolbox import DefaultCompleter as Completer
+#from argtoolbox import DefaultCompleter as Completer
 
 
 # -----------------------------------------------------------------------------
@@ -39,6 +39,8 @@ class UsersListCommand(DefaultCommand):
     def __call__(self, args):
         super(UsersListCommand, self).__call__(args)
         cli = self.ls.users
+        if not  (args.firstname or args.lastname or args.mail):
+            raise ValueError('You should use at leat one option among : --firstname, --lastname or --mail')
         table = self.get_table(args, cli, self.IDENTIFIER)
         table.show_table(
             cli.search(args.firstname, args.lastname, args.mail),
@@ -57,8 +59,6 @@ def add_parser(subparsers, name, desc):
     subparsers2 = parser_tmp.add_subparsers()
     parser_tmp2 = subparsers2.add_parser('list',
                                          help="list users from linshare")
-    parser_tmp2.add_argument('pattern', nargs="*",
-                             help="").completer = Completer()
     parser_tmp2.add_argument('-f', '--firstname', action="store")
     parser_tmp2.add_argument('-l', '--lastname', action="store")
     parser_tmp2.add_argument('-m', '--mail', action="store")
