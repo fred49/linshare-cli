@@ -30,9 +30,9 @@ import re
 
 from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
-from linsharecli.user.core import add_list_parser_options
-from linsharecli.user.core import add_delete_parser_options
-from linsharecli.user.core import add_download_parser_options
+from linsharecli.common.core import add_list_parser_options
+from linsharecli.common.core import add_delete_parser_options
+from linsharecli.common.core import add_download_parser_options
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
 from linsharecli.common.formatters import DateFormatter
@@ -94,7 +94,11 @@ class DocumentsListCommand(DocumentsCommand):
     def _create(self, args, cli, uuid, position=None, count=None):
         if args.mails is not None:
             for mail in args.mails:
-                code, msg, req_time = self.ls.shares.share(uuid, mail)
+                if getattr(args, "dry_run", False):
+                    code = 204
+                    req_time = "- "
+                else:
+                    code, msg, req_time = self.ls.shares.share(uuid, mail)
                 if code == 204:
                     self.log.info(
                         "The document '" + uuid +
@@ -105,6 +109,8 @@ class DocumentsListCommand(DocumentsCommand):
                                   uuid + "' with " + mail)
                     self.log.error("Unexpected return code : " +
                                    str(code) + " : " + msg)
+        else:
+            self.log.warn("no recipient was found")
         return 0
 
     def complete_mail(self, args, prefix):
@@ -282,7 +288,8 @@ def add_parser(subparsers, name, desc):
     parser.add_argument(
         'names', nargs="*",
         help="Filter documents by their names")
-    parser.add_argument(
+    res = add_list_parser_options(parser)
+    res[3].add_argument(
         '-m',
         '--mail',
         action="append",
@@ -290,6 +297,5 @@ def add_parser(subparsers, name, desc):
         # required=True,
         help="Recipient mails."
         ).completer = Completer("complete_mail")
-    parser.add_argument('--share', action="store_true", dest="create")
-    add_list_parser_options(parser)
+    res[3].add_argument('--share', action="store_true", dest="create")
     parser.set_defaults(__func__=DocumentsListCommand())

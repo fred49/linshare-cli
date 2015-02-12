@@ -59,18 +59,6 @@ class DefaultCommand(common.DefaultCommand):
             self.log.error(ex.args[1] + " : " + err_suffix)
         return False
 
-    def _delete(self, method, message_ok, err_suffix, *args):
-        try:
-            if method(*args):
-                self.log.info(message_ok)
-                return True
-            else:
-                return False
-        except LinShareException as ex:
-            self.log.debug("LinShareException : " + str(ex.args))
-            self.log.error(ex.args[1] + " : " + err_suffix)
-        return False
-
 
 # -----------------------------------------------------------------------------
 class NotYetImplementedCommand(argtoolbox.DefaultCommand):

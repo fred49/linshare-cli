@@ -28,9 +28,9 @@ from __future__ import unicode_literals
 
 import urllib2
 from linsharecli.user.core import DefaultCommand
-from linsharecli.user.core import add_list_parser_options
-from linsharecli.user.core import add_delete_parser_options
-from linsharecli.user.core import add_download_parser_options
+from linsharecli.common.core import add_list_parser_options
+from linsharecli.common.core import add_delete_parser_options
+from linsharecli.common.core import add_download_parser_options
 from argtoolbox import DefaultCompleter
 from linshareapi.cache import Time
 from linsharecli.common.filters import PartialOr

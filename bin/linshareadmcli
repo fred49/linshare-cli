@@ -43,12 +43,12 @@ from argtoolbox import SectionHook
 from linsharecli.admin.thread import add_parser as add_threads_parser
 from linsharecli.admin.tmember import add_parser as add_thread_members_parser
 from linsharecli.admin.user import add_parser as add_users_parser
-from linsharecli.admin.core import add_parser as add_test_parser
 from linsharecli.admin.domain import add_parser as add_domains_parser
 from linsharecli.admin.ldap import add_parser as add_ldap_connections_parser
 from linsharecli.admin.dpattern import add_parser as add_domain_patterns_parser
-from linsharecli.admin.func import add_parser as add_functionalitites_parser
+from linsharecli.admin.func import add_parser as add_functionalities_parser
 from linsharecli.admin.core import add_parser as add_core_parser
+from linsharecli.admin.domainpolicies import add_parser as add_domain_policies
 import linsharecli
 
 # if you want to debug argcomplete completion,
@@ -183,8 +183,8 @@ section 'server-4'""")
         add_domains_parser(subparsers, "domains", "domains")
         add_ldap_connections_parser(subparsers, "ldap", "ldap connections")
         add_domain_patterns_parser(subparsers, "dpatterns", "domain patterns")
-        add_test_parser(subparsers, self.config)
-        add_functionalitites_parser(subparsers, "funcs", "Functionalities")
+        add_functionalities_parser(subparsers, "funcs", "Functionalities")
+        add_domain_policies(subparsers, "domainpolicy", "Domain Policies")
         add_core_parser(subparsers, self.config)
 
 # if you need debug during class construction, config file loading,
