@@ -26,6 +26,8 @@
 
 from __future__ import unicode_literals
 
+from linshareapi.cache import Time
+from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
@@ -35,16 +37,17 @@ from argtoolbox import DefaultCompleter as Completer
 class DomainPatternsListCommand(DefaultCommand):
     """ List all domain patterns."""
     IDENTIFIER = "identifier"
+    DEFAULT_SORT = "identifier"
 
+    @Time('linsharecli.domains', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainPatternsListCommand, self).__call__(args)
         cli = self.ls.domain_patterns
         table = self.get_table(args, cli, self.IDENTIFIER)
-        table.show_table(
-            cli.list(args.model),
-            PartialOr(self.IDENTIFIER, args.identifiers, True)
-        )
-        return True
+        json_obj = cli.list()
+        # Filters
+        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
+        return self._list(args, cli, table, json_obj, filters=filters)
 
     def complete(self, args, prefix):
         super(DomainPatternsListCommand, self).__call__(args)
@@ -137,25 +140,17 @@ successfully deleted",
 def add_parser(subparsers, name, desc):
     """Add all domain pattern sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
+    subparsers2 = parser_tmp.add_subparsers()
 
     # command : list
-    subparsers2 = parser_tmp.add_subparsers()
-    parser_tmp2 = subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'list', help="list domain patterns.")
-    parser_tmp2.add_argument('identifiers', nargs="*",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('--extended', action="store_true",
-                             help="extended format")
-    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
-                             help="reverse order while sorting")
-    parser_tmp2.add_argument('-m', '--model', action="store_true",
-                             help="show model of domain patterns")
-    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
-                             help="use vertical output mode")
-    parser_tmp2.add_argument('--csv', action="store_true", help="Csv output")
-    parser_tmp2.add_argument('--raw', action="store_true",
-                             help="Disable all formatters")
-    parser_tmp2.set_defaults(__func__=DomainPatternsListCommand())
+    parser.add_argument('identifiers', nargs="*",
+        help="Filter domain patterns by their names")
+    parser.add_argument('-m', '--model', action="store_true",
+                        help="show model of domain patterns")
+    add_list_parser_options(parser)
+    parser.set_defaults(__func__=DomainPatternsListCommand())
 
     # command : create
     parser_tmp2 = subparsers2.add_parser(

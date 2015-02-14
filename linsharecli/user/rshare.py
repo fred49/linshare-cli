@@ -26,33 +26,46 @@
 
 from __future__ import unicode_literals
 
-import urllib2
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
-from argtoolbox import DefaultCompleter
 from linshareapi.cache import Time
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
 from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.formatters import SizeFormatter
-from operator import itemgetter
 
+class ReceivedSharesCommand(DefaultCommand):
+    """ List all received shares"""
 
-# -----------------------------------------------------------------------------
-class ReceivedSharesListCommand(DefaultCommand):
-
-    DEFAULT_TOTAL = "Received shares found : %s"
+    DEFAULT_TOTAL = "Received shares found : %(count)s"
     MSG_RS_NOT_FOUND = "No received shares could be found."
     MSG_RS_DELETED = "The received share '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DELETED = "The received share '%(uuid)s' can not be deleted."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%s received share(s) can not be deleted."
+    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s received share(s) can not be deleted."
     MSG_RS_DOWNLOADED = "%(position)s/%(count)s: The received share '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One received share can not be downloaded."
-    MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%s received shares can not be downloaded."
+    MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%(count)s received shares can not be downloaded."
 
-    @Time('linsharecli.rshares', label='Global time : %s')
+    ACTIONS = {
+        'delete' : '_delete_all',
+        'download' : '_download_all',
+        'count_only' : '_count_only',
+    }
+
+    def complete(self, args, prefix):
+        super(ReceivedSharesCommand, self).__call__(args)
+        json_obj = self.ls.rshares.list()
+        return (
+            v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
+
+
+# -----------------------------------------------------------------------------
+class ReceivedSharesListCommand(ReceivedSharesCommand):
+
+
+    @Time('linsharecli.rshares', label='Global time : %(time)s')
     def __call__(self, args):
         super(ReceivedSharesListCommand, self).__call__(args)
         cli = self.ls.rshares
@@ -70,28 +83,23 @@ class ReceivedSharesListCommand(DefaultCommand):
 
 
 # -----------------------------------------------------------------------------
-class ReceivedSharesDownloadCommand(DefaultCommand):
+class ReceivedSharesDownloadCommand(ReceivedSharesCommand):
 
+    @Time('linsharecli.rshares', label='Global time : %(time)s')
     def __call__(self, args):
         super(ReceivedSharesDownloadCommand, self).__call__(args)
+        cli = self.ls.rshares
+        return self._download_all(args, cli, args.uuids)
 
-        for uuid in args.uuids:
-            try:
-                file_name, req_time = self.ls.rshares.download(uuid)
-                self.log.info(
-                    "The share '" + file_name +
-                    "' was downloaded. (" + req_time + "s)")
-            except urllib2.HTTPError as ex:
-                print "Error : "
-                print ex
-                return
 
-    def complete(self, args, prefix):
-        super(ReceivedSharesDownloadCommand, self).__call__(args)
+# -----------------------------------------------------------------------------
+class ReceivedSharesDeleteCommand(ReceivedSharesCommand):
 
-        json_obj = self.ls.rshares.list()
-        return (
-            v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
+    @Time('linsharecli.document', label='Global time : %(time)s')
+    def __call__(self, args):
+        super(ReceivedSharesDeleteCommand, self).__call__(args)
+        cli = self.ls.rshares
+        return self._delete_all(args, cli, args.uuids)
 
 
 # -----------------------------------------------------------------------------
@@ -103,14 +111,21 @@ def add_parser(subparsers, name, desc):
     # command : download
     parser = subparsers2.add_parser(
         'download',
-        help="download received shares from linshare")
+        help="download received shares")
     add_download_parser_options(parser)
     parser.set_defaults(__func__=ReceivedSharesDownloadCommand())
 
     # command : list
     parser = subparsers2.add_parser(
         'list',
-        help="list received shares from linshare")
+        help="list received shares")
     parser.add_argument('names', nargs="*", help="")
-    add_list_parser_options(parser)
+    add_list_parser_options(parser, download=True, delete=True, cdate=True)
     parser.set_defaults(__func__=ReceivedSharesListCommand())
+
+    # command : delete
+    parser = subparsers2.add_parser(
+        'delete',
+        help="delete received shares")
+    add_delete_parser_options(parser)
+    parser.set_defaults(__func__=ReceivedSharesDeleteCommand())

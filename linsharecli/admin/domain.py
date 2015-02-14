@@ -26,7 +26,9 @@
 
 from __future__ import unicode_literals
 
+from linshareapi.cache import Time
 from linsharecli.common.filters import PartialOr
+from linsharecli.common.core import add_list_parser_options
 from linsharecli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
 
@@ -35,18 +37,19 @@ from argtoolbox import DefaultCompleter as Completer
 class DomainsListCommand(DefaultCommand):
     """ List all domains."""
     IDENTIFIER = "identifier"
+    DEFAULT_SORT = "identifier"
 
+    @Time('linsharecli.domains', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainsListCommand, self).__call__(args)
         cli = self.ls.domains
         table = self.get_table(args, cli, self.IDENTIFIER)
         if args.label:
             table.sortby = "label"
-        table.show_table(
-            cli.list(),
-            PartialOr(self.IDENTIFIER, args.identifiers, True)
-        )
-        return True
+        json_obj = cli.list()
+        # Filters
+        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
+        return self._list(args, cli, table, json_obj, filters=filters)
 
     def complete(self, args, prefix):
         super(DomainsListCommand, self).__call__(args)
@@ -288,22 +291,16 @@ def add_parser(subparsers, name, desc):
     subparsers2 = parser_tmp.add_subparsers()
 
     # command : list
-    parser_tmp2 = subparsers2.add_parser(
-        'list', help="list domains.")
-    parser_tmp2.add_argument('identifiers', nargs="*",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('--extended', action="store_true",
-                             help="extended format")
-    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
-                             help="reverse order while sorting")
-    parser_tmp2.add_argument('-n', '--label', action="store_true",
+    parser = subparsers2.add_parser(
+        'list',
+        help="list domains")
+    parser.add_argument(
+        'identifiers', nargs="*",
+        help="Filter domains by their identifiers")
+    parser.add_argument('-n', '--label', action="store_true",
                              help="sort by domain label")
-    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
-                             help="use vertical output mode")
-    parser_tmp2.add_argument('--csv', action="store_true", help="Csv output")
-    parser_tmp2.add_argument('--raw', action="store_true",
-                             help="Disable all formatters")
-    parser_tmp2.set_defaults(__func__=DomainsListCommand())
+    add_list_parser_options(parser)
+    parser.set_defaults(__func__=DomainsListCommand())
 
     # command : create
     parser_tmp2 = subparsers2.add_parser(

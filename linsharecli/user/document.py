@@ -45,14 +45,21 @@ from argtoolbox import DefaultCompleter as Completer
 class DocumentsCommand(DefaultCommand):
     """ List all documents store into LinShare."""
 
-    DEFAULT_TOTAL = "Documents found : %s"
+    DEFAULT_TOTAL = "Documents found : %(count)s"
     MSG_RS_NOT_FOUND = "No documents could be found."
     MSG_RS_DELETED = "%(position)s/%(count)s: The document '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DELETED = "The document '%(uuid)s' can not be deleted."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%s document(s) can not be deleted."
+    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s document(s) can not be deleted."
     MSG_RS_DOWNLOADED = "%(position)s/%(count)s: The document '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One document can not be downloaded."
-    MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%s documents can not be downloaded."
+    MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%(count)s documents can not be downloaded."
+
+    ACTIONS = {
+        'delete' : '_delete_all',
+        'download' : '_download_all',
+        'share' : '_share_all',
+        'count_only' : '_count_only',
+    }
 
     def complete(self, args, prefix):
         super(DocumentsCommand, self).__call__(args)
@@ -65,7 +72,7 @@ class DocumentsCommand(DefaultCommand):
 class DocumentsListCommand(DocumentsCommand):
     """ List all documents store into LinShare."""
 
-    @Time('linsharecli.document', label='Global time : %s')
+    @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsListCommand, self).__call__(args)
         cli = self.ls.documents
@@ -81,37 +88,47 @@ class DocumentsListCommand(DocumentsCommand):
                     DateFormatter('modificationDate')]
         return self._list(args, cli, table, json_obj, formatters, filters)
 
-    def _create_all(self, args, cli, uuids):
+    def _share_all(self, args, cli, uuids):
         count = len(uuids)
         position = 0
         res = 0
         for uuid in uuids:
             position += 1
-            res += self._create(args, cli, uuid, position, count)
+            res += self._share(args, cli, uuid, position, count)
         if res > 0:
-            self.log.warn("some file (%s) have not been shared.", res)
+            self.pprint(
+                "Some file (%(count)s) have not been shared.",
+                {'count': res})
+            return False
+        return True
 
-    def _create(self, args, cli, uuid, position=None, count=None):
-        if args.mails is not None:
-            for mail in args.mails:
-                if getattr(args, "dry_run", False):
-                    code = 204
-                    req_time = "- "
-                else:
-                    code, msg, req_time = self.ls.shares.share(uuid, mail)
-                if code == 204:
-                    self.log.info(
-                        "The document '" + uuid +
-                        "' was successfully shared with " + mail +
-                        " ( " + req_time + "s)")
-                else:
-                    self.log.warn("Trying to share document '" +
-                                  uuid + "' with " + mail)
-                    self.log.error("Unexpected return code : " +
-                                   str(code) + " : " + msg)
-        else:
-            self.log.warn("no recipient was found")
-        return 0
+    def _share(self, args, cli, uuid, position=None, count=None):
+        if args.mails is None:
+            self.pprint("No recipient was found !")
+            return 0
+        err_count = 0
+        for mail in args.mails:
+            if getattr(args, "dry_run", False):
+                code = 204
+                req_time = "- "
+            else:
+                code, err_msg, req_time = self.ls.shares.share(uuid, mail)
+            if code == 204:
+                self.pprint(
+                    "The document (%(uuid)s) was successfully shared with %(mail)s (%(time)s s)",
+                    {'uuid': uuid, 'mail': mail, 'time': req_time})
+            else:
+                err_count += 1
+                meta = {
+                    'mail': mail, 'uuid': uuid,
+                    'code': code, 'err_msg': err_msg}
+                self.pprint_warn(
+                    "Trying to share document '%(uuid)s' with mail %(mail)s",
+                    meta)
+                self.pprint_error(
+                    "Unexpected return code : %(code)s : %(err_msg)s",
+                    meta)
+        return err_count
 
     def complete_mail(self, args, prefix):
         super(DocumentsListCommand, self).__call__(args)
@@ -129,7 +146,7 @@ class DocumentsUploadCommand(DefaultCommand):
     """ Upload a file to LinShare using its rest api. return the uploaded
     document uuid  """
 
-    @Time('linsharecli.document', label='Global time : %s')
+    @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsUploadCommand, self).__call__(args)
         count = len(args.files)
@@ -144,32 +161,33 @@ class DocumentsUploadCommand(DefaultCommand):
                 self.log.info(
                     "%(position)s/%(count)s: The file '%(name)s' (%(uuid)s) was uploaded. (%(time)ss)",
                     json_obj)
+        return True
 
 
 # -----------------------------------------------------------------------------
 class DocumentsDownloadCommand(DocumentsCommand):
 
-    @Time('linsharecli.document', label='Global time : %s')
+    @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsDownloadCommand, self).__call__(args)
         cli = self.ls.documents
-        self._download_all(args, cli, args.uuids)
+        return self._download_all(args, cli, args.uuids)
 
 
 # -----------------------------------------------------------------------------
 class DocumentsDeleteCommand(DocumentsCommand):
 
-    @Time('linsharecli.document', label='Global time : %s')
+    @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsDeleteCommand, self).__call__(args)
         cli = self.ls.documents
-        self._delete_all(args, cli, args.uuids)
+        return self._delete_all(args, cli, args.uuids)
 
 
 # -----------------------------------------------------------------------------
 class DocumentsUploadAndSharingCommand(DefaultCommand):
 
-    @Time('linsharecli.document', label='Global time : %s')
+    @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
         for file_path in args.files:
@@ -191,6 +209,7 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
                                   uuid + "' with " + mail)
                     self.log.error("Unexpected return code : " +
                                    str(code) + " : " + msg)
+        return True
 
     def complete(self, args, prefix):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
@@ -288,8 +307,9 @@ def add_parser(subparsers, name, desc):
     parser.add_argument(
         'names', nargs="*",
         help="Filter documents by their names")
-    res = add_list_parser_options(parser)
-    res[3].add_argument(
+    action_parser = add_list_parser_options(
+        parser, download=True, delete=True, cdate=True)[3]
+    action_parser.add_argument(
         '-m',
         '--mail',
         action="append",
@@ -297,5 +317,5 @@ def add_parser(subparsers, name, desc):
         # required=True,
         help="Recipient mails."
         ).completer = Completer("complete_mail")
-    res[3].add_argument('--share', action="store_true", dest="create")
+    action_parser.add_argument('--share', action="store_true", dest="share")
     parser.set_defaults(__func__=DocumentsListCommand())

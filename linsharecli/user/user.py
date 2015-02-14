@@ -26,56 +26,57 @@
 
 from __future__ import unicode_literals
 
+from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.filters import PartialMultipleAnd
 from linsharecli.common.filters import PartialOr
-from linsharecli.common.formatters import DateFormatter
-from argtoolbox import DefaultCompleter as Completer
+from linsharecli.common.core import add_list_parser_options
+from argparse import RawTextHelpFormatter
 
 
 # -----------------------------------------------------------------------------
 class UsersListCommand(DefaultCommand):
     """ List all users store into LinShare."""
     IDENTIFIER = "mail"
+    DEFAULT_SORT = "mail"
 
+    @Time('linsharecli.users', label='Global time : %(time)s')
     def __call__(self, args):
         super(UsersListCommand, self).__call__(args)
         cli = self.ls.users
         table = self.get_table(args, cli, self.IDENTIFIER)
-        table.show_table(
-            cli.list(),
-            [PartialMultipleAnd({"mail": args.mail,
-                                "firstName": args.firstname,
-                                "lastName": args.lastname},
-                                True),
-             PartialOr("uuid", args.uuid)],
-            formatters=[DateFormatter('creationDate'),
-             DateFormatter('expirationDate'),
-             DateFormatter('modificationDate')]
-        )
-        return True
+        json_obj = cli.list()
+        # Filters
+        filters = [
+            PartialMultipleAnd(
+                {
+                    "mail": args.mail,
+                    "firstName": args.firstname,
+                    "lastName": args.lastname
+                },
+                True),
+            PartialOr("uuid", args.uuid),
+            PartialOr(self.IDENTIFIER, args.pattern, True)
+        ]
+        return self._list(args, cli, table, json_obj, filters=filters)
 
 
 # -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc):
     parser_tmp = subparsers.add_parser(name, help=desc)
-
     subparsers2 = parser_tmp.add_subparsers()
-    parser_tmp2 = subparsers2.add_parser('list',
-                                         help="list users from linshare")
-    parser_tmp2.add_argument('pattern', nargs="*",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('-f', '--firstname', action="store")
-    parser_tmp2.add_argument('-l', '--lastname', action="store")
-    parser_tmp2.add_argument('-m', '--mail', action="store")
-    parser_tmp2.add_argument('-u', '--uuid', action="append")
-    parser_tmp2.add_argument('--extended', action="store_true",
-                             help="extended format")
-    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
-                             help="reverse order while sorting")
-    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
-                             help="use vertical output mode")
-    parser_tmp2.add_argument('--csv', action="store_true", help="Csv output")
-    parser_tmp2.add_argument('--raw', action="store_true",
-                             help="Disable all formatters")
-    parser_tmp2.set_defaults(__func__=UsersListCommand())
+
+    # command : list
+    parser = subparsers2.add_parser(
+        'list',
+        formatter_class=RawTextHelpFormatter,
+        help="list users from linshare")
+    parser.add_argument(
+        'pattern', nargs="*",
+        help="Filter documents by their names")
+    parser.add_argument('-f', '--firstname', action="store")
+    parser.add_argument('-l', '--lastname', action="store")
+    parser.add_argument('-m', '--mail', action="store")
+    parser.add_argument('-u', '--uuid', action="append")
+    add_list_parser_options(parser)
+    parser.set_defaults(__func__=UsersListCommand())

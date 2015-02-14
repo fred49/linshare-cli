@@ -26,6 +26,8 @@
 
 from __future__ import unicode_literals
 
+from linshareapi.cache import Time
+from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import HTable
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
@@ -37,16 +39,17 @@ import argparse
 class FunctionalityListCommand(DefaultCommand):
     """ List all functionalities."""
     IDENTIFIER = "identifier"
+    DEFAULT_SORT = "identifier"
 
+    @Time('linsharecli.domains', label='Global time : %(time)s')
     def __call__(self, args):
         super(FunctionalityListCommand, self).__call__(args)
         cli = self.ls.funcs
         table = self.get_table(args, cli, self.IDENTIFIER)
-        table.show_table(
-            cli.list(),
-            PartialOr(self.IDENTIFIER, args.identifiers, True)
-        )
-        return True
+        json_obj = cli.list()
+        # Filters
+        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
+        return self._list(args, cli, table, json_obj, filters=filters)
 
     def complete(self, args, prefix):
         super(FunctionalityListCommand, self).__call__(args)
@@ -282,22 +285,13 @@ def add_parser(subparsers, name, desc):
     subparsers2 = parser_tmp.add_subparsers()
 
     # command : list
-    parser_tmp2 = subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'list', help="list functionalities.")
-    parser_tmp2.add_argument('identifiers', nargs="*",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('-d', '--domain', action="store",
+    parser.add_argument('identifiers', nargs="*")
+    parser.add_argument('-d', '--domain', action="store",
                              help="").completer = Completer('complete_domain')
-    parser_tmp2.add_argument('--extended', action="store_true",
-                             help="extended format")
-    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
-                             help="reverse order while sorting")
-    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
-                             help="use vertical output mode")
-    parser_tmp2.add_argument('--csv', action="store_true", help="Csv output")
-    parser_tmp2.add_argument('--raw', action="store_true",
-                             help="Disable all formatters")
-    parser_tmp2.set_defaults(__func__=FunctionalityListCommand())
+    add_list_parser_options(parser)
+    parser.set_defaults(__func__=FunctionalityListCommand())
 
     # command : display
     parser_tmp2 = subparsers2.add_parser(

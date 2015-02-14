@@ -41,7 +41,7 @@ class DomainPoliciesCommand(DefaultCommand):
     DEFAULT_SORT = "identifier"
     DEFAULT_SORT_NAME = "identifier"
     RESOURCE_IDENTIFIER = "identifier"
-    DEFAULT_TOTAL = "domain policies found : %s"
+    DEFAULT_TOTAL = "Domain policies found : %(count)s"
     MSG_RS_NOT_FOUND = "No domain policies could be found."
     MSG_RS_DELETED = "%(position)s/%(count)s: The domain policy '%(uuid)s' was deleted. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DELETED = "The domain policy '%(uuid)s' can not be deleted."
@@ -61,7 +61,7 @@ class DomainPoliciesCommand(DefaultCommand):
 class DomainPoliciesListCommand(DomainPoliciesCommand):
     """ List all domain policies."""
 
-    @Time('linshareadmcli.domainpolicies', label='Global time : %s')
+    @Time('linshareadmcli.domainpolicies', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainPoliciesListCommand, self).__call__(args)
         cli = self.ls.domain_policies
@@ -76,7 +76,7 @@ class DomainPoliciesListCommand(DomainPoliciesCommand):
 class DomainPoliciesCreateCommand(DomainPoliciesCommand):
     """Create domain policy."""
 
-    @Time('linshareadmcli.domain_policies', label='Global time : %s')
+    @Time('linshareadmcli.domain_policies', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainPoliciesCreateCommand, self).__call__(args)
         rbu = self.ls.domain_policies.get_rbu()
@@ -93,7 +93,7 @@ created",
 class DomainPoliciesUpdateCommand(DomainPoliciesCommand):
     """Update domain policy."""
 
-    @Time('linshareadmcli.domain_policies', label='Global time : %s')
+    @Time('linshareadmcli.domain_policies', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainPoliciesUpdateCommand, self).__call__(args)
         resource = self.ls.domain_policies.get(args.identifier)
@@ -114,11 +114,11 @@ updated",
 class DomainPoliciesDeleteCommand(DomainPoliciesCommand):
     """Delete domain policy."""
 
-    @Time('linshareadmcli.domain_policies', label='Global time : %s')
+    @Time('linshareadmcli.domain_policies', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainPoliciesDeleteCommand, self).__call__(args)
         cli = self.ls.domain_policies
-        self._delete_all(args, cli, args.identifiers)
+        return self._delete_all(args, cli, args.identifiers)
 
 
 # -----------------------------------------------------------------------------
@@ -134,7 +134,7 @@ def add_parser(subparsers, name, desc):
     parser.add_argument(
         'identifiers', nargs="*",
         help="Filter domain policies by their identifiers")
-    add_list_parser_options(parser, download=False)
+    add_list_parser_options(parser)
     parser.set_defaults(__func__=DomainPoliciesListCommand())
 
     # command : delete

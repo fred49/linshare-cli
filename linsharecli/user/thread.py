@@ -26,10 +26,11 @@
 
 from __future__ import unicode_literals
 
+from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import DateFormatter
-from argtoolbox import DefaultCompleter as Completer
+from linsharecli.common.core import add_list_parser_options
 
 
 # -----------------------------------------------------------------------------
@@ -37,17 +38,18 @@ class ThreadsListCommand(DefaultCommand):
     """ List all threads store into LinShare."""
     IDENTIFIER = "name"
 
+    @Time('linsharecli.threads', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadsListCommand, self).__call__(args)
         cli = self.ls.threads
         table = self.get_table(args, cli, self.IDENTIFIER)
-        table.show_table(
-            cli.list(),
-            PartialOr(self.IDENTIFIER, args.identifiers, True),
-            [DateFormatter('creationDate'),
-             DateFormatter('modificationDate')]
-        )
-        return True
+        json_obj = cli.list()
+        # Filters
+        filters = PartialOr(self.IDENTIFIER, args.identifiers, True)
+        # Formatters
+        formatters = [DateFormatter('creationDate'),
+                    DateFormatter('modificationDate')]
+        return self._list(args, cli, table, json_obj, formatters, filters)
 
 
 # -----------------------------------------------------------------------------
@@ -55,18 +57,11 @@ def add_parser(subparsers, name, desc):
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
-    parser_tmp2 = subparsers2.add_parser(
+
+    # command : list
+    parser = subparsers2.add_parser(
         'list',
         help="list threads from linshare")
-    parser_tmp2.add_argument('identifiers', nargs="*",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('--extended', action="store_true",
-                             help="extended format")
-    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
-                             help="reverse order while sorting")
-    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
-                             help="use vertical output mode")
-    parser_tmp2.add_argument('--csv', action="store_true", help="Csv output")
-    parser_tmp2.add_argument('--raw', action="store_true",
-                             help="Disable all formatters")
-    parser_tmp2.set_defaults(__func__=ThreadsListCommand())
+    parser.add_argument('identifiers', nargs="*", help="")
+    add_list_parser_options(parser, delete=False, cdate=True)
+    parser.set_defaults(__func__=ThreadsListCommand())

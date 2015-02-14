@@ -52,17 +52,22 @@ class DefaultCommand(argtoolbox.DefaultCommand):
     IDENTIFIER = "name"
     DEFAULT_SORT = "creationDate"
     DEFAULT_SORT_SIZE = "size"
-    DEFAULT_TOTAL = "Ressources found : %s"
+    DEFAULT_TOTAL = "Ressources found : %(count)s"
     DEFAULT_SORT_NAME = "name"
     RESOURCE_IDENTIFIER = "uuid"
     MSG_RS_NOT_FOUND = "No resources could be found."
     MSG_RS_DELETED = "%(position)s/%(count)s: The resource '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DELETED = "The resource '%(uuid)s' can not be deleted."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%s resource(s) can not be deleted."
+    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s resource(s) can not be deleted."
     MSG_RS_DOWNLOADED = "%(position)s/%(count)s: The resource '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One resource can not be downloaded."
-    MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%s resources can not be downloaded."
+    MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%(count)s resources can not be downloaded."
 
+    ACTIONS = {
+        'delete' : '_delete_all',
+        'download' : '_download_all',
+        'count_only' : '_count_only',
+    }
 
     def __init__(self, config=None):
         super(DefaultCommand, self).__init__(config)
@@ -112,34 +117,26 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             table.sortby = self.DEFAULT_SORT_NAME
         else:
             table.sortby = self.DEFAULT_SORT
-        _delete = getattr(args, 'delete', False)
-        _download = getattr(args, 'download', False)
-        _create = getattr(args, 'create', False)
-        _count_only = getattr(args, 'count_only', False)
-        if _delete or _download or _count_only or _create:
-            table.load(json_obj, filters, formatters)
-            rows = table.get_raw()
-            if _count_only:
-                self.log.info(self.DEFAULT_TOTAL, len(rows))
-                return True
-            if len(rows) == 0:
-                self.log.warn(self.MSG_RS_NOT_FOUND)
-                return True
-            uuids = [row.get(self.RESOURCE_IDENTIFIER) for row in rows]
-            if _download:
-                self._download_all(args, cli, uuids)
-            elif _create:
-                self._create_all(args, cli, uuids)
-            else:
-                self._delete_all(args, cli, uuids)
-            self.log.info(self.DEFAULT_TOTAL, len(rows))
-        else:
-            table.show_table(json_obj, filters, formatters)
-            self.log.info(self.DEFAULT_TOTAL, len(table.get_raw()))
+        for key in self.ACTIONS.keys():
+            if getattr(args, key, False):
+                table.load(json_obj, filters, formatters)
+                rows = table.get_raw()
+                if len(rows) == 0:
+                    self.pprint(self.MSG_RS_NOT_FOUND)
+                    return True
+                if key == 'count_only':
+                    meta = {'count': len(rows)}
+                    self.pprint(self.DEFAULT_TOTAL, meta)
+                    return True
+                else:
+                    uuids = [row.get(self.RESOURCE_IDENTIFIER) for row in rows]
+                    method = getattr(self, self.ACTIONS.get(key))
+                    method(args, cli, uuids)
+                    return True
+        table.show_table(json_obj, filters, formatters)
+        meta = {'count': len(table.get_raw())}
+        self.pprint(self.DEFAULT_TOTAL, meta)
         return True
-
-    def _create_all(self, args, cli, uuids):
-        self.log.warn("Not implemented yet !")
 
     def _download_all(self, args, cli, uuids):
         count = len(uuids)
@@ -149,19 +146,22 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             position += 1
             res += self._download(args, cli, uuid, position, count)
         if res > 0:
-            self.log.warn(self.MSG_RS_CAN_NOT_BE_DOWNLOADED_M, res)
+            meta = {'count': res}
+            self.pprint(self.MSG_RS_CAN_NOT_BE_DOWNLOADED_M , meta)
+            return False
+        return True
 
     def _download(self, args, cli, uuid, position=None, count=None):
         directory = getattr(args, "directory", None)
         if directory:
             if not os.path.isdir(directory):
                 os.makedirs(directory)
+        meta = {}
+        meta['uuid'] = uuid
+        meta['time'] = " -"
+        meta['position'] = position
+        meta['count'] = count
         try:
-            meta = {}
-            meta['uuid'] = uuid
-            meta['time'] = " -"
-            meta['position'] = position
-            meta['count'] = count
             if getattr(args, "dry_run", False):
                 json_obj = cli.get(uuid)
                 meta['name'] = json_obj.get('name')
@@ -169,10 +169,14 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 file_name, req_time = cli.download(uuid, directory)
                 meta['name'] = file_name
                 meta['time'] = req_time
-            self.log.info(self.MSG_RS_DOWNLOADED, meta)
+            self.pprint(self.MSG_RS_DOWNLOADED, meta)
             return 0
         except urllib2.HTTPError as ex:
-            self.log.error("Download error : %s", ex)
+            meta['code'] = ex.code
+            meta['ex'] = str(ex)
+            if ex.code == 404:
+                self.pprint_error("http error : %(ex)s", meta)
+                self.pprint_error("Can not download the missing document : %(uuid)s", meta)
             return 1
 
     def _delete_all(self, args, cli, uuids):
@@ -183,7 +187,10 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             position += 1
             res += self._delete(args, cli, uuid, position, count)
         if res > 0:
-            self.log.warn(self.MSG_RS_CAN_NOT_BE_DELETED_M, res)
+            meta = {'count': res}
+            self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED_M, meta)
+            return False
+        return True
 
     def _delete(self, args, cli, uuid, position=None, count=None):
         try:
@@ -198,14 +205,30 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 json_obj = cli.delete(uuid)
                 meta['time'] = self.ls.last_req_time
             if not json_obj:
-                self.log.warn(self.MSG_RS_CAN_NOT_BE_DELETED, {'uuid': uuid})
+                meta = {'uuid': uuid}
+                self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
                 return 1
             meta['name'] = json_obj.get('name')
-            self.log.info(self.MSG_RS_DELETED, meta)
+            self.pprint(self.MSG_RS_DELETED, meta)
             return 0
         except urllib2.HTTPError as ex:
             self.log.error("Delete error : %s", ex)
             return 1
+
+    def pprint(self, msg, meta={}):
+        msg = msg % meta
+        self.log.debug(msg)
+        print msg
+
+    def pprint_warn(self, msg, meta={}):
+        msg = "WARN: " + msg % meta
+        self.log.warn(msg)
+        print msg
+
+    def pprint_error(self, msg, meta={}):
+        msg = "ERROR: " + msg % meta
+        self.log.error(msg)
+        print msg
 
     #pylint: disable=R0201
     def pretty_json(self, obj):
@@ -369,14 +392,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 
     def get_table(self, args, cli, first_column):
         args.vertical = getattr(args, "vertical", False)
-        if getattr(args, "download", False):
-            args.vertical = True
-        if getattr(args, "count_only", False):
-            args.vertical = True
-        if getattr(args, "create", False):
-            args.vertical = True
-        if getattr(args, "delete", False):
-            args.vertical = True
+        for key in self.ACTIONS.keys():
+            if getattr(args, key, False):
+                args.vertical = True
         args.reverse = getattr(args, "reverse", False)
         args.extended = getattr(args, "extended", False)
         keys = cli.get_rbu().get_keys(args.extended)
@@ -396,11 +414,11 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         table._pref_start = getattr(args, "start", 0)
         table._pref_end = getattr(args, "end", 0)
         table._pref_limit = getattr(args, "limit", 0)
-        table._pref_no_csv_headers = getattr(args, "no_header", False)
+        table._pref_no_csv_headers = getattr(args, "no_headers", True)
         return table
 
 # -----------------------------------------------------------------------------
-def add_list_parser_options(parser, download=True, delete=True):
+def add_list_parser_options(parser, download=False, delete=False, cdate=False, ssize=False):
     # filters
     filter_group = parser.add_argument_group('Filters')
     filter_group.add_argument(
@@ -412,9 +430,10 @@ def add_list_parser_options(parser, download=True, delete=True):
     filter_group.add_argument(
         '--limit', action="store", type=int, default=0,
         help="Used to limit the number of row to print.")
-    filter_group.add_argument(
-        '--date', action="store", dest="cdate",
-        help="Filter on creation date")
+    if cdate:
+        filter_group.add_argument(
+            '--date', action="store", dest="cdate",
+            help="Filter on creation date")
 
     # sort
     sort_group = parser.add_argument_group('Sort')
@@ -424,9 +443,10 @@ def add_list_parser_options(parser, download=True, delete=True):
     sort_group.add_argument(
         '--sort-name', action="store_true",
         help="Sort by name")
-    sort_group.add_argument(
-        '--sort-size', action="store_true",
-        help="Sort by size")
+    if ssize:
+        sort_group.add_argument(
+            '--sort-size', action="store_true",
+            help="Sort by size")
 
     # format
     format_group = parser.add_argument_group('Format')
@@ -465,9 +485,11 @@ def add_list_parser_options(parser, download=True, delete=True):
             if download:
                 actions_group.add_argument('-o', '--output-dir', action="store",
                                     dest="directory")
-                actions_group.add_argument('-d', '--download', action="store_true")
+                actions_group.add_argument(
+                    '-d', '--download', action="store_true")
             if delete:
-                actions_group.add_argument('-D', '--delete', action="store_true")
+                actions_group.add_argument(
+                    '-D', '--delete', action="store_true")
     return filter_group, sort_group,  format_group, actions_group
 
 # -----------------------------------------------------------------------------
@@ -584,7 +606,7 @@ class VTable(BaseTable):
 
     def get_csv(self):
         records = []
-        if self._pref_no_csv_headers:
+        if not self._pref_no_csv_headers:
             records.append(";".join(self.keys))
         for row in self.get_raw():
             record = []
@@ -689,7 +711,7 @@ class HTable(VeryPrettyTable, BaseTable):
 
     def get_csv(self):
         records = []
-        if self._pref_no_csv_headers:
+        if not self._pref_no_csv_headers:
             records.append(";".join(self.keys))
         for row in self.get_raw():
             record = []
