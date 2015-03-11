@@ -68,6 +68,14 @@ class LinShareCliProgram(BasicProgram):
         section_server.add_element(Element(
             'host',
             required=True))
+        section_server.add_element(Element(
+            'api_version',
+            default=0,
+            e_type=int,
+            desc="""The linshare api version to be used. Default '0'.
+- For LinShare Core <= 1.7.x, use api_version=0.
+- For LinShare Core <= 1.8.x, use api_version=1.
+"""))
 
         section_server.add_element(Element('user', required=True))
 
@@ -92,6 +100,7 @@ class LinShareCliProgram(BasicProgram):
         section_server.add_element(Element(
             'debug',
             e_type=int,
+            e_type_exclude=True,
             default=0,
             desc="""(default: 0)
 0 : debug off
@@ -169,6 +178,12 @@ section 'server-4'""")
             '--base-url',
             action="store",
             **self.config.server.base_url.get_arg_parse_arguments())
+
+        self.parser.add_argument(
+            '--api-version',
+            action="store",
+            choices=(0,1),
+            **self.config.server.api_version.get_arg_parse_arguments())
 
         # Adding all others parsers.
         subparsers = self.parser.add_subparsers()

@@ -42,7 +42,7 @@ class DefaultCommand(common.DefaultCommand):
 
     def __get_cli_object(self, args):
         cli = AdminCli(args.host, args.user, args.password, args.verbose,
-                       args.debug)
+                      args.debug, api_version=args.api_version)
         if args.base_url:
             cli.base_url = args.base_url
         return cli
