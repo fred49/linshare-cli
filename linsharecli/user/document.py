@@ -30,6 +30,7 @@ import re
 
 from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
+from linshareapi.core import LinShareException
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
@@ -38,6 +39,7 @@ from linsharecli.common.filters import PartialDate
 from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.formatters import SizeFormatter
 from argparse import RawTextHelpFormatter
+from argparse import ArgumentError
 from argtoolbox import DefaultCompleter as Completer
 
 
@@ -185,6 +187,43 @@ class DocumentsDeleteCommand(DocumentsCommand):
 
 
 # -----------------------------------------------------------------------------
+class DocumentsUpdateCommand(DocumentsCommand):
+
+    @Time('linsharecli.document', label='Global time : %(time)s')
+    def __call__(self, args):
+        super(DocumentsUpdateCommand, self).__call__(args)
+        a = ['description', 'meta_data', 'name']
+        one_set = False
+        for i in a:
+            if getattr(args, i, None) is not None:
+                one_set = True
+                break
+        if not one_set:
+            raise ArgumentError(None, "You need to choose at least one of the three options : --name or --meta-data or --description")
+        cli = self.ls.documents
+        try:
+            document = cli.get(args.uuid)
+            original_name = document.get('name')
+            rbu = cli.get_rbu()
+            rbu.copy(document)
+            rbu.load_from_args(args)
+            json_obj = cli.update(rbu.to_resource())
+            if json_obj.get('name') == original_name:
+                message_ok = "The following document '%(name)s' was successfully updated"
+                self.pprint(message_ok, json_obj)
+            else:
+                json_obj['original_name'] = original_name
+                message_ok = "The former document '%(original_name)s' (renamed to '%(name)s') was successfully updated"
+                self.pprint(message_ok, json_obj)
+            if self.verbose or self.debug:
+                self.pretty_json(json_obj)
+            return True
+        except LinShareException as ex:
+            self.pprint_error(ex.args[1] + " : " + args.uuid)
+        return False
+
+
+# -----------------------------------------------------------------------------
 class DocumentsUploadAndSharingCommand(DefaultCommand):
 
     @Time('linsharecli.document', label='Global time : %(time)s')
@@ -319,3 +358,15 @@ def add_parser(subparsers, name, desc):
         ).completer = Completer("complete_mail")
     action_parser.add_argument('--share', action="store_true", dest="share")
     parser.set_defaults(__func__=DocumentsListCommand())
+
+    # command : update
+    parser = subparsers2.add_parser(
+        'update', help="update document meta data.")
+    parser.add_argument('uuid').completer = Completer()
+    parser.add_argument('--name', action="store",
+                        help="document new name")
+    parser.add_argument('--meta-data', action="store",
+                        help="document meta data")
+    parser.add_argument('--description', action="store",
+                        help="document description")
+    parser.set_defaults(__func__=DocumentsUpdateCommand())

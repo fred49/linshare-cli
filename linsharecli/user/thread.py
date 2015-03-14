@@ -31,11 +31,35 @@ from linsharecli.user.core import DefaultCommand
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.core import add_list_parser_options
+from linsharecli.common.core import add_delete_parser_options
+from argtoolbox import DefaultCompleter as Completer
 
 
 # -----------------------------------------------------------------------------
-class ThreadsListCommand(DefaultCommand):
-    """ List all threads store into LinShare."""
+class ThreadsCommand(DefaultCommand):
+
+    DEFAULT_TOTAL = "Threads found : %(count)s"
+    MSG_RS_NOT_FOUND = "No threads could be found."
+    MSG_RS_DELETED = "%(position)s/%(count)s: The thread '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
+    MSG_RS_CAN_NOT_BE_DELETED = "The thread '%(uuid)s' can not be deleted."
+    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s thread(s) can not be deleted."
+
+    ACTIONS = {
+        'delete' : '_delete_all',
+        'count_only' : '_count_only',
+    }
+
+    def complete(self, args, prefix):
+        super(ThreadsCommand, self).__call__(args)
+        json_obj = self.ls.threads.list()
+        return (
+            v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
+
+
+
+# -----------------------------------------------------------------------------
+class ThreadsListCommand(ThreadsCommand):
+    """ List all threads store."""
     IDENTIFIER = "name"
 
     @Time('linsharecli.threads', label='Global time : %(time)s')
@@ -53,6 +77,46 @@ class ThreadsListCommand(DefaultCommand):
 
 
 # -----------------------------------------------------------------------------
+class ThreadsCreateCommand(ThreadsCommand):
+
+    def __call__(self, args):
+        super(ThreadsCreateCommand, self).__call__(args)
+        rbu = self.ls.threads.get_rbu()
+        rbu.load_from_args(args)
+        return self._run(
+            self.ls.threads.create,
+            "The following threads '%(name)s' was successfully \
+created",
+            args.name,
+            rbu.to_resource())
+
+
+# -----------------------------------------------------------------------------
+class ThreadsUpdateCommand(ThreadsCommand):
+
+    def __call__(self, args):
+        super(ThreadsUpdateCommand, self).__call__(args)
+        rbu = self.ls.threads.get_rbu()
+        rbu.load_from_args(args)
+        return self._run(
+            self.ls.threads.update,
+            "The following threads '%(name)s' was successfully \
+updated",
+            args.uuid,
+            rbu.to_resource())
+
+
+# -----------------------------------------------------------------------------
+class ThreadsDeleteCommand(ThreadsCommand):
+
+    @Time('linsharecli.thread', label='Global time : %(time)s')
+    def __call__(self, args):
+        super(ThreadsDeleteCommand, self).__call__(args)
+        cli = self.ls.threads
+        return self._delete_all(args, cli, args.uuids)
+
+
+# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc):
     parser_tmp = subparsers.add_parser(name, help=desc)
 
@@ -61,7 +125,28 @@ def add_parser(subparsers, name, desc):
     # command : list
     parser = subparsers2.add_parser(
         'list',
-        help="list threads from linshare")
+        help="list threads")
     parser.add_argument('identifiers', nargs="*", help="")
-    add_list_parser_options(parser, delete=False, cdate=True)
+    add_list_parser_options(parser, delete=True, cdate=True)
     parser.set_defaults(__func__=ThreadsListCommand())
+
+    # command : delete
+    parser = subparsers2.add_parser(
+        'delete',
+        help="delete threads")
+    add_delete_parser_options(parser)
+    parser.set_defaults(__func__=ThreadsDeleteCommand())
+
+    # command : create
+    parser = subparsers2.add_parser(
+        'create', help="create thread.")
+    parser.add_argument('name', action="store", help="")
+    parser.set_defaults(__func__=ThreadsCreateCommand())
+
+    # command : update
+    parser = subparsers2.add_parser(
+        'update', help="update thread.")
+    parser.add_argument(
+        'uuid', action="store", help="").completer = Completer()
+    parser.add_argument('name', action="store", help="")
+    parser.set_defaults(__func__=ThreadsUpdateCommand())

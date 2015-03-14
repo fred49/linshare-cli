@@ -42,6 +42,7 @@ from veryprettytable import VeryPrettyTable
 from ordereddict import OrderedDict
 from hurry.filesize import size as filesize
 from argtoolbox import DefaultCompleter as Completer
+from linshareapi.core import LinShareException
 
 # -----------------------------------------------------------------------------
 #pylint: disable=R0921
@@ -214,6 +215,18 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         except urllib2.HTTPError as ex:
             self.log.error("Delete error : %s", ex)
             return 1
+
+    def _run(self, method, message_ok, err_suffix, *args):
+        try:
+            json_obj = method(*args)
+            self.log.info(message_ok, json_obj)
+            if self.debug:
+                self.pretty_json(json_obj)
+            return True
+        except LinShareException as ex:
+            self.log.debug("LinShareException : " + str(ex.args))
+            self.log.error(ex.args[1] + " : " + err_suffix)
+        return False
 
     def pprint(self, msg, meta={}):
         msg = msg % meta
