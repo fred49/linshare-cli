@@ -140,7 +140,9 @@ class DocumentsListCommand(DocumentsCommand):
             return (v.get('mail')
                     for v in json_obj if v.get('mail').startswith(prefix))
         else:
+            warn("---------------------------------------")
             warn("Completion need at least 3 characters.")
+            warn("---------------------------------------")
 
 
 # -----------------------------------------------------------------------------
