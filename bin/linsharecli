@@ -71,11 +71,11 @@ class LinShareCliProgram(BasicProgram):
             required=True))
         section_server.add_element(Element(
             'api_version',
-            default=0,
+            default=1,
             e_type=int,
-            desc="""The linshare api version to be used. Default '0'.
+            desc="""The linshare api version to be used. Default '1'.
 - For LinShare Core <= 1.7.x, use api_version=0.
-- For LinShare Core <= 1.8.x, use api_version=1.
+- For LinShare Core >= 1.8.x, use api_version=1.
 """))
 
         section_server.add_element(Element('user', required=True))

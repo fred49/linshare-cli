@@ -479,13 +479,13 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
 
     # actions
     actions_group = parser.add_argument_group('Actions')
+    download_group = parser.add_argument_group('Downloading options')
     actions_group.add_argument(
         '-c', '--count', action="store_true", dest="count_only",
         help="Just display number of results instead of results.")
     if download or delete:
-        actions_group.add_argument('--dry-run', action="store_true")
         if download:
-            actions_group.add_argument(
+            download_group.add_argument(
                 '-o', '--output-dir', action="store",
                 dest="directory")
         if download and delete:
@@ -503,6 +503,7 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
             if delete:
                 actions_group.add_argument(
                     '-D', '--delete', action="store_true")
+        actions_group.add_argument('--dry-run', action="store_true")
     return filter_group, sort_group,  format_group, actions_group
 
 # -----------------------------------------------------------------------------

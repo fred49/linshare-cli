@@ -59,6 +59,7 @@ class DocumentsCommand(DefaultCommand):
     ACTIONS = {
         'delete' : '_delete_all',
         'download' : '_download_all',
+        'share' : '_share_all2',
         'share' : '_share_all',
         'count_only' : '_count_only',
     }
@@ -91,6 +92,57 @@ class DocumentsListCommand(DocumentsCommand):
         return self._list(args, cli, table, json_obj, formatters, filters)
 
     def _share_all(self, args, cli, uuids):
+        if args.api_version == 0:
+            return self._share_all_1_7(args, cli, uuids)
+        elif args.api_version == 1:
+            return self._share_all_1_8(args, cli, uuids)
+
+    def _share_all_1_8(self, args, cli, uuids):
+        rbu = self.ls.shares.get_rbu()
+        rbu.load_from_args(args)
+        rbu.set_value('documents', uuids)
+        self.log.debug("rbu document: " + str(rbu))
+        recipients = []
+        cpt = 0
+        size = len(args.mails)
+        for mail in args.mails:
+            cpt += 1
+            prefix = "%(cpt)s/%(size)s : " % {'cpt': cpt, 'size': size}
+            rbu_user = self.ls.shares.get_rbu_user()
+            rbu_user.load_from_args(args)
+            rbu_user.set_value('mail', mail)
+            recipients.append(rbu_user.to_resource())
+            self.log.debug(prefix + "recipient: rbu user: " + str(rbu_user))
+        rbu.set_value('recipients', recipients)
+        json_obj = self.ls.shares.create(rbu.to_resource())
+        if self.debug:
+            self.pretty_json(json_obj)
+        documents = []
+        recipients = []
+        for i in json_obj:
+            d = i.get('documentDto')
+            document = d['name'] + " (" + d['uuid'] +")"
+            if document not in documents:
+                documents.append(document)
+            # recipients
+            r = i['recipient']
+            if r['firstName']:
+                recipient = "%(firstName)s %(lastName)s (%(mail)s)" % r
+            else:
+                recipient = "%(mail)s" % r
+            if recipient not in recipients:
+                recipients.append(recipient)
+        self.pprint("The following documents :\n")
+        for d in sorted(documents):
+            self.pprint(" - " + d)
+        self.pprint("\n were shared with :\n")
+        for d in sorted(recipients):
+            self.pprint(" - " + d)
+        self.pprint("")
+
+        return 0
+
+    def _share_all_1_7(self, args, cli, uuids):
         count = len(uuids)
         position = 0
         res = 0
@@ -348,18 +400,30 @@ def add_parser(subparsers, name, desc):
     parser.add_argument(
         'names', nargs="*",
         help="Filter documents by their names")
+    # command : list : share action
     action_parser = add_list_parser_options(
         parser, download=True, delete=True, cdate=True)[3]
     action_parser.add_argument(
+        '--share',
+        action="store_true",
+        dest="share",
+        help="You can share all displayed files by the list command.")
+    parser.set_defaults(__func__=DocumentsListCommand())
+    # command : list : share options
+    share_group = parser.add_argument_group('Sharing options')
+    share_group.add_argument('--expiration-date', action="store")
+    share_group.add_argument('--secured', action="store_true", default=None)
+    share_group.add_argument('--no-secured', action="store_false", default=None, dest="secured")
+    share_group.add_argument('--message', action="store")
+    share_group.add_argument('--subject', action="store")
+    share_group.add_argument(
         '-m',
         '--mail',
         action="append",
         dest="mails",
         # required=True,
-        help="Recipient mails."
+        help="Recipient (email)."
         ).completer = Completer("complete_mail")
-    action_parser.add_argument('--share', action="store_true", dest="share")
-    parser.set_defaults(__func__=DocumentsListCommand())
 
     # command : update
     parser = subparsers2.add_parser(
