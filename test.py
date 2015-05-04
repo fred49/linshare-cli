@@ -157,6 +157,7 @@ class LinShareTest(unittest.TestCase):
         ns.host = "http://192.168.1.106:8081"
         ns.user = "homer.simpson@nodomain.com"
         ns.password = "secret"
+        ns.api_version = 0
         return ns
 
     def run_default0(self, command):
@@ -347,7 +348,7 @@ class TestDocumentsList(LinShareTest):
         command = "documents list --extended"
         output = self.run_default0(command)
         self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
-        self.assertEqual(len(output[0]), 174)
+        self.assertEqual(len(output[0]), 251)
 
     @patch('linshareapi.core.CoreCli.auth', return_value=True)
     @patch('linshareapi.user.documents.Documents.list',
@@ -422,7 +423,7 @@ class TestDocumentsList(LinShareTest):
     @patch('linshareapi.user.documents.Documents.list',
            return_value=get_document_data())
     def test_documents_list12(self, *args):
-        """retrieve documents list and try to download them (all failed)"""
+        """retrieve documents list and try to download them (all should failed)"""
         FIRST_LINE = 3
         LAST_LINE = -4
         # start
