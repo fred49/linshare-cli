@@ -76,8 +76,8 @@ setup(
 
     # List run-time dependencies here.  These will be installed by pip when your
     # project is installed.
-    install_requires = ['argtoolbox>=0.0.8',
-                        'linshareapi',
+    install_requires = ['argtoolbox>=0.1.0',
+                        'linshareapi>=0.2.3',
                         'poster',
                         'progressbar',
                         'veryprettytable',
