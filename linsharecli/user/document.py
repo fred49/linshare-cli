@@ -30,6 +30,7 @@ import re
 
 from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
+from linsharecli.user.share import ShareAction
 from linshareapi.core import LinShareException
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
@@ -59,7 +60,6 @@ class DocumentsCommand(DefaultCommand):
     ACTIONS = {
         'delete' : '_delete_all',
         'download' : '_download_all',
-        'share' : '_share_all2',
         'share' : '_share_all',
         'count_only' : '_count_only',
     }
@@ -92,97 +92,8 @@ class DocumentsListCommand(DocumentsCommand):
         return self._list(args, cli, table, json_obj, formatters, filters)
 
     def _share_all(self, args, cli, uuids):
-        if args.api_version == 0:
-            return self._share_all_1_7(args, cli, uuids)
-        elif args.api_version == 1:
-            return self._share_all_1_8(args, cli, uuids)
-
-    def _share_all_1_8(self, args, cli, uuids):
-        rbu = self.ls.shares.get_rbu()
-        rbu.load_from_args(args)
-        rbu.set_value('documents', uuids)
-        self.log.debug("rbu document: " + str(rbu))
-        recipients = []
-        cpt = 0
-        size = len(args.mails)
-        for mail in args.mails:
-            cpt += 1
-            prefix = "%(cpt)s/%(size)s : " % {'cpt': cpt, 'size': size}
-            rbu_user = self.ls.shares.get_rbu_user()
-            rbu_user.load_from_args(args)
-            rbu_user.set_value('mail', mail)
-            recipients.append(rbu_user.to_resource())
-            self.log.debug(prefix + "recipient: rbu user: " + str(rbu_user))
-        rbu.set_value('recipients', recipients)
-        json_obj = self.ls.shares.create(rbu.to_resource())
-        if self.debug:
-            self.pretty_json(json_obj)
-        documents = []
-        recipients = []
-        for i in json_obj:
-            d = i.get('documentDto')
-            document = d['name'] + " (" + d['uuid'] +")"
-            if document not in documents:
-                documents.append(document)
-            # recipients
-            r = i['recipient']
-            if r['firstName']:
-                recipient = "%(firstName)s %(lastName)s (%(mail)s)" % r
-            else:
-                recipient = "%(mail)s" % r
-            if recipient not in recipients:
-                recipients.append(recipient)
-        self.pprint("The following documents :\n")
-        for d in sorted(documents):
-            self.pprint(" - " + d)
-        self.pprint("\n were shared with :\n")
-        for d in sorted(recipients):
-            self.pprint(" - " + d)
-        self.pprint("")
-
-        return 0
-
-    def _share_all_1_7(self, args, cli, uuids):
-        count = len(uuids)
-        position = 0
-        res = 0
-        for uuid in uuids:
-            position += 1
-            res += self._share(args, cli, uuid, position, count)
-        if res > 0:
-            self.pprint(
-                "Some file (%(count)s) have not been shared.",
-                {'count': res})
-            return False
-        return True
-
-    def _share(self, args, cli, uuid, position=None, count=None):
-        if args.mails is None:
-            self.pprint("No recipient was found !")
-            return 0
-        err_count = 0
-        for mail in args.mails:
-            if getattr(args, "dry_run", False):
-                code = 204
-                req_time = "- "
-            else:
-                code, err_msg, req_time = self.ls.shares.share(uuid, mail)
-            if code == 204:
-                self.pprint(
-                    "The document (%(uuid)s) was successfully shared with %(mail)s (%(time)s s)",
-                    {'uuid': uuid, 'mail': mail, 'time': req_time})
-            else:
-                err_count += 1
-                meta = {
-                    'mail': mail, 'uuid': uuid,
-                    'code': code, 'err_msg': err_msg}
-                self.pprint_warn(
-                    "Trying to share document '%(uuid)s' with mail %(mail)s",
-                    meta)
-                self.pprint_error(
-                    "Unexpected return code : %(code)s : %(err_msg)s",
-                    meta)
-        return err_count
+        command = ShareAction(self)
+        return command(args, cli, uuids)
 
     def complete_mail(self, args, prefix):
         super(DocumentsListCommand, self).__call__(args)
