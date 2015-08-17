@@ -405,9 +405,12 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 
     def get_table(self, args, cli, first_column):
         args.vertical = getattr(args, "vertical", False)
-        for key in self.ACTIONS.keys():
-            if getattr(args, key, False):
-                args.vertical = True
+        if getattr(args, "json", False):
+            args.vertical = True
+        if not args.vertical:
+            for key in self.ACTIONS.keys():
+                if getattr(args, key, False):
+                    args.vertical = True
         args.reverse = getattr(args, "reverse", False)
         args.extended = getattr(args, "extended", False)
         keys = cli.get_rbu().get_keys(args.extended)
@@ -422,6 +425,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         table.sortby = first_column
         table.reversesort = args.reverse
         table.keys = keys
+        table.json = getattr(args, "json", False)
+        table.raw_json = getattr(args, "raw_json", False)
         table.csv = getattr(args, "csv", False)
         table.raw = getattr(args, "raw", False)
         table._pref_start = getattr(args, "start", 0)
@@ -469,6 +474,10 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
     format_group.add_argument(
         '-t', '--vertical', action="store_true",
         help="Display results using vertical output mode")
+    format_group.add_argument('--json', action="store_true", help="Json output")
+    format_group.add_argument(
+        '--raw-json', action="store_true",
+        help="Display every attributes for json output.")
     format_group.add_argument('--csv', action="store_true", help="Csv output")
     format_group.add_argument(
         '--no-headers', action="store_true",
@@ -551,6 +560,9 @@ class BaseTable(object):
     def get_raw(self):
         raise NotImplementedError()
 
+    def get_json(self):
+        raise NotImplementedError()
+
     def get_csv(self):
         raise NotImplementedError()
 
@@ -577,6 +589,9 @@ class VTable(BaseTable):
 
     def show_table(self, json_obj, filters=None, formatters=None):
         self.load(json_obj, filters, formatters)
+        if self.json:
+            print self.get_json()
+            return
         if self.csv:
             print self.get_csv()
             return
@@ -617,6 +632,19 @@ class VTable(BaseTable):
         elif self.end:
             source = source[:self.end]
         return source
+
+    def get_json(self):
+        records = []
+        for row in self.get_raw():
+            if self.raw_json:
+                res = json.dumps(row, sort_keys=True, indent=2)
+            else:
+                record = {}
+                for k in self.keys:
+                    record[k] = row.get(k)
+                res = json.dumps(record, sort_keys=True, indent=2)
+            records.append(res)
+        return "\n".join(records)
 
     def get_csv(self):
         records = []
@@ -707,6 +735,9 @@ class HTable(VeryPrettyTable, BaseTable):
 
     def show_table(self, json_obj, filters=None, formatters=None):
         self.load(json_obj, filters, formatters)
+        if self.json:
+            print self.get_json()
+            return
         if self.csv:
             print self.get_csv()
             return
