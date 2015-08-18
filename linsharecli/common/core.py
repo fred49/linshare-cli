@@ -614,6 +614,9 @@ class VTable(BaseTable):
             limit = self._pref_limit
             if limit > 0:
                 self.end = self.start + limit
+        elif self._pref_limit > 0:
+            self.start = 1
+            self.end = 1 + self._pref_limit
 
     def add_row(self, row):
         if self.debug >= 2:
