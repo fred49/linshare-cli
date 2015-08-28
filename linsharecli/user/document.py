@@ -194,6 +194,26 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
+        if args.api_version == 0:
+            return self._upshare_1_7(args)
+        elif args.api_version == 1:
+            return self._upshare_1_8(args)
+
+    def _upshare_1_8(self, args):
+        """Method to share documents. compatible >= 1.8 """
+        uuids = []
+        for file_path in args.files:
+            json_obj = self.ls.documents.upload(file_path)
+            uuids.append(json_obj.get('uuid'))
+            json_obj['time'] = self.ls.last_req_time
+            self.log.info(
+                "The file '%(name)s' (%(uuid)s) was uploaded. (%(time)ss)",
+                json_obj)
+        command = ShareAction(self)
+        cli = self.ls.shares
+        return command(args, cli, uuids)
+
+    def _upshare_1_7(self, args):
         for file_path in args.files:
             json_obj = self.ls.documents.upload(file_path)
             uuid = json_obj.get('uuid')
