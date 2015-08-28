@@ -638,16 +638,14 @@ class VTable(BaseTable):
 
     def get_json(self):
         records = []
+        if self.raw_json:
+            return json.dumps(self.get_raw(), sort_keys=True, indent=2)
         for row in self.get_raw():
-            if self.raw_json:
-                res = json.dumps(row, sort_keys=True, indent=2)
-            else:
-                record = {}
-                for k in self.keys:
-                    record[k] = row.get(k)
-                res = json.dumps(record, sort_keys=True, indent=2)
-            records.append(res)
-        return "\n".join(records)
+            record = {}
+            for k in self.keys:
+                record[k] = row.get(k)
+            records.append(record)
+        return json.dumps(records, sort_keys=True, indent=2)
 
     def get_csv(self):
         records = []
