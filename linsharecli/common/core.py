@@ -132,8 +132,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 else:
                     uuids = [row.get(self.RESOURCE_IDENTIFIER) for row in rows]
                     method = getattr(self, self.ACTIONS.get(key))
-                    method(args, cli, uuids)
-                    return True
+                    return method(args, cli, uuids)
         table.show_table(json_obj, filters, formatters)
         meta = {'count': len(table.get_raw())}
         self.pprint(self.DEFAULT_TOTAL, meta)
