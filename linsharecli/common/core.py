@@ -404,12 +404,15 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 
     def get_table(self, args, cli, first_column):
         args.vertical = getattr(args, "vertical", False)
-        if getattr(args, "json", False):
-            args.vertical = True
         if not args.vertical:
-            for key in self.ACTIONS.keys():
-                if getattr(args, key, False):
-                    args.vertical = True
+            if getattr(args, "json", False):
+                args.vertical = True
+            elif getattr(args, "csv", False):
+                args.vertical = True
+            else:
+                for key in self.ACTIONS.keys():
+                    if getattr(args, key, False):
+                        args.vertical = True
         args.reverse = getattr(args, "reverse", False)
         args.extended = getattr(args, "extended", False)
         keys = cli.get_rbu().get_keys(args.extended)
@@ -626,6 +629,9 @@ class VTable(BaseTable):
         self.update_max_lengthkey(row)
 
     def get_raw(self):
+        if self.sortby:
+            self._rows = sorted(self._rows, reverse=self.reversesort,
+                            key=itemgetter(self.sortby))
         source = self._rows
         if self.start:
             source = source[self.start:]
@@ -668,18 +674,7 @@ class VTable(BaseTable):
     def get_string(self):
         max_length_line = 0
         records = []
-        out = []
-        if self.sortby:
-            self._rows = sorted(self._rows, reverse=self.reversesort,
-                            key=itemgetter(self.sortby))
-        source = self._rows
-        if self.start:
-            source = source[self.start:]
-            if self.end:
-                source = source[:self.end - self.start]
-        elif self.end:
-            source = source[:self.end]
-        for row in source:
+        for row in self.get_raw():
             record = []
             for k in self.keys:
                 t_format = u"{key:" + unicode(str(self._maxlengthkey)) + u"s} | {value:s}"
@@ -693,6 +688,7 @@ class VTable(BaseTable):
                 record.append(t_record)
                 max_length_line = max(max_length_line, len(t_record))
             records.append("\n".join(record))
+        out = []
         cptline = 0
         for record in records:
             cptline += 1
@@ -735,35 +731,9 @@ class HTable(VeryPrettyTable, BaseTable):
 
     def show_table(self, json_obj, filters=None, formatters=None):
         self.load(json_obj, filters, formatters)
-        if self.json:
-            print self.get_json()
-            return
-        if self.csv:
-            print self.get_csv()
-            return
         out = self.get_string(fields=self.keys)
         print unicode(out)
 
     def get_raw(self):
-        source = self._rows
-        if self.start:
-            source = source[self.start:]
-            if self.end:
-                source = source[:self.end - self.start]
-        elif self.end:
-            source = source[:self.end]
-        return source
-
-    def get_csv(self):
-        records = []
-        if not self._pref_no_csv_headers:
-            records.append(";".join(self.keys))
-        for row in self.get_raw():
-            record = []
-            for k in row:
-                if isinstance(k, types.UnicodeType):
-                    record.append(k)
-                else:
-                    record.append(str(k))
-            records.append(";".join(record))
-        return "\n".join(records)
+        options = self._get_options({'fields': self.keys})
+        return self._get_rows(options)
