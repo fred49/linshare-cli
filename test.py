@@ -14,7 +14,6 @@ import unittest
 import argparse
 import codecs
 import logging
-import re
 import urllib2
 from mock import patch
 from copy import deepcopy
@@ -25,6 +24,8 @@ from linsharecli.user.rshare import add_parser as add_received_share_parser
 from linsharecli.user.thread import add_parser as add_threads_parser
 from linsharecli.user.user import add_parser as add_users_parser
 
+# debug level superior or equal to three may have side effect
+# during output parsing (stdout)
 DEBUG_LEVEL = int(os.getenv('_TEST_LINSHARE_CLI_USER_DEBUG', 0))
 LOG = logging.getLogger()
 LOG.setLevel(logging.FATAL)
@@ -122,6 +123,47 @@ DATA_DOCUMENTS = [
 def get_document_data():
     return deepcopy(DATA_DOCUMENTS)
 
+DATA_CREATED_SHARE = [
+      {
+              "ciphered": None,
+              "creationDate": 1440945179751,
+              "description": None,
+              "document": {
+                "ciphered": False,
+                "creationDate": 1413644784988,
+                "description": "",
+                "expirationDate": None,
+                "metaData": None,
+                "modificationDate": 1440945181335,
+                "name": "fortest_499",
+                "sha256sum": None,
+                "size": 898,
+                "type": "text/plain",
+                "uuid": "09159704-c17b-46ef-ae26-6f9cce4e9d9a"
+              },
+              "downloaded": None,
+              "expirationDate": 1448893979725,
+              "message": None,
+              "modificationDate": 1440945179751,
+              "name": "fortest_499",
+              "recipient": {
+                        "domain": "topdomain",
+                        "firstName": "Bart",
+                        "lastName": "Simpson",
+                        "mail": "bart.simpson@nodomain.com",
+                        "uuid": "27573c44-f896-42e7-ba0d-7bec7ba67568"
+                      },
+              "sender": None,
+              "size": None,
+              "type": None,
+              "uuid": "9487e4f3-978e-4496-8bb6-1e7b283df0cc"
+            }
+]
+
+def get_created_share_data():
+    return deepcopy(DATA_CREATED_SHARE)
+
+
 # -----------------------------------------------------------------------------
 class LinShareTest(unittest.TestCase):
 
@@ -144,6 +186,7 @@ class LinShareTest(unittest.TestCase):
                                   "rshares",
                                   "Alias of received_share command")
         add_users_parser(subparsers, "users", "users")
+        self.api_version = 0
 
     def get_default_ns(self):
         ns = argparse.Namespace()
@@ -157,7 +200,7 @@ class LinShareTest(unittest.TestCase):
         ns.host = "http://192.168.1.106:8081"
         ns.user = "homer.simpson@nodomain.com"
         ns.password = "secret"
-        ns.api_version = 0
+        ns.api_version = self.api_version
         return ns
 
     def run_default0(self, command):
@@ -300,8 +343,9 @@ class TestDocumentsList(LinShareTest):
         self.assertEqual(len(output), 9)
         self.assertEqual(len(output[0]), 45)
         self.assertEqual(len(output[1]), 86)
-        self.assertRegexpMatches(output[1], "file0.*")
-        self.assertRegexpMatches(output[-5], "file3.*")
+        # first file
+        self.assertRegexpMatches(output[1], "file5.*")
+        self.assertRegexpMatches(output[-5], "file1.*")
 
     @patch('linshareapi.core.CoreCli.auth', return_value=True)
     @patch('linshareapi.user.documents.Documents.list',
@@ -313,7 +357,7 @@ class TestDocumentsList(LinShareTest):
         # documents + header + footer = 6 + 0 + 2
         self.assertEqual(len(output), 8)
         self.assertEqual(len(output[0]), 86)
-        self.assertRegexpMatches(output[-3], "file5.*")
+        self.assertRegexpMatches(output[-3], "file3.*")
 
     @patch('linshareapi.core.CoreCli.auth', return_value=True)
     @patch('linshareapi.user.documents.Documents.list',
@@ -473,9 +517,30 @@ class TestDocumentsList(LinShareTest):
     def test_documents_list13(self, *args):
         """retrieve documents list and download them"""
         command = "documents list file5 --share --mail bart.simpson@localhost"
+        self.api_version = 0
+        #self.assertRaises(ValueError, self.run_default0(command))
+        try:
+            self.run_default0(command)
+            self.assertTrue(False)
+        except ValueError:
+            self.assertTrue(True)
+
+    @patch('linshareapi.core.CoreCli.auth', return_value=True)
+    @patch('linshareapi.user.documents.Documents.list',
+           return_value=get_document_data())
+    @patch('linshareapi.user.shares.Shares2.create',
+           return_value=get_created_share_data())
+    def test_documents_list13b(self, *args):
+        """retrieve documents list and download them"""
+        command = "documents list file5 --share --mail bart.simpson@localhost"
+        self.api_version = 1
         output = self.run_default0(command)
-        self.assertEqual(len(output), 2)
-        self.assertRegexpMatches(output[0], ".*26b3adbb-6e59-48fc-bd73-c84c01afb5de.*bart.simpson.*")
+        self.assertRegexpMatches("".join(output), ".*Bart Simpson.*")
+        self.assertRegexpMatches("".join(output), ".*The following documents :.*")
+        if self.debug == 2:
+            self.assertEqual(len(output), 45)
+        else:
+            self.assertEqual(len(output), 9)
 
     #def test_threads_list(self):
     #    self.assertTrue(self.run_default("threads list"))

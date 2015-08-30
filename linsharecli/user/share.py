@@ -68,7 +68,7 @@ class ShareAction(object):
             self.log.debug(prefix + "recipient: rbu user: " + str(rbu_user))
         rbu.set_value('recipients', recipients)
         json_obj = self.ls.shares.create(rbu.to_resource())
-        if self.debug:
+        if self.debug >= 2:
             self.pretty_json(json_obj)
         documents = []
         recipients = []
