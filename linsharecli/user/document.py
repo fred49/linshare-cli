@@ -92,8 +92,13 @@ class DocumentsListCommand(DocumentsCommand):
         return self._list(args, cli, table, json_obj, formatters, filters)
 
     def _share_all(self, args, cli, uuids):
-        command = ShareAction(self)
-        return command(args, cli, uuids)
+        if args.api_version == 1:
+            if not args.mails:
+                raise ValueError("To share files, you need to use -m/--mail option.")
+            command = ShareAction(self)
+            return command(args, cli, uuids)
+        else:
+            raise ValueError("Not supported for the current api version : " + str(args.api_version))
 
     def complete_mail(self, args, prefix):
         super(DocumentsListCommand, self).__call__(args)
