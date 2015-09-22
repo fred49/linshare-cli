@@ -630,8 +630,11 @@ class VTable(BaseTable):
 
     def get_raw(self):
         if self.sortby:
-            self._rows = sorted(self._rows, reverse=self.reversesort,
+            try:
+                self._rows = sorted(self._rows, reverse=self.reversesort,
                             key=itemgetter(self.sortby))
+            except KeyError as ex:
+                self.log.warn("missing sortby key : " + str(ex))
         source = self._rows
         if self.start:
             source = source[self.start:]
