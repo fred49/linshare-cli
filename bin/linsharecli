@@ -195,17 +195,21 @@ section 'server-4'""")
 
         # Adding all others parsers.
         subparsers = self.parser.add_subparsers()
-        add_document_parser(subparsers, "documents", "Documents management")
-        add_threads_parser(subparsers, "threads", "threads management")
-        add_tmembers_parser(subparsers, "tmembers", "thread members management")
-        add_share_parser(subparsers, "shares", "Created shares management")
+        add_document_parser(subparsers, "documents", "Documents management",
+                            self.config)
+        add_threads_parser(subparsers, "threads", "threads management",
+                           self.config)
+        add_tmembers_parser(subparsers, "tmembers",
+                            "thread members management", self.config)
+        add_share_parser(subparsers, "shares", "Created shares management",
+                         self.config)
         add_received_share_parser(subparsers,
                                   "received_shares",
-                                  "Received shares management")
+                                  "Received shares management", self.config)
         add_received_share_parser(subparsers,
                                   "rshares",
-                                  "Alias of received_share command")
-        add_users_parser(subparsers, "users", "users")
+                                  "Alias of received_share command", self.config)
+        add_users_parser(subparsers, "users", "users", self.config)
         add_core_parser(subparsers, self.config)
 
 

@@ -52,7 +52,7 @@ class UsersListCommand(DefaultCommand):
 
 
 # -----------------------------------------------------------------------------
-def add_parser(subparsers, name, desc):
+def add_parser(subparsers, name, desc, config):
     """Add all user sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
 

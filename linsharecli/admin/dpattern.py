@@ -137,7 +137,7 @@ successfully deleted",
 
 
 # -----------------------------------------------------------------------------
-def add_parser(subparsers, name, desc):
+def add_parser(subparsers, name, desc, config):
     """Add all domain pattern sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()

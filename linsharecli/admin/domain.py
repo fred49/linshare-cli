@@ -285,7 +285,7 @@ updated",
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
 # -----------------------------------------------------------------------------
-def add_parser(subparsers, name, desc):
+def add_parser(subparsers, name, desc, config):
     """Add all domain sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()

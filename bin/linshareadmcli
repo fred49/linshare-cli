@@ -197,15 +197,15 @@ section 'server-4'""")
 
         # Adding all others parsers.
         subparsers = self.parser.add_subparsers()
-        add_threads_parser(subparsers, "threads", "threads management")
+        add_threads_parser(subparsers, "threads", "threads management", self.config)
         add_thread_members_parser(subparsers, "tmembers",
-                                  "thread member management")
-        add_users_parser(subparsers, "users", "users")
-        add_domains_parser(subparsers, "domains", "domains")
-        add_ldap_connections_parser(subparsers, "ldap", "ldap connections")
-        add_domain_patterns_parser(subparsers, "dpatterns", "domain patterns")
-        add_functionalities_parser(subparsers, "funcs", "Functionalities")
-        add_domain_policies(subparsers, "domainpolicy", "Domain Policies")
+                                  "thread member management", self.config)
+        add_users_parser(subparsers, "users", "users", self.config)
+        add_domains_parser(subparsers, "domains", "domains", self.config)
+        add_ldap_connections_parser(subparsers, "ldap", "ldap connections", self.config)
+        add_domain_patterns_parser(subparsers, "dpatterns", "domain patterns", self.config)
+        add_functionalities_parser(subparsers, "funcs", "Functionalities", self.config)
+        add_domain_policies(subparsers, "domainpolicy", "Domain Policies", self.config)
         add_core_parser(subparsers, self.config)
 
 # if you need debug during class construction, config file loading,

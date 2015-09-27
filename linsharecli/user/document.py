@@ -284,7 +284,7 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
 
 
 # -----------------------------------------------------------------------------
-def add_parser(subparsers, name, desc):
+def add_parser(subparsers, name, desc, config):
     """This method adds to the input subparser, all parsers for document
     methods"""
     parser_tmp = subparsers.add_parser(name, help=desc)
