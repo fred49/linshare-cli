@@ -84,6 +84,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         self.verbose = args.verbose
         self.debug = args.debug
 
+        if args.env_password:
+            args.password = os.getenv('LS_PASSWORD')
         if args.ask_password:
             try:
                 args.password = getpass.getpass("Please enter your password :")

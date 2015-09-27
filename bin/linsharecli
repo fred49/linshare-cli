@@ -83,7 +83,7 @@ class LinShareCliProgram(BasicProgram):
         section_server.add_element(Element(
             'password',
             hidden=True,
-            desc="user password to linshare",
+            desc="user password to linshare. See cli help for using env variable instead.",
             hooks=[Base64ElementHook(warning=True), ]))
 
         section_server.add_element(Element(
@@ -163,6 +163,13 @@ section 'server-4'""")
             default=False,
             dest="ask_password",
             help="If set, the program will ask you your password.")
+
+        group.add_argument(
+            '-E',
+            action="store_true",
+            default=False,
+            dest="env_password",
+            help="If set, the program will load your password from LS_PASSWORD environement variable.")
 
         self.parser.add_argument(
             '-H',
