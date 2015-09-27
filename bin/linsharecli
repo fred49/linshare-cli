@@ -45,6 +45,7 @@ from linsharecli.user.share import add_parser as add_share_parser
 from linsharecli.user.rshare import add_parser as add_received_share_parser
 from linsharecli.user.thread import add_parser as add_threads_parser
 from linsharecli.user.tmember import add_parser as add_tmembers_parser
+from linsharecli.user.tdocuments import add_parser as add_tdocuments_parser
 from linsharecli.user.user import add_parser as add_users_parser
 from linsharecli.user.core import add_parser as add_core_parser
 import linsharecli
@@ -201,6 +202,8 @@ section 'server-4'""")
                            self.config)
         add_tmembers_parser(subparsers, "tmembers",
                             "thread members management", self.config)
+        add_tdocuments_parser(subparsers, "tdocuments", "thread documents ",
+                            self.config)
         add_share_parser(subparsers, "shares", "Created shares management",
                          self.config)
         add_received_share_parser(subparsers,

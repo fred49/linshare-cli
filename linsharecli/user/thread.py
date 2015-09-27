@@ -79,6 +79,7 @@ class ThreadsListCommand(ThreadsCommand):
 # -----------------------------------------------------------------------------
 class ThreadsCreateCommand(ThreadsCommand):
 
+    @Time('linsharecli.threads', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadsCreateCommand, self).__call__(args)
         rbu = self.ls.threads.get_rbu()
@@ -94,6 +95,7 @@ created",
 # -----------------------------------------------------------------------------
 class ThreadsUpdateCommand(ThreadsCommand):
 
+    @Time('linsharecli.threads', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadsUpdateCommand, self).__call__(args)
         rbu = self.ls.threads.get_rbu()
