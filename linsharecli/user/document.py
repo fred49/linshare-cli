@@ -92,13 +92,12 @@ class DocumentsListCommand(DocumentsCommand):
         return self._list(args, cli, table, json_obj, formatters, filters)
 
     def _share_all(self, args, cli, uuids):
-        if args.api_version == 1:
-            if not args.mails:
-                raise ValueError("To share files, you need to use -m/--mail option.")
-            command = ShareAction(self)
-            return command(args, cli, uuids)
-        else:
+        if args.api_version == 0:
             raise ValueError("Not supported for the current api version : " + str(args.api_version))
+        if not args.mails:
+            raise ValueError("To share files, you need to use -m/--mail option.")
+        command = ShareAction(self)
+        return command(args, cli, uuids)
 
     def complete_mail(self, args, prefix):
         super(DocumentsListCommand, self).__call__(args)
@@ -201,7 +200,7 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
         if args.api_version == 0:
             return self._upshare_1_7(args)
-        elif args.api_version == 1:
+        else:
             return self._upshare_1_8(args)
 
     def _upshare_1_8(self, args):
@@ -297,7 +296,7 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('--desc', action="store", dest="description",
                         required=False, help="Optional description.")
     parser.add_argument('files', nargs='+')
-    parser.set_defaults(__func__=DocumentsUploadCommand())
+    parser.set_defaults(__func__=DocumentsUploadCommand(config))
 
     # command : upshare
     parser = subparsers2.add_parser(
@@ -312,21 +311,21 @@ def add_parser(subparsers, name, desc, config):
         required=True,
         help="Recipient mails."
         ).completer = Completer()
-    parser.set_defaults(__func__=DocumentsUploadAndSharingCommand())
+    parser.set_defaults(__func__=DocumentsUploadAndSharingCommand(config))
 
     # command : download
     parser = subparsers2.add_parser(
         'download',
         help="download documents from linshare")
     add_download_parser_options(parser)
-    parser.set_defaults(__func__=DocumentsDownloadCommand())
+    parser.set_defaults(__func__=DocumentsDownloadCommand(config))
 
     # command : delete
     parser = subparsers2.add_parser(
         'delete',
         help="delete documents from linshare")
     add_delete_parser_options(parser)
-    parser.set_defaults(__func__=DocumentsDeleteCommand())
+    parser.set_defaults(__func__=DocumentsDeleteCommand(config))
 
     # command : list
     parser = subparsers2.add_parser(
@@ -344,7 +343,7 @@ def add_parser(subparsers, name, desc, config):
         action="store_true",
         dest="share",
         help="You can share all displayed files by the list command.")
-    parser.set_defaults(__func__=DocumentsListCommand())
+    parser.set_defaults(__func__=DocumentsListCommand(config))
     # command : list : share options
     share_group = parser.add_argument_group('Sharing options')
     share_group.add_argument('--expiration-date', action="store")
@@ -371,4 +370,4 @@ def add_parser(subparsers, name, desc, config):
                         help="document meta data")
     parser.add_argument('--description', action="store",
                         help="document description")
-    parser.set_defaults(__func__=DocumentsUpdateCommand())
+    parser.set_defaults(__func__=DocumentsUpdateCommand(config))

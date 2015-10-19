@@ -45,6 +45,9 @@ from argtoolbox import DefaultCompleter as Completer
 # -----------------------------------------------------------------------------
 class ThreadCompleter(object):
 
+    def __init__(self, config):
+        self.config = config
+
     def __call__(self, prefix, **kwargs):
         from argcomplete import debug
         try:
@@ -55,7 +58,7 @@ class ThreadCompleter(object):
                 debug("\t - " + str(j))
             debug("\n------------ ThreadCompleter -----------------\n")
             args = kwargs.get('parsed_args')
-            thread_cmd = ThreadDocumentsListCommand()
+            thread_cmd = ThreadDocumentsListCommand(self.config)
             return thread_cmd.complete_threads(args, prefix)
         # pylint: disable-msg=W0703
         except Exception as ex:
@@ -230,7 +233,7 @@ def add_parser(subparsers, name, desc, config):
         action="store",
         dest="thread_uuid",
         help="thread uuid",
-        required=True).completer = ThreadCompleter()
+        required=True).completer = ThreadCompleter(config)
 
     subparsers2 = parser_tmp.add_subparsers()
 
@@ -243,21 +246,21 @@ def add_parser(subparsers, name, desc, config):
         help="Filter documents by their names")
     add_list_parser_options(
         parser, download=True, delete=True, cdate=True)[3]
-    parser.set_defaults(__func__=ThreadDocumentsListCommand())
+    parser.set_defaults(__func__=ThreadDocumentsListCommand(config))
 
     # command : delete
     parser = subparsers2.add_parser(
         'delete',
         help="delete thread members")
     add_delete_parser_options(parser)
-    parser.set_defaults(__func__=ThreadDocumentsListCommand())
+    parser.set_defaults(__func__=ThreadDocumentsListCommand(config))
 
     # command : download
     parser = subparsers2.add_parser(
         'download',
         help="download documents from linshare")
     add_download_parser_options(parser)
-    parser.set_defaults(__func__=ThreadDocumentsDownloadCommand())
+    parser.set_defaults(__func__=ThreadDocumentsDownloadCommand(config))
 
     # command : upload
     parser = subparsers2.add_parser(
@@ -266,5 +269,5 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('--desc', action="store", dest="description",
                         required=False, help="Optional description.")
     parser.add_argument('files', nargs='+')
-    parser.set_defaults(__func__=ThreadDocumentsUploadCommand())
+    parser.set_defaults(__func__=ThreadDocumentsUploadCommand(config))
 

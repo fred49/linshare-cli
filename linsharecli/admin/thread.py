@@ -68,4 +68,4 @@ def add_parser(subparsers, name, desc, config):
         help="list threads from linshare")
     parser.add_argument('identifiers', nargs="*", help="")
     add_list_parser_options(parser)
-    parser.set_defaults(__func__=ThreadsListCommand())
+    parser.set_defaults(__func__=ThreadsListCommand(config))

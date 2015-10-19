@@ -30,68 +30,106 @@ from linshareapi.cache import Time
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
+from linsharecli.common.core import add_delete_parser_options
 from argtoolbox import DefaultCompleter as Completer
 
 
-# -----------------------------------------------------------------------------
-class DomainPatternsListCommand(DefaultCommand):
-    """ List all domain patterns."""
-    IDENTIFIER = "identifier"
-    DEFAULT_SORT = "identifier"
+class DomainPatternsCommand(DefaultCommand):
 
-    @Time('linsharecli.domains', label='Global time : %(time)s')
+    """For  api >= 1.9"""
+    IDENTIFIER = "label"
+    DEFAULT_SORT = "label"
+    DEFAULT_SORT_NAME = "label"
+    RESOURCE_IDENTIFIER = "uuid"
+
+    DEFAULT_TOTAL = "Domain pattern found : %(count)s"
+    MSG_RS_NOT_FOUND = "No domain pattern could be found."
+    MSG_RS_DELETED = "%(position)s/%(count)s: The domain pattern '%(label)s' (%(uuid)s) was deleted. (%(time)s s)"
+    MSG_RS_CAN_NOT_BE_DELETED = "The domain pattern '%(label)s'  '%(uuid)s' can not be deleted."
+    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain pattern(s) can not be deleted."
+    MSG_RS_UPDATED = "The domain pattern '%(label)s' (%(uuid)s) was successfully updated. (%(time)s s)"
+    MSG_RS_CREATED = "The domain pattern '%(label)s' (%(uuid)s) was successfully created. (%(time)s s)"
+
+    def init_old_language_key(self):
+        """For  api >= 1.6 and api <= 1.8"""
+        self.IDENTIFIER = "identifier"
+        self.DEFAULT_SORT = "identifier"
+        self.RESOURCE_IDENTIFIER = "identifier"
+        self.DEFAULT_SORT_NAME = "identifier"
+
+        self.DEFAULT_TOTAL = "Domain pattern found : %(count)s"
+        self.MSG_RS_NOT_FOUND = "No domain pattern could be found."
+        self.MSG_RS_DELETED = "The domain pattern '%(identifier)s' was deleted. (%(time)s s)"
+        self.MSG_RS_DELETED = "%(position)s/%(count)s: The domain pattern '%(identifier)s' was deleted. (%(time)s s)"
+        self.MSG_RS_CAN_NOT_BE_DELETED = "The domain pattern '%(identifier)s' can not be deleted."
+        self.MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain pattern(s) can not be deleted."
+        self.MSG_RS_UPDATED = "The domain pattern '%(identifier)s' was successfully updated."
+        self.MSG_RS_CREATED = "The domain pattern '%(identifier)s' was successfully created."
+
+    def complete_identifier(self, args, prefix):
+        super(DomainPatternsCommand, self).__call__(args)
+        json_obj = self.ls.domain_patterns.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete(self, args, prefix):
+        super(DomainPatternsCommand, self).__call__(args)
+        if self.api_version == 0:
+            self.init_old_language_key()
+        json_obj = self.ls.domain_patterns.list()
+        return (v.get(self.RESOURCE_IDENTIFIER)
+                for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
+
+
+# -----------------------------------------------------------------------------
+class DomainPatternsListCommand(DomainPatternsCommand):
+    """ List all domain patterns."""
+
+    ACTIONS = {
+        'delete' : '_delete_all',
+        'count_only' : '_count_only',
+    }
+
+    @Time('linsharecli.dpattern', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainPatternsListCommand, self).__call__(args)
+        if self.api_version == 0:
+            self.init_old_language_key()
         cli = self.ls.domain_patterns
         table = self.get_table(args, cli, self.IDENTIFIER)
-        json_obj = cli.list()
+        json_obj = cli.list(args.model)
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
         return self._list(args, cli, table, json_obj, filters=filters)
 
-    def complete(self, args, prefix):
-        super(DomainPatternsListCommand, self).__call__(args)
-        json_obj = self.ls.domain_patterns.list()
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix))
-
 
 # -----------------------------------------------------------------------------
-class DomainPatternsUpdateCommand(DefaultCommand):
+class DomainPatternsUpdateCommand(DomainPatternsCommand):
     """ Update a domain pattern."""
 
     def __call__(self, args):
         super(DomainPatternsUpdateCommand, self).__call__(args)
-        resource = None
-        for model in self.ls.domain_patterns.list():
-            if model.get('identifier') == args.identifier:
-                resource = model
-                break
-        if resource is None:
-            raise ValueError("Domain resource idenfier not found")
-        rbu = self.ls.domain_patterns.get_rbu()
+        if self.api_version == 0:
+            self.init_old_language_key()
+        cli = self.ls.domain_patterns
+        resource = cli.get(args.identifier)
+        rbu = cli.get_rbu()
         rbu.copy(resource)
         rbu.load_from_args(args)
         return self._run(
-            self.ls.domain_patterns.update,
-            "The following domain pattern '%(identifier)s' was successfully \
-updated",
+            cli.update,
+            self.MSG_RS_UPDATED,
             args.identifier,
             rbu.to_resource())
 
-    def complete(self, args, prefix):
-        super(DomainPatternsUpdateCommand, self).__call__(args)
-        json_obj = self.ls.domain_patterns.list()
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix))
-
 
 # -----------------------------------------------------------------------------
-class DomainPatternsCreateCommand(DefaultCommand):
+class DomainPatternsCreateCommand(DomainPatternsCommand):
     """ Create a domain pattern."""
 
     def __call__(self, args):
         super(DomainPatternsCreateCommand, self).__call__(args)
+        self.init_old_language_key()
         rbu = self.ls.domain_patterns.get_rbu()
         if args.model:
             json_obj = self.ls.domain_patterns.list(True)
@@ -100,6 +138,7 @@ class DomainPatternsCreateCommand(DefaultCommand):
                     rbu.copy(model)
                     # reset identifier
                     rbu.set_value('identifier', "")
+                    rbu.set_value('description', "")
                     break
         rbu.load_from_args(args)
         return self._run(
@@ -109,36 +148,68 @@ created",
             args.identifier,
             rbu.to_resource())
 
+
+# -----------------------------------------------------------------------------
+class DomainPatternsCreateCommand2(DomainPatternsCommand):
+    """ Create a domain pattern."""
+
+    def __call__(self, args):
+        super(DomainPatternsCreateCommand2, self).__call__(args)
+        if self.api_version == 0:
+            self.init_old_language_key()
+        rbu = self.ls.domain_patterns.get_rbu()
+        if args.model:
+            json_obj = self.ls.domain_patterns.list(True)
+            for model in json_obj:
+                if model.get('uuid') == args.model:
+                    rbu.copy(model)
+                    # reset description
+                    rbu.set_value('description', "")
+                    break
+        rbu.load_from_args(args)
+        return self._run(
+            self.ls.domain_patterns.create,
+            "The following domain pattern '%(label)s' (%(uuid)s) was successfully \
+created",
+            args.label,
+            rbu.to_resource())
+
     def complete(self, args, prefix):
-        super(DomainPatternsCreateCommand, self).__call__(args)
+        super(DomainPatternsCreateCommand2, self).__call__(args)
         json_obj = self.ls.domain_patterns.list(True)
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix))
+        return (v.get('uuid')
+                for v in json_obj if v.get('uuid').startswith(prefix))
 
 
 # -----------------------------------------------------------------------------
-class DomainPatternsDeleteCommand(DefaultCommand):
+class DomainPatternsDeleteCommand(DomainPatternsCommand):
     """ List all domain patterns."""
 
     def __call__(self, args):
         super(DomainPatternsDeleteCommand, self).__call__(args)
-        return self._delete(
-            self.ls.domain_patterns.delete,
-            "The following domain pattern '" + args.identifier + "' was \
-successfully deleted",
-            args.identifier,
-            args.identifier)
+        cli = self.ls.domain_patterns
+        if self.api_version == 0:
+            return self._delete(
+                args,
+                cli,
+                args.identifier)
+        else:
+            return self._delete_all(args, cli, args.uuids)
 
     def complete(self, args, prefix):
         super(DomainPatternsDeleteCommand, self).__call__(args)
         json_obj = self.ls.domain_patterns.list(False)
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix))
+        identifier = 'uuid'
+        if self.api_version == 0:
+            identifier = 'identifier'
+        return (v.get(identifier)
+                for v in json_obj if v.get(identifier).startswith(prefix))
 
 
 # -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     """Add all domain pattern sub commands."""
+    api_version = config.server.api_version.value
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
 
@@ -149,13 +220,15 @@ def add_parser(subparsers, name, desc, config):
         help="Filter domain patterns by their names")
     parser.add_argument('-m', '--model', action="store_true",
                         help="show model of domain patterns")
-    add_list_parser_options(parser)
-    parser.set_defaults(__func__=DomainPatternsListCommand())
+    if api_version == 0:
+        add_list_parser_options(parser)
+    else:
+        add_list_parser_options(parser, delete=True, cdate=False)
+    parser.set_defaults(__func__=DomainPatternsListCommand(config))
 
     # command : create
     parser_tmp2 = subparsers2.add_parser(
         'create', help="create domain pattern.")
-    parser_tmp2.add_argument('identifier', action="store", help="")
     parser_tmp2.add_argument('--model', action="store",
                              help="").completer = Completer()
     parser_tmp2.add_argument('--completion-page-size', action="store",
@@ -177,14 +250,24 @@ def add_parser(subparsers, name, desc, config):
                              action="store", help="")
     parser_tmp2.add_argument('--auto-complete-command-on-first-and-last-name',
                              action="store", help="")
-    parser_tmp2.set_defaults(__func__=DomainPatternsCreateCommand())
+    if api_version == 0:
+        parser_tmp2.add_argument('identifier', action="store", help="")
+        parser_tmp2.set_defaults(__func__=DomainPatternsCreateCommand(config))
+    else:
+        parser_tmp2.add_argument('label', action="store", help="")
+        parser_tmp2.set_defaults(__func__=DomainPatternsCreateCommand2(config))
 
     # command : delete
     parser_tmp2 = subparsers2.add_parser(
         'delete', help="delete domain pattern.")
-    parser_tmp2.add_argument('identifier', action="store",
-                             help="").completer = Completer()
-    parser_tmp2.set_defaults(__func__=DomainPatternsDeleteCommand())
+    if api_version == 0:
+        parser_tmp2.add_argument(
+            'identifier',
+            action="store",
+            help="").completer = Completer()
+    else:
+        add_delete_parser_options(parser_tmp2)
+    parser_tmp2.set_defaults(__func__=DomainPatternsDeleteCommand(config))
 
     # command : update
     parser_tmp2 = subparsers2.add_parser(
@@ -212,4 +295,4 @@ def add_parser(subparsers, name, desc, config):
                              action="store", help="")
     parser_tmp2.add_argument('--auto-complete-command-on-first-and-last-name',
                              action="store", help="")
-    parser_tmp2.set_defaults(__func__=DomainPatternsUpdateCommand())
+    parser_tmp2.set_defaults(__func__=DomainPatternsUpdateCommand(config))

@@ -113,7 +113,7 @@ def add_parser(subparsers, name, desc, config):
         'download',
         help="download received shares")
     add_download_parser_options(parser)
-    parser.set_defaults(__func__=ReceivedSharesDownloadCommand())
+    parser.set_defaults(__func__=ReceivedSharesDownloadCommand(config))
 
     # command : list
     parser = subparsers2.add_parser(
@@ -121,11 +121,11 @@ def add_parser(subparsers, name, desc, config):
         help="list received shares")
     parser.add_argument('names', nargs="*", help="")
     add_list_parser_options(parser, download=True, delete=True, cdate=True)
-    parser.set_defaults(__func__=ReceivedSharesListCommand())
+    parser.set_defaults(__func__=ReceivedSharesListCommand(config))
 
     # command : delete
     parser = subparsers2.add_parser(
         'delete',
         help="delete received shares")
     add_delete_parser_options(parser)
-    parser.set_defaults(__func__=ReceivedSharesDeleteCommand())
+    parser.set_defaults(__func__=ReceivedSharesDeleteCommand(config))

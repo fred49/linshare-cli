@@ -130,20 +130,20 @@ def add_parser(subparsers, name, desc, config):
         help="list threads")
     parser.add_argument('identifiers', nargs="*", help="")
     add_list_parser_options(parser, delete=True, cdate=True)
-    parser.set_defaults(__func__=ThreadsListCommand())
+    parser.set_defaults(__func__=ThreadsListCommand(config))
 
     # command : delete
     parser = subparsers2.add_parser(
         'delete',
         help="delete threads")
     add_delete_parser_options(parser)
-    parser.set_defaults(__func__=ThreadsDeleteCommand())
+    parser.set_defaults(__func__=ThreadsDeleteCommand(config))
 
     # command : create
     parser = subparsers2.add_parser(
         'create', help="create thread.")
     parser.add_argument('name', action="store", help="")
-    parser.set_defaults(__func__=ThreadsCreateCommand())
+    parser.set_defaults(__func__=ThreadsCreateCommand(config))
 
     # command : update
     parser = subparsers2.add_parser(
@@ -151,4 +151,4 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument(
         'uuid', action="store", help="").completer = Completer()
     parser.add_argument('name', action="store", help="")
-    parser.set_defaults(__func__=ThreadsUpdateCommand())
+    parser.set_defaults(__func__=ThreadsUpdateCommand(config))

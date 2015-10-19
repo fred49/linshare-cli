@@ -53,8 +53,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
     IDENTIFIER = "name"
     DEFAULT_SORT = "creationDate"
     DEFAULT_SORT_SIZE = "size"
-    DEFAULT_TOTAL = "Ressources found : %(count)s"
     DEFAULT_SORT_NAME = "name"
+    DEFAULT_TOTAL = "Ressources found : %(count)s"
     RESOURCE_IDENTIFIER = "uuid"
     MSG_RS_NOT_FOUND = "No resources could be found."
     MSG_RS_DELETED = "%(position)s/%(count)s: The resource '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
@@ -63,6 +63,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
     MSG_RS_DOWNLOADED = "%(position)s/%(count)s: The resource '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One resource can not be downloaded."
     MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%(count)s resources can not be downloaded."
+    MSG_RS_UPDATED = "The resource '%(name)s' (%(uuid)s) was successfully updated. (%(time)s s)"
+    MSG_RS_CREATED = "The resource '%(label)s' (%(uuid)s) was successfully created. (%(time)s s)"
 
     ACTIONS = {
         'delete' : '_delete_all',
@@ -70,8 +72,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         'count_only' : '_count_only',
     }
 
-    def __init__(self, config=None):
+    def __init__(self, config):
         super(DefaultCommand, self).__init__(config)
+        self.api_version = config.server.api_version.value
         classname = str(self.__class__.__name__.lower())
         self.log = logging.getLogger('linsharecli.' + classname)
         self.verbose = False
@@ -196,6 +199,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 
     def _delete(self, args, cli, uuid, position=None, count=None):
         try:
+            if not position:
+                position = 1
+                count = 1
             meta = {}
             meta['uuid'] = uuid
             meta['time'] = " -"
@@ -210,7 +216,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 meta = {'uuid': uuid}
                 self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
                 return 1
-            meta['name'] = json_obj.get('name')
+            meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
             self.pprint(self.MSG_RS_DELETED, meta)
             return 0
         except urllib2.HTTPError as ex:

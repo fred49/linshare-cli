@@ -79,4 +79,4 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('-m', '--mail', action="store")
     parser.add_argument('-u', '--uuid', action="append")
     add_list_parser_options(parser)
-    parser.set_defaults(__func__=UsersListCommand())
+    parser.set_defaults(__func__=UsersListCommand(config))

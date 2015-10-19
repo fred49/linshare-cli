@@ -74,11 +74,13 @@ class LinShareCliProgram(BasicProgram):
             required=True))
         section_server.add_element(Element(
             'api_version',
-            default=0,
+            default=int(os.getenv('LS_API', 1)),
             e_type=int,
-            desc="""The linshare api version to be used. Default '0'.
-- For LinShare Core >= 1.6.x, use api_version=0.
-"""))
+            desc="""The linshare api version to be used. Default '1'.
+* For LinShare Core >= 1.6.x, use api_version=0.
+* For LinShare Core >= 1.9.x, use api_version=1.
+The default value can be overriden by the env variable LS_API, which can be
+overriden by this parameter."""))
 
         section_server.add_element(Element('user', required=True))
 
@@ -189,12 +191,6 @@ section 'server-4'""")
             action="store",
             **self.config.server.base_url.get_arg_parse_arguments())
 
-        self.parser.add_argument(
-            '--api-version',
-            action="store",
-            choices=(0, ),
-            **self.config.server.api_version.get_arg_parse_arguments())
-
         # Adding all others parsers.
         subparsers = self.parser.add_subparsers()
         add_threads_parser(subparsers, "threads", "threads management", self.config)
@@ -219,13 +215,27 @@ PROG = LinShareCliProgram(
 
     In order to enable auto complete support, or generate the default
     configuration file associated with the current program,
-    look at the argtoolboxtool program.
+    look at the argtoolboxtool program :  argtoolboxtool generate  linshareadmcli
 
 
 Advanced documentation :
-------------------------
-If you need debug during class construction, config file loading,
-you just need to export _LINSHARE_CLI_ADMIN_DEBUG=True
+========================
+
+API Version :
+-------------
+
+    This client support multiple LinShare server and its API version.
+The default value '1' can be overriden by the env variable LS_API, which can be
+set in the configuration file.
+* For LinShare Core >= 1.6.x, use api_version=0.
+* For LinShare Core >= 1.9.x, use api_version=1.
+
+Advanced debug:
+---------------
+
+* If you need debug during class construction, config file loading,
+you just need to export _LINSHARE_CLI_USER_DEBUG=True
+* To debug auto completion, you need to export _ARC_DEBUG=1.
 
 ================================================================
 """)

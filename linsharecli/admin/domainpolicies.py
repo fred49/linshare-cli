@@ -135,7 +135,7 @@ def add_parser(subparsers, name, desc, config):
         'identifiers', nargs="*",
         help="Filter domain policies by their identifiers")
     add_list_parser_options(parser)
-    parser.set_defaults(__func__=DomainPoliciesListCommand())
+    parser.set_defaults(__func__=DomainPoliciesListCommand(config))
 
     # command : delete
     parser_tmp2 = subparsers2.add_parser(
@@ -144,14 +144,14 @@ def add_parser(subparsers, name, desc, config):
                              nargs="*",
                              action="store",
                              help="").completer = Completer()
-    parser_tmp2.set_defaults(__func__=DomainPoliciesDeleteCommand())
+    parser_tmp2.set_defaults(__func__=DomainPoliciesDeleteCommand(config))
 
     # command : create
     parser_tmp2 = subparsers2.add_parser(
         'create', help="create domain policies.")
     parser_tmp2.add_argument('identifier', action="store", help="")
     parser_tmp2.add_argument('--description', action="store", help="")
-    parser_tmp2.set_defaults(__func__=DomainPoliciesCreateCommand())
+    parser_tmp2.set_defaults(__func__=DomainPoliciesCreateCommand(config))
 
     # command : update
     parser_tmp2 = subparsers2.add_parser(
@@ -159,4 +159,4 @@ def add_parser(subparsers, name, desc, config):
     parser_tmp2.add_argument(
         'identifier', action="store", help="").completer = Completer()
     parser_tmp2.add_argument('--description', action="store", help="")
-    parser_tmp2.set_defaults(__func__=DomainPoliciesUpdateCommand())
+    parser_tmp2.set_defaults(__func__=DomainPoliciesUpdateCommand(config))

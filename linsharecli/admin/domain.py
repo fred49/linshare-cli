@@ -30,38 +30,78 @@ from linshareapi.cache import Time
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.admin.core import DefaultCommand
+from linsharecli.common.core import add_delete_parser_options
 from argtoolbox import DefaultCompleter as Completer
 
 
 # -----------------------------------------------------------------------------
-class DomainsListCommand(DefaultCommand):
+class DomainsCommand(DefaultCommand):
+    """For  api >= 1.9"""
+    IDENTIFIER = "label"
+    DEFAULT_SORT = "label"
+    DEFAULT_SORT_NAME = "label"
+    RESOURCE_IDENTIFIER = "identifier"
+
+    DEFAULT_TOTAL = "Domain found : %(count)s"
+    MSG_RS_NOT_FOUND = "No domain could be found."
+    MSG_RS_DELETED = "%(position)s/%(count)s: The domain '%(label)s' (%(uuid)s) was deleted. (%(time)s s)"
+    MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(label)s'  '%(uuid)s' can not be deleted."
+    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain (s) can not be deleted."
+    MSG_RS_UPDATED = "The domain '%(label)s' (%(uuid)s) was successfully updated. (%(time)s s)"
+    MSG_RS_CREATED = "The domain '%(label)s' (%(uuid)s) was successfully created. (%(time)s s)"
+
+    def init_old_language_key(self):
+        """For  api >= 1.6 and api <= 1.8"""
+        self.IDENTIFIER = "identifier"
+        self.DEFAULT_SORT = "identifier"
+        self.RESOURCE_IDENTIFIER = "identifier"
+        self.DEFAULT_SORT_NAME = "identifier"
+
+        self.DEFAULT_TOTAL = "Domain found : %(count)s"
+        self.MSG_RS_NOT_FOUND = "No domain could be found."
+        self.MSG_RS_DELETED = "The domain '%(identifier)s' was deleted. (%(time)s s)"
+        self.MSG_RS_DELETED = "%(position)s/%(count)s: The domain '%(identifier)s' was deleted. (%(time)s s)"
+        self.MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(identifier)s' can not be deleted."
+        self.MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain (s) can not be deleted."
+        self.MSG_RS_UPDATED = "The domain '%(identifier)s' was successfully updated."
+        self.MSG_RS_CREATED = "The domain '%(identifier)s' was successfully created."
+
+    def complete(self, args, prefix):
+        super(DomainsCommand, self).__call__(args)
+        if self.api_version == 0:
+            self.init_old_language_key()
+        json_obj = self.ls.domains.list()
+        return (v.get(self.RESOURCE_IDENTIFIER)
+                for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
+
+
+
+# -----------------------------------------------------------------------------
+class DomainsListCommand(DomainsCommand):
     """ List all domains."""
-    IDENTIFIER = "identifier"
-    DEFAULT_SORT = "identifier"
+
+    ACTIONS = {
+        'delete' : '_delete_all',
+        'count_only' : '_count_only',
+    }
 
     @Time('linsharecli.domains', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainsListCommand, self).__call__(args)
+        if self.api_version == 0:
+            self.init_old_language_key()
         cli = self.ls.domains
         table = self.get_table(args, cli, self.IDENTIFIER)
-        if args.label:
-            table.sortby = "label"
         json_obj = cli.list()
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
         return self._list(args, cli, table, json_obj, filters=filters)
 
-    def complete(self, args, prefix):
-        super(DomainsListCommand, self).__call__(args)
-        json_obj = self.ls.domains.list()
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix))
-
 
 # -----------------------------------------------------------------------------
 # Ignore unused variable prefix
 # pylint: disable-msg=W0613
-class DomainsCreateCommand(DefaultCommand):
+class DomainsCreateCommand(DomainsCommand):
     """ List all domains."""
 
     def __call__(self, args):
@@ -95,9 +135,14 @@ class DomainsCreateCommand(DefaultCommand):
         super(DomainsCreateCommand, self).__call__(args)
         return self.ls.domains.options_language()
 
+    def complete_mail_language(self, args, prefix):
+        """ Complete with available external mail language."""
+        super(DomainsCreateCommand, self).__call__(args)
+        return self.ls.domains.options_mail_language()
+
 
 # -----------------------------------------------------------------------------
-class DomainsUpdateCommand(DefaultCommand):
+class DomainsUpdateCommand(DomainsCommand):
     """ Update a domain."""
 
     def __call__(self, args):
@@ -136,27 +181,24 @@ class DomainsUpdateCommand(DefaultCommand):
 
 
 # -----------------------------------------------------------------------------
-class DomainsDeleteCommand(DefaultCommand):
+class DomainsDeleteCommand(DomainsCommand):
     """ List all domains."""
 
     def __call__(self, args):
         super(DomainsDeleteCommand, self).__call__(args)
-        return self._delete(
-            self.ls.domains.delete,
-            "The following domain '" + args.identifier + "' was \
-successfully deleted",
-            args.identifier,
-            args.identifier)
-
-    def complete(self, args, prefix):
-        super(DomainsDeleteCommand, self).__call__(args)
-        json_obj = self.ls.domains.list()
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix))
+        cli = self.ls.domains
+        if self.api_version == 0:
+            self.init_old_language_key()
+            return self._delete(
+                args,
+                cli,
+                args.identifier)
+        else:
+            return self._delete_all(args, cli, args.uuids)
 
 
 # -----------------------------------------------------------------------------
-class DomainProvidersCreateCommand(DefaultCommand):
+class DomainProvidersCreateCommand(DomainsCommand):
     """ Update a domain."""
 
     def __call__(self, args):
@@ -204,7 +246,7 @@ successfully created",
 
 
 # -----------------------------------------------------------------------------
-class DomainProvidersDeleteCommand(DefaultCommand):
+class DomainProvidersDeleteCommand(DomainsCommand):
     """ List all domains."""
 
     def __call__(self, args):
@@ -236,7 +278,7 @@ deleted",
 
 
 # -----------------------------------------------------------------------------
-class DomainProvidersUpdateCommand(DefaultCommand):
+class DomainProvidersUpdateCommand(DomainsCommand):
     """ Update a user provider."""
 
     def __call__(self, args):
@@ -289,6 +331,7 @@ def add_parser(subparsers, name, desc, config):
     """Add all domain sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
+    api_version = config.server.api_version.value
 
     # command : list
     parser = subparsers2.add_parser(
@@ -299,8 +342,11 @@ def add_parser(subparsers, name, desc, config):
         help="Filter domains by their identifiers")
     parser.add_argument('-n', '--label', action="store_true",
                              help="sort by domain label")
-    add_list_parser_options(parser)
-    parser.set_defaults(__func__=DomainsListCommand())
+    if api_version == 0:
+        add_list_parser_options(parser, delete=True, cdate=False)
+    else:
+        add_list_parser_options(parser, delete=True, cdate=False)
+    parser.set_defaults(__func__=DomainsListCommand(config))
 
     # command : create
     parser_tmp2 = subparsers2.add_parser(
@@ -329,7 +375,7 @@ def add_parser(subparsers, name, desc, config):
     parser_tmp2.add_argument(
         '--mail-config', dest="mail_config", action="store",
         help="TODO").completer = Completer("complete_mail")
-    parser_tmp2.set_defaults(__func__=DomainsCreateCommand())
+    parser_tmp2.set_defaults(__func__=DomainsCreateCommand(config))
 
     # command : update
     parser_tmp2 = subparsers2.add_parser(
@@ -344,19 +390,27 @@ def add_parser(subparsers, name, desc, config):
     parser_tmp2.add_argument(
         '--language', dest="language", action="store",
         help="").completer = Completer("complete_language")
-    parser_tmp2.set_defaults(__func__=DomainsUpdateCommand())
+    if api_version >= 1:
+        parser_tmp2.add_argument(
+            '--mail-language', dest="external_mail_locale", action="store",
+            help="").completer = Completer("complete_mail_language")
+    parser_tmp2.set_defaults(__func__=DomainsUpdateCommand(config))
 
     # command : delete
     parser_tmp2 = subparsers2.add_parser(
         'delete', help="delete domain.")
-    parser_tmp2.add_argument(
-        'identifier', action="store",
-        help="").completer = Completer()
-    parser_tmp2.set_defaults(__func__=DomainsDeleteCommand())
+    if api_version == 0:
+        parser_tmp2.add_argument(
+            'identifier',
+            action="store",
+            help="").completer = Completer()
+    else:
+        add_delete_parser_options(parser_tmp2)
+    parser_tmp2.set_defaults(__func__=DomainsDeleteCommand(config))
 
     # command : set provider
     parser_tmp2 = subparsers2.add_parser(
-        'setup', help="add user provider.")
+        'setup', help="configure user provider.")
     parser_tmp2.add_argument(
         'identifier', action="store",
         help="domain identifier").completer = Completer()
@@ -369,7 +423,7 @@ def add_parser(subparsers, name, desc, config):
         '--dpattern', dest="dpattern", action="store",
         help="domain pattern identifier",
         required=True).completer = Completer("complete_dpattern")
-    parser_tmp2.set_defaults(__func__=DomainProvidersCreateCommand())
+    parser_tmp2.set_defaults(__func__=DomainProvidersCreateCommand(config))
 
     # command : update provider
     parser_tmp2 = subparsers2.add_parser(
@@ -385,12 +439,12 @@ def add_parser(subparsers, name, desc, config):
         '--dpattern', dest="dpattern", action="store",
         help="domain pattern identifier").completer = Completer(
             "complete_dpattern")
-    parser_tmp2.set_defaults(__func__=DomainProvidersUpdateCommand())
+    parser_tmp2.set_defaults(__func__=DomainProvidersUpdateCommand(config))
 
     # command : del provider
     parser_tmp2 = subparsers2.add_parser(
-        'delup', help="add user provider.")
+        'cleanup', help="clean user provider.")
     parser_tmp2.add_argument(
         'identifier', action="store",
         help="domain identifier").completer = Completer()
-    parser_tmp2.set_defaults(__func__=DomainProvidersDeleteCommand())
+    parser_tmp2.set_defaults(__func__=DomainProvidersDeleteCommand(config))

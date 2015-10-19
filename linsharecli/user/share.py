@@ -47,7 +47,7 @@ class ShareAction(object):
     def __call__(self, args, cli, uuids):
         if args.api_version == 0:
             return self._share_all_1_7(args, cli, uuids)
-        elif args.api_version == 1:
+        else:
             return self._share_all_1_8(args, cli, uuids)
 
     def _share_all_1_8(self, args, cli, uuids):
@@ -157,7 +157,7 @@ class SharesCommand(DefaultCommand):
     def _share_all(self, args, cli, uuids):
         if args.api_version == 0:
             return self._share_all_1_7(args, cli, uuids)
-        elif args.api_version == 1:
+        else:
             return self._share_all_1_8(args, cli, uuids)
 
     def _share_all_1_7(self, args, cli, uuids):
@@ -200,7 +200,7 @@ def add_parser(subparsers, name, desc, config):
 
     parser_tmp2 = subparsers2.add_parser('create',
                                          help="share files into linshare")
-    parser_tmp2.set_defaults(__func__=SharesCommand())
+    parser_tmp2.set_defaults(__func__=SharesCommand(config))
     parser_tmp2.add_argument(
         'uuids',
         nargs='+',

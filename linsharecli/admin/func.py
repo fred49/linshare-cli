@@ -291,7 +291,7 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('-d', '--domain', action="store",
                              help="").completer = Completer('complete_domain')
     add_list_parser_options(parser)
-    parser.set_defaults(__func__=FunctionalityListCommand())
+    parser.set_defaults(__func__=FunctionalityListCommand(config))
 
     # command : display
     parser_tmp2 = subparsers2.add_parser(
@@ -302,7 +302,7 @@ def add_parser(subparsers, name, desc, config):
                              help="").completer = Completer('complete_domain')
     parser_tmp2.add_argument('--extended', action="store_true",
                              help="extended format")
-    parser_tmp2.set_defaults(__func__=FunctionalityDisplayCommand())
+    parser_tmp2.set_defaults(__func__=FunctionalityDisplayCommand(config))
 
     # command : update
     parser_tmp2 = subparsers2.add_parser(
@@ -363,7 +363,7 @@ def add_parser(subparsers, name, desc, config):
         '--unit',
         action="store").completer = Completer('complete_unit')
 
-    parser_tmp2.set_defaults(__func__=FunctionalityUpdateCommand())
+    parser_tmp2.set_defaults(__func__=FunctionalityUpdateCommand(config))
 
     # command : reset
     parser_tmp2 = subparsers2.add_parser(
@@ -372,4 +372,4 @@ def add_parser(subparsers, name, desc, config):
                              help="").completer = Completer()
     parser_tmp2.add_argument('domain', action="store",
                              help="").completer = Completer('complete_domain')
-    parser_tmp2.set_defaults(__func__=FunctionalityResetCommand())
+    parser_tmp2.set_defaults(__func__=FunctionalityResetCommand(config))

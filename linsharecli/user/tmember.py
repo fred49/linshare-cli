@@ -41,6 +41,9 @@ from argtoolbox import DefaultCompleter as Completer
 # -----------------------------------------------------------------------------
 class ThreadCompleter(object):
 
+    def __init__(self, config):
+        self.config = config
+
     def __call__(self, prefix, **kwargs):
         from argcomplete import debug
         try:
@@ -51,7 +54,7 @@ class ThreadCompleter(object):
                 debug("\t - " + str(j))
             debug("\n------------ ThreadCompleter -----------------\n")
             args = kwargs.get('parsed_args')
-            thread_cmd = ThreadMembersListCommand()
+            thread_cmd = ThreadMembersListCommand(self.config)
             return thread_cmd.complete_threads(args, prefix)
         # pylint: disable-msg=W0703
         except Exception as ex:
@@ -215,7 +218,7 @@ def add_parser(subparsers, name, desc, config):
         action="store",
         dest="thread_uuid",
         help="thread uuid",
-        required=True).completer = ThreadCompleter()
+        required=True).completer = ThreadCompleter(config)
 
     subparsers2 = parser_tmp.add_subparsers()
 
@@ -225,14 +228,14 @@ def add_parser(subparsers, name, desc, config):
         help="list thread members")
     parser.add_argument('identifiers', nargs="*", help="")
     add_list_parser_options(parser, delete=True, cdate=True)
-    parser.set_defaults(__func__=ThreadMembersListCommand())
+    parser.set_defaults(__func__=ThreadMembersListCommand(config))
 
     # command : delete
     parser = subparsers2.add_parser(
         'delete',
         help="delete thread members")
     add_delete_parser_options(parser)
-    parser.set_defaults(__func__=ThreadMembersDeleteCommand())
+    parser.set_defaults(__func__=ThreadMembersDeleteCommand(config))
 
     # command : create
     parser = subparsers2.add_parser(
@@ -244,7 +247,7 @@ def add_parser(subparsers, name, desc, config):
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--admin', action="store_true", help="")
     group.add_argument('--readonly', action="store_true", help="")
-    parser.set_defaults(__func__=ThreadMembersCreateCommand())
+    parser.set_defaults(__func__=ThreadMembersCreateCommand(config))
 
     # command : update
     parser = subparsers2.add_parser(
@@ -252,4 +255,4 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument(
         'userUuid', action="store", help="").completer = Completer()
     parser.add_argument('role', choices=["admin", "normal","restricted"], help="")
-    parser.set_defaults(__func__=ThreadMembersUpdateCommand())
+    parser.set_defaults(__func__=ThreadMembersUpdateCommand(config))
