@@ -92,8 +92,8 @@ class DocumentsListCommand(DocumentsCommand):
         return self._list(args, cli, table, json_obj, formatters, filters)
 
     def _share_all(self, args, cli, uuids):
-        if args.api_version == 0:
-            raise ValueError("Not supported for the current api version : " + str(args.api_version))
+        if self.api_version == 0:
+            raise ValueError("Not supported for the current api version : " + str(self.api_version))
         if not args.mails:
             raise ValueError("To share files, you need to use -m/--mail option.")
         command = ShareAction(self)
@@ -198,7 +198,7 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
-        if args.api_version == 0:
+        if self.api_version == 0:
             return self._upshare_1_7(args)
         else:
             return self._upshare_1_8(args)

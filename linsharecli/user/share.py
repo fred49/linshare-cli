@@ -43,9 +43,10 @@ class ShareAction(object):
         self.pprint = self.command.pprint
         self.pprint_warn = self.command.pprint_warn
         self.pprint_error = self.command.pprint_error
+        self.api_version = self.command.api_version
 
     def __call__(self, args, cli, uuids):
-        if args.api_version == 0:
+        if self.api_version == 0:
             return self._share_all_1_7(args, cli, uuids)
         else:
             return self._share_all_1_8(args, cli, uuids)
@@ -155,7 +156,7 @@ class SharesCommand(DefaultCommand):
         return command(args, cli, uuids)
 
     def _share_all(self, args, cli, uuids):
-        if args.api_version == 0:
+        if self.api_version == 0:
             return self._share_all_1_7(args, cli, uuids)
         else:
             return self._share_all_1_8(args, cli, uuids)

@@ -43,6 +43,7 @@ from argtoolbox import SectionHook
 from linsharecli.admin.thread import add_parser as add_threads_parser
 from linsharecli.admin.tmember import add_parser as add_thread_members_parser
 from linsharecli.admin.user import add_parser as add_users_parser
+from linsharecli.admin.iuser import add_parser as add_iusers_parser
 from linsharecli.admin.domain import add_parser as add_domains_parser
 from linsharecli.admin.ldap import add_parser as add_ldap_connections_parser
 from linsharecli.admin.dpattern import add_parser as add_domain_patterns_parser
@@ -197,6 +198,7 @@ section 'server-4'""")
         add_thread_members_parser(subparsers, "tmembers",
                                   "thread member management", self.config)
         add_users_parser(subparsers, "users", "users", self.config)
+        add_iusers_parser(subparsers, "iusers", "inconsistent users", self.config)
         add_domains_parser(subparsers, "domains", "domains", self.config)
         add_ldap_connections_parser(subparsers, "ldap", "ldap connections", self.config)
         add_domain_patterns_parser(subparsers, "dpatterns", "domain patterns", self.config)
