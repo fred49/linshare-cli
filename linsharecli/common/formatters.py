@@ -45,6 +45,10 @@ class Formatter(object):
             raise ValueError("missing key : " + self.prop)
         return val
 
+    def __call__(self, row, context=None):
+        raise NotImplementedError()
+
+
 
 # -----------------------------------------------------------------------------
 class DateFormatter(Formatter):
@@ -53,7 +57,7 @@ class DateFormatter(Formatter):
         super(DateFormatter, self).__init__(prop, formatt)
         self.formatt = "{da:" + formatt + "}"
 
-    def __call__(self, row):
+    def __call__(self, row, context=None):
         ldate = row.get(self.prop)
         if ldate is not None:
             row[self.prop] = self.formatt.format(
@@ -66,7 +70,24 @@ class SizeFormatter(Formatter):
     def __init__(self, prop):
         super(SizeFormatter, self).__init__(prop)
 
-    def __call__(self, row):
+    def __call__(self, row, context=None):
         lsize = row.get(self.prop)
         if lsize is not None:
             row[self.prop] = filesize(lsize)
+
+
+# -----------------------------------------------------------------------------
+class NoneFormatter(Formatter):
+    """Convert None value to an empty string only if key exists"""
+
+    def __init__(self, prop):
+        super(NoneFormatter, self).__init__(prop)
+
+    def __call__(self, row, context=None):
+        # do not create/format a property that does not already exist.
+        # Because Htable does not support it
+        if not self.prop in row.keys():
+            return
+        parameter = row.get(self.prop)
+        if parameter is None:
+            row[self.prop] = ""

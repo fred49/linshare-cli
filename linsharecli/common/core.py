@@ -64,6 +64,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One resource can not be downloaded."
     MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%(count)s resources can not be downloaded."
     MSG_RS_UPDATED = "The resource '%(name)s' (%(uuid)s) was successfully updated. (%(time)s s)"
+    MSG_RS_CAN_NOT_BE_UPDATED = "One resource can not be updated."
+    MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s resources can not be updated."
     MSG_RS_CREATED = "The resource '%(label)s' (%(uuid)s) was successfully created. (%(time)s s)"
 
     ACTIONS = {
@@ -113,16 +115,14 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             "You must implement the __get_cli_object method.")
 
     def _list(self, args, cli, table, json_obj, formatters=None, filters=None):
-        # No default sort.
-        table.sortby = None
+        if table.sortby is None:
+            table.sortby = self.DEFAULT_SORT
         # sort by size
         if getattr(args, 'sort_size', False):
             json_obj = sorted(json_obj, reverse=args.reverse,
                               key=itemgetter(self.DEFAULT_SORT_SIZE))
         if getattr(args, 'sort_name', False):
             table.sortby = self.DEFAULT_SORT_NAME
-        else:
-            table.sortby = self.DEFAULT_SORT
         for key in self.ACTIONS.keys():
             if getattr(args, key, False):
                 table.load(json_obj, filters, formatters)
@@ -141,6 +141,21 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         table.show_table(json_obj, filters, formatters)
         meta = {'count': len(table.get_raw())}
         self.pprint(self.DEFAULT_TOTAL, meta)
+        return True
+
+    def _apply_to_all(self, args, cli, uuids, msg_m, func):
+        count = len(uuids)
+        position = 0
+        res = 0
+        for uuid in uuids:
+            position += 1
+            status = func(args, cli, uuid, position, count)
+            # convert Boolean to integer, 0 ok, 1 fail
+            res += abs(status - 1)
+        if res > 0:
+            meta = {'count': res}
+            self.pprint(msg_m, meta)
+            return False
         return True
 
     def _download_all(self, args, cli, uuids):
@@ -222,6 +237,33 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         except urllib2.HTTPError as ex:
             self.log.error("Delete error : %s", ex)
             return 1
+
+    def _update(self, args, cli, resource, position=None, count=None):
+        try:
+            if not position:
+                position = 1
+                count = 1
+            meta = {}
+            if resource.get(self.IDENTIFIER) is None:
+                raise ValueError("missing resource uuid/identifier")
+            meta[self.IDENTIFIER] = resource.get(self.IDENTIFIER)
+            meta['time'] = " -"
+            meta['position'] = position
+            meta['count'] = count
+            if getattr(args, "dry_run", False):
+                json_obj = resource
+            else:
+                json_obj = cli.update(resource)
+                meta['time'] = self.ls.last_req_time
+            if not json_obj:
+                self.pprint(self.MSG_RS_CAN_NOT_BE_UPDATED, meta)
+                return False
+            meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
+            self.pprint(self.MSG_RS_UPDATED, meta)
+            return True
+        except urllib2.HTTPError as ex:
+            self.log.error("Update error : %s", ex)
+            return False
 
     def _run(self, method, message_ok, err_suffix, *args):
         try:
@@ -443,6 +485,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         table._pref_end = getattr(args, "end", 0)
         table._pref_limit = getattr(args, "limit", 0)
         table._pref_no_csv_headers = getattr(args, "no_headers", True)
+        # just backup args into table
+        table.args = args
         return table
 
 # -----------------------------------------------------------------------------
@@ -523,7 +567,7 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
                 actions_group.add_argument(
                     '-D', '--delete', action="store_true")
         actions_group.add_argument('--dry-run', action="store_true")
-    return filter_group, sort_group,  format_group, actions_group
+    return filter_group, sort_group, format_group, actions_group
 
 # -----------------------------------------------------------------------------
 def add_delete_parser_options(parser):
@@ -563,9 +607,9 @@ class BaseTable(object):
         if formatters is not None:
             if isinstance(formatters, list):
                 for func in formatters:
-                    func(row)
+                    func(row, context=self)
             else:
-                formatters(row)
+                formatters(row, context=self)
 
     def get_raw(self):
         raise NotImplementedError()
@@ -583,11 +627,15 @@ class BaseTable(object):
 # -----------------------------------------------------------------------------
 class VTable(BaseTable):
 
+    vertical = True
+
     def __init__(self, keys = [], reverse = False, debug=0):
         self.debug = debug
         classname = str(self.__class__.__name__.lower())
         self.log = logging.getLogger('linsharecli.' + classname)
         self.keys = keys
+        # field only use for compatibility with HTable
+        self.align = {}
         self.start = None
         self.end = None
         self._rows = []
@@ -712,6 +760,8 @@ class VTable(BaseTable):
 
 # -----------------------------------------------------------------------------
 class HTable(VeryPrettyTable, BaseTable):
+
+    vertical = False
 
     def load(self, json_obj, filters=None, formatters=None):
         ignore_exceptions = {}
