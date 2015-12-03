@@ -164,7 +164,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         res = 0
         for uuid in uuids:
             position += 1
-            res += self._download(args, cli, uuid, position, count)
+            status = self._download(args, cli, uuid, position, count)
+            res += abs(status - 1)
         if res > 0:
             meta = {'count': res}
             self.pprint(self.MSG_RS_CAN_NOT_BE_DOWNLOADED_M , meta)
@@ -190,14 +191,14 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 meta['name'] = file_name
                 meta['time'] = req_time
             self.pprint(self.MSG_RS_DOWNLOADED, meta)
-            return 0
+            return True
         except urllib2.HTTPError as ex:
             meta['code'] = ex.code
             meta['ex'] = str(ex)
             if ex.code == 404:
                 self.pprint_error("http error : %(ex)s", meta)
                 self.pprint_error("Can not download the missing document : %(uuid)s", meta)
-            return 1
+            return False
 
     def _delete_all(self, args, cli, uuids):
         count = len(uuids)
@@ -205,7 +206,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         res = 0
         for uuid in uuids:
             position += 1
-            res += self._delete(args, cli, uuid, position, count)
+            status = self._delete(args, cli, uuid, position, count)
+            res += abs(status - 1)
         if res > 0:
             meta = {'count': res}
             self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED_M, meta)
@@ -230,13 +232,13 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             if not json_obj:
                 meta = {'uuid': uuid}
                 self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
-                return 1
+                return False
             meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
             self.pprint(self.MSG_RS_DELETED, meta)
-            return 0
+            return True
         except urllib2.HTTPError as ex:
             self.log.error("Delete error : %s", ex)
-            return 1
+            return False
 
     def _update(self, args, cli, resource, position=None, count=None):
         try:
