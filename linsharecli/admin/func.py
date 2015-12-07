@@ -162,7 +162,7 @@ class FunctionalityListCommand(FunctionalityCommand):
     def __call__(self, args):
         super(FunctionalityListCommand, self).__call__(args)
         cli = self.ls.funcs
-        table = self.get_table(args, cli, self.IDENTIFIER)
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         if args.sort_type:
             table.sortby = "type"
         json_obj = cli.list(args.domain)
@@ -188,6 +188,11 @@ class FunctionalityListCommand(FunctionalityCommand):
         json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_fields(self, args, prefix):
+        super(FunctionalityListCommand, self).__call__(args)
+        cli = self.ls.funcs
+        return cli.get_rbu().get_keys(True)
 
 
 # -----------------------------------------------------------------------------

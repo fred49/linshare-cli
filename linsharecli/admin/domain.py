@@ -91,11 +91,16 @@ class DomainsListCommand(DomainsCommand):
         if self.api_version == 0:
             self.init_old_language_key()
         cli = self.ls.domains
-        table = self.get_table(args, cli, self.IDENTIFIER)
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         json_obj = cli.list()
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
         return self._list(args, cli, table, json_obj, filters=filters)
+
+    def complete_fields(self, args, prefix):
+        super(DomainsListCommand, self).__call__(args)
+        cli = self.ls.domains
+        return cli.get_rbu().get_keys(True)
 
 
 # -----------------------------------------------------------------------------

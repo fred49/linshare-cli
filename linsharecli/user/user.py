@@ -44,7 +44,7 @@ class UsersListCommand(DefaultCommand):
     def __call__(self, args):
         super(UsersListCommand, self).__call__(args)
         cli = self.ls.users
-        table = self.get_table(args, cli, self.IDENTIFIER)
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         json_obj = cli.list()
         # Filters
         filters = [
@@ -59,6 +59,11 @@ class UsersListCommand(DefaultCommand):
             PartialOr(self.IDENTIFIER, args.pattern, True)
         ]
         return self._list(args, cli, table, json_obj, filters=filters)
+
+    def complete_fields(self, args, prefix):
+        super(UsersListCommand, self).__call__(args)
+        cli = self.ls.users
+        return cli.get_rbu().get_keys(True)
 
 
 # -----------------------------------------------------------------------------

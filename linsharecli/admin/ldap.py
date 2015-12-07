@@ -85,11 +85,16 @@ class LdapConnectionsListCommand(LdapConnectionsCommand):
         if self.api_version == 0:
             self.init_old_language_key()
         cli = self.ls.ldap_connections
-        table = self.get_table(args, cli, self.IDENTIFIER)
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         json_obj = cli.list()
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
         return self._list(args, cli, table, json_obj, filters=filters)
+
+    def complete_fields(self, args, prefix):
+        super(LdapConnectionsListCommand, self).__call__(args)
+        cli = self.ls.ldap_connections
+        return cli.get_rbu().get_keys(True)
 
 
 # -----------------------------------------------------------------------------

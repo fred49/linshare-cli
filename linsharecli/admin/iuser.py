@@ -86,7 +86,7 @@ class InconsistentUsersListCommand(InconsistentUsersCommand):
     def __call__(self, args):
         super(InconsistentUsersListCommand, self).__call__(args)
         cli = self.ls.iusers
-        table = self.get_table(args, cli, self.IDENTIFIER)
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         json_obj = cli.list()
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
@@ -134,6 +134,11 @@ class InconsistentUsersListCommand(InconsistentUsersCommand):
         except urllib2.HTTPError as ex:
             self.log.error("Delete error : %s", ex)
             return 1
+
+    def complete_fields(self, args, prefix):
+        super(InconsistentUsersListCommand, self).__call__(args)
+        cli = self.ls.iusers
+        return cli.get_rbu().get_keys(True)
 
 
 # -----------------------------------------------------------------------------

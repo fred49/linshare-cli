@@ -153,7 +153,7 @@ class ThreadMembersListCommand(ThreadMembersCommand):
     def __call__(self, args):
         super(ThreadMembersListCommand, self).__call__(args)
         cli = self.ls.thread_members
-        table = self.get_table(args, cli, self.IDENTIFIER)
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         json_obj = cli.list(args.thread_uuid)
         # Filters
         filters = PartialOr(self.IDENTIFIER, args.identifiers, True)
@@ -161,6 +161,11 @@ class ThreadMembersListCommand(ThreadMembersCommand):
         #formatters = [DateFormatter('creationDate'),
         #            DateFormatter('modificationDate')]
         return self._list(args, cli, table, json_obj, filters=filters)
+
+    def complete_fields(self, args, prefix):
+        super(ThreadMembersListCommand, self).__call__(args)
+        cli = self.ls.thread_members
+        return cli.get_rbu().get_keys(True)
 
 
 # -----------------------------------------------------------------------------

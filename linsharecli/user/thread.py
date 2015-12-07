@@ -66,7 +66,7 @@ class ThreadsListCommand(ThreadsCommand):
     def __call__(self, args):
         super(ThreadsListCommand, self).__call__(args)
         cli = self.ls.threads
-        table = self.get_table(args, cli, self.IDENTIFIER)
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         json_obj = cli.list()
         # Filters
         filters = PartialOr(self.IDENTIFIER, args.identifiers, True)
@@ -74,6 +74,11 @@ class ThreadsListCommand(ThreadsCommand):
         formatters = [DateFormatter('creationDate'),
                     DateFormatter('modificationDate')]
         return self._list(args, cli, table, json_obj, formatters, filters)
+
+    def complete_fields(self, args, prefix):
+        super(ThreadsListCommand, self).__call__(args)
+        cli = self.ls.threads
+        return cli.get_rbu().get_keys(True)
 
 
 # -----------------------------------------------------------------------------

@@ -42,7 +42,7 @@ class ThreadMembersListCommand(DefaultCommand):
     def __call__(self, args):
         super(ThreadMembersListCommand, self).__call__(args)
         cli = self.ls.thread_members
-        table = self.get_table(args, cli, self.IDENTIFIER)
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         table.show_table(
             cli.list(args.uuid)
         )
@@ -53,6 +53,12 @@ class ThreadMembersListCommand(DefaultCommand):
         json_obj = self.ls.threads.list()
         return (v.get('uuid')
                 for v in json_obj if v.get('uuid').startswith(prefix))
+
+    def complete_fields(self, args, prefix):
+        super(ThreadMembersListCommand, self).__call__(args)
+        cli = self.ls.thread_members
+        return cli.get_rbu().get_keys(True)
+
 
 
 # -----------------------------------------------------------------------------

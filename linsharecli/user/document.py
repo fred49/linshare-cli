@@ -79,7 +79,7 @@ class DocumentsListCommand(DocumentsCommand):
     def __call__(self, args):
         super(DocumentsListCommand, self).__call__(args)
         cli = self.ls.documents
-        table = self.get_table(args, cli, self.IDENTIFIER)
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         json_obj = cli.list()
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.names, True),
@@ -98,6 +98,11 @@ class DocumentsListCommand(DocumentsCommand):
             raise ValueError("To share files, you need to use -m/--mail option.")
         command = ShareAction(self)
         return command(args, cli, uuids)
+
+    def complete_fields(self, args, prefix):
+        super(DocumentsListCommand, self).__call__(args)
+        cli = self.ls.documents
+        return cli.get_rbu().get_keys(True)
 
     def complete_mail(self, args, prefix):
         super(DocumentsListCommand, self).__call__(args)

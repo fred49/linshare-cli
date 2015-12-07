@@ -192,7 +192,7 @@ class ThreadDocumentsListCommand(ThreadMembersCommand):
     def __call__(self, args):
         super(ThreadDocumentsListCommand, self).__call__(args)
         cli = self.ls.thread_entries
-        table = self.get_table(args, cli, self.IDENTIFIER)
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         json_obj = cli.list(args.thread_uuid)
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.names, True),
@@ -202,6 +202,11 @@ class ThreadDocumentsListCommand(ThreadMembersCommand):
                     SizeFormatter('size'),
                     DateFormatter('modificationDate')]
         return self._list(args, cli, table, json_obj, formatters, filters)
+
+    def complete_fields(self, args, prefix):
+        super(ThreadDocumentsListCommand, self).__call__(args)
+        cli = self.ls.thread_entries
+        return cli.get_rbu().get_keys(True)
 
 
 # -----------------------------------------------------------------------------

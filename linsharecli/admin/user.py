@@ -41,7 +41,7 @@ class UsersListCommand(DefaultCommand):
         cli = self.ls.users
         if not  (args.firstname or args.lastname or args.mail):
             raise ValueError('You should use at leat one option among : --firstname, --lastname or --mail')
-        table = self.get_table(args, cli, self.IDENTIFIER)
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         table.show_table(
             cli.search(args.firstname, args.lastname, args.mail),
             formatters=[DateFormatter('creationDate'),
@@ -49,6 +49,11 @@ class UsersListCommand(DefaultCommand):
              DateFormatter('modificationDate')]
         )
         return True
+
+    def complete_fields(self, args, prefix):
+        super(UsersListCommand, self).__call__(args)
+        cli = self.ls.users
+        return cli.get_rbu().get_keys(True)
 
 
 # -----------------------------------------------------------------------------

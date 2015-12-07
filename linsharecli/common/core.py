@@ -454,7 +454,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             self.print_list(json_obj, d_format, "Documents",
                             no_legend=no_legend)
 
-    def get_table(self, args, cli, first_column):
+    def get_table(self, args, cli, first_column, keys=[]):
         args.vertical = getattr(args, "vertical", False)
         if not args.vertical:
             if getattr(args, "json", False):
@@ -467,7 +467,11 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                         args.vertical = True
         args.reverse = getattr(args, "reverse", False)
         args.extended = getattr(args, "extended", False)
-        keys = cli.get_rbu().get_keys(args.extended)
+        if keys:
+            if not self.IDENTIFIER in  keys:
+                keys.insert(0, self.IDENTIFIER)
+        else:
+            keys = cli.get_rbu().get_keys(args.extended)
         table = None
         if args.vertical:
             table = VTable(keys, debug=self.debug)
@@ -508,6 +512,8 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
         filter_group.add_argument(
             '--date', action="store", dest="cdate",
             help="Filter on creation date")
+    filter_group.add_argument('-k', '--field', action='append', dest="fields"
+        ).completer = Completer("complete_fields")
 
     # sort
     sort_group = parser.add_argument_group('Sort')

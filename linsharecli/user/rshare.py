@@ -69,7 +69,7 @@ class ReceivedSharesListCommand(ReceivedSharesCommand):
     def __call__(self, args):
         super(ReceivedSharesListCommand, self).__call__(args)
         cli = self.ls.rshares
-        table = self.get_table(args, cli, self.IDENTIFIER)
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         json_obj = cli.list()
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.names, True),
@@ -80,6 +80,11 @@ class ReceivedSharesListCommand(ReceivedSharesCommand):
                     SizeFormatter('size'),
                     DateFormatter('modificationDate')]
         return self._list(args, cli, table, json_obj, formatters, filters)
+
+    def complete_fields(self, args, prefix):
+        super(ReceivedSharesListCommand, self).__call__(args)
+        cli = self.ls.rshares
+        return cli.get_rbu().get_keys(True)
 
 
 # -----------------------------------------------------------------------------
