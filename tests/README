@@ -1,0 +1,14 @@
+# How to run all tests
+python setup.py -v test
+
+# How to run all tests from class
+python -m unittest -v tests.TestDocumentsList
+
+# How to run a test method inside a class
+python -m unittest -v tests.TestDocumentsList.test_documents_list4
+
+# enable debug during tests : 0=none
+export _TEST_LINSHARE_CLI_USER_DEBUG=X
+
+# By default tests are run with api_version=0, you can change default value with :
+export _TEST_LINSHARE_CLI_USER_API_VERSION=X
