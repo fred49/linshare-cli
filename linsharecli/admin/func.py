@@ -34,7 +34,6 @@ from linsharecli.common.formatters import NoneFormatter
 from linsharecli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
 import argparse
-import urllib2
 
 
 # -----------------------------------------------------------------------------
@@ -86,10 +85,12 @@ class ParameterFormatter(Formatter):
                 p_type = parameter['type']
                 if p_type in ["STRING", "INTEGER"]:
                     dformat = "{" + p_type.lower() + "}"
-                if p_type == "BOOLEAN":
+                elif p_type == "BOOLEAN":
                     dformat = "{bool}"
                 elif p_type in ["UNIT_SIZE", "UNIT_TIME"]:
                     dformat = "{integer} {string}"
+                elif p_type == "ENUM_LANG":
+                    dformat = "{string}"
                 res.append(dformat.format(**parameter))
             row[self.prop] = " | ".join(res)
 
@@ -165,7 +166,7 @@ class FunctionalityListCommand(FunctionalityCommand):
         table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         if args.sort_type:
             table.sortby = "type"
-        json_obj = cli.list(args.domain)
+        json_obj = cli.list(args.domain, args.only_parents)
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.identifiers, True),
                    PartialOr("type", args.funct_type, True)]
@@ -267,6 +268,29 @@ class FunctionalityUpdateTimeCommand(FunctionalityCommand):
                         if param.get('type') == 'UNIT_TIME':
                             res.append(v.get('identifier'))
         return res
+
+# -----------------------------------------------------------------------------
+class FunctionalityUpdateLangCommand(FunctionalityCommand):
+    """ Update TIME functionalities."""
+
+    def __call__(self, args):
+        super(FunctionalityUpdateLangCommand, self).__call__(args)
+        cli = self.ls.funcs
+        resource = cli.get(args.identifier, args.domain)
+        if self.debug:
+            self.pretty_json(resource)
+        if resource.get('type') != 'ENUM_LANG':
+            raise argparse.ArgumentError(None, "Invalid functionality type")
+        parameters = resource.get('parameters')
+        param = parameters[0]
+        param['string'] = args.lang
+        return self._update(args, cli, resource)
+
+    def complete(self, args, prefix):
+        super(FunctionalityUpdateIntegerCommand, self).__call__(args)
+        json_obj = self.ls.funcs.list(args.domain)
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix) and v.get('type') == 'ENUM_LANG')
 
 
 # -----------------------------------------------------------------------------
@@ -469,6 +493,8 @@ def add_parser(subparsers, name, desc, config):
     filter_group.add_argument('--type', action="append",
                         dest="funct_type",
                         help="Filter on functionality type")
+    filter_group.add_argument('--only-parents', action="store_false",
+                        help="Sub functionalities will not be displayed, since core 1.7")
     sort_group = groups[1]
     sort_group.add_argument('--sort-type', action="store_true",
                         help="Sort functionalities by type")
@@ -534,6 +560,21 @@ def add_parser(subparsers, name, desc, config):
         dest="boolean")
     parser_tmp2.add_argument('--dry-run', action="store_true")
     parser_tmp2.set_defaults(__func__=FunctionalityUpdateBooleanCommand(config))
+
+    # command : update-lang
+    parser_tmp2 = subparsers2.add_parser(
+        'update-lang', help="update language functionality.")
+    parser_tmp2.add_argument('identifier', action="store",
+                             help="").completer = Completer()
+    parser_tmp2.add_argument('-d', '--domain', action="store",
+                             help="Completion available").completer = Completer('complete_domain')
+    parser_tmp2.add_argument(
+        '-l',
+        '--lang',
+        action="store",
+        choices=('EN', 'FR'))
+    parser_tmp2.add_argument('--dry-run', action="store_true")
+    parser_tmp2.set_defaults(__func__=FunctionalityUpdateLangCommand(config))
 
     # command : update-time
     parser_tmp2 = subparsers2.add_parser(
