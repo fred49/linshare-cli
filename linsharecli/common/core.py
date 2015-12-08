@@ -115,6 +115,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             "You must implement the __get_cli_object method.")
 
     def _list(self, args, cli, table, json_obj, formatters=None, filters=None):
+        self.log.debug("table.sortby : %s", table.sortby)
         if table.sortby is None:
             table.sortby = self.DEFAULT_SORT
         # sort by size
@@ -123,6 +124,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                               key=itemgetter(self.DEFAULT_SORT_SIZE))
         if getattr(args, 'sort_name', False):
             table.sortby = self.DEFAULT_SORT_NAME
+        self.log.debug("final table.sortby : %s", table.sortby)
         for key in self.ACTIONS.keys():
             if getattr(args, key, False):
                 table.load(json_obj, filters, formatters)
@@ -480,7 +482,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             # styles
             table.align[first_column] = "l"
             table.padding_width = 1
-        table.sortby = first_column
+        table.sortby = None
         table.reversesort = args.reverse
         table.keys = keys
         table.json = getattr(args, "json", False)
