@@ -36,6 +36,9 @@ import datetime
 import argtoolbox
 import locale
 import urllib2
+import hashlib
+import cookielib
+import pickle
 import types
 from operator import itemgetter
 from veryprettytable import VeryPrettyTable
@@ -44,8 +47,84 @@ from hurry.filesize import size as filesize
 from argtoolbox import DefaultCompleter as Completer
 from linshareapi.core import LinShareException
 
+
 # -----------------------------------------------------------------------------
-#pylint: disable=R0921
+class LsFileCookieJar(cookielib.FileCookieJar):
+
+    def save(self, filename=None, ignore_discard=False, ignore_expires=False):
+        cookie_file = open(filename, "w")
+        try:
+            for cookie in self:
+                pickle.dump(cookie, cookie_file)
+        finally:
+            cookie_file.close()
+
+    def load(self, filename=None, ignore_discard=False, ignore_expires=False):
+        if not os.path.isfile(filename):
+            return
+        cookie_file = open(filename, "r")
+        try:
+            cookie = pickle.load(cookie_file)
+            self.set_cookie(cookie)
+        finally:
+            cookie_file.close()
+
+
+# -----------------------------------------------------------------------------
+class HTTPBasicAuthHandler(urllib2.HTTPBasicAuthHandler):
+    """Manage Basic authentification by using cookie and asking password"""
+
+    def __init__(self, cli, ask_password=False, use_cookie=False,
+                 password_mgr=None):
+        urllib2.HTTPBasicAuthHandler.__init__(self, password_mgr=password_mgr)
+        self.cli = cli
+        self.ask_password = ask_password
+        self.use_cookie = use_cookie
+        self.initialized = False
+        self.hash_key = None
+        self.cookiejar = None
+
+    def init(self):
+        """compute cookie file name and create cookie directory"""
+        directory = os.path.expanduser('~/.linshare-cookies')
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+        hash_key = hashlib.sha256()
+        hash_key.update(self.cli.root_url)
+        hash_key.update(self.cli.user)
+        self.hash_key = os.path.join(
+            directory,
+            hash_key.hexdigest()
+        )
+        self.cookiejar = self.cli.cookiejar
+        self.initialized = True
+
+    def http_error_401(self, req, fp, code, msg, headers):
+        # pylint: disable=too-many-arguments
+        # print self.passwd.passwd
+        if self.initialized:
+            if self.ask_password:
+                try:
+                    password = getpass.getpass("Please enter your password :")
+                except KeyboardInterrupt:
+                    print "\nKeyboard interruption was caught. Program aborted."
+                    sys.exit(1)
+                self.add_password(
+                    realm=self.cli.realm.encode('utf8'),
+                    uri=self.cli.root_url.encode('utf8'),
+                    user=self.cli.user.encode('utf8'),
+                    passwd=password)
+        else:
+            self.init()
+        response = urllib2.HTTPBasicAuthHandler.http_error_401(
+            self, req, fp, code, msg, headers)
+        if self.use_cookie:
+            self.cookiejar.save(self.hash_key)
+        return response
+
+
+# -----------------------------------------------------------------------------
+# pylint: disable=abstract-class-not-used
 class DefaultCommand(argtoolbox.DefaultCommand):
     """ If you want to add a new command to the command line interface, your
     class should extend this class.
@@ -81,32 +160,45 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         self.log = logging.getLogger('linsharecli.' + classname)
         self.verbose = False
         self.debug = False
-        #pylint: disable=C0103
+        # pylint: disable=invalid-name
         self.ls = None
 
+    # pylint: disable=super-on-old-class
     def __call__(self, args):
         super(DefaultCommand, self).__call__(args)
         self.verbose = args.verbose
         self.debug = args.debug
-
         if args.env_password:
             args.password = os.getenv('LS_PASSWORD')
-        if args.ask_password:
-            try:
-                args.password = getpass.getpass("Please enter your password :")
-            except KeyboardInterrupt:
-                print """\nKeyboardInterrupt exception was caught.
-                Program terminated."""
-                sys.exit(1)
-
-        if not args.password:
-            raise ValueError("invalid password : password is not set ! ")
-
+        # Creation of cli object
         self.ls = self.__get_cli_object(args)
+        if args.password:
+            self.ls.password = args.password
+        else:
+            self.ls.password = "undefined password"
+        # FMA TODO
+        print self.ls.password
+        if args.base_url:
+            self.ls.base_url = args.base_url
         if args.nocache:
             self.ls.nocache = True
-        if not self.ls.auth():
-            sys.exit(1)
+        self.ls.cookiejar = LsFileCookieJar()
+        # Override default auth_handler
+        auth_handler = HTTPBasicAuthHandler(
+            self.ls, args.ask_password, use_cookie=False)
+        # once every properties are set, we configure the cli object
+        self.ls.init_cli(auth_handler)
+
+        # if not self.ls.auth():
+        #    sys.exit(1)
+        if False:
+            directory = os.path.expanduser('~/.linshare-cookies')
+            if not os.path.isdir(directory):
+                os.makedirs(directory)
+            self.cookiejar.load(os.path.join(
+                directory,
+                self.get_cookie_filename()))
+
 
     def __get_cli_object(self, args):
         """You must implement this method and return a object instance of
