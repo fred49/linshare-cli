@@ -28,7 +28,7 @@ from __future__ import unicode_literals
 
 from linsharecli.common.formatters import DateFormatter
 from linsharecli.admin.core import DefaultCommand
-#from argtoolbox import DefaultCompleter as Completer
+from argtoolbox import DefaultCompleter as Completer
 
 
 # -----------------------------------------------------------------------------
@@ -76,4 +76,6 @@ def add_parser(subparsers, name, desc, config):
     parser_tmp2.add_argument('--csv', action="store_true", help="Csv output")
     parser_tmp2.add_argument('--raw', action="store_true",
                              help="Disable all formatters")
+    parser_tmp2.add_argument('-k', '--field', action='append', dest="fields"
+        ).completer = Completer("complete_fields")
     parser_tmp2.set_defaults(__func__=UsersListCommand(config))
