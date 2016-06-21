@@ -166,29 +166,42 @@ class DocumentsUpdateCommand(DocumentsCommand):
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsUpdateCommand, self).__call__(args)
-        a = ['description', 'meta_data', 'name']
+        a = ['description', 'meta_data', 'name', 'new_file']
         one_set = False
         for i in a:
             if getattr(args, i, None) is not None:
                 one_set = True
                 break
         if not one_set:
-            raise ArgumentError(None, "You need to choose at least one of the three options : --name or --meta-data or --description")
+            raise ArgumentError(
+                None,
+                "You need to choose --file or at least one of the three options : --name or --meta-data or --description")
         cli = self.ls.documents
         try:
             document = cli.get(args.uuid)
-            original_name = document.get('name')
-            rbu = cli.get_rbu()
-            rbu.copy(document)
-            rbu.load_from_args(args)
-            json_obj = cli.update(rbu.to_resource())
-            if json_obj.get('name') == original_name:
-                message_ok = "The following document '%(name)s' was successfully updated"
-                self.pprint(message_ok, json_obj)
+            if args.new_file:
+                json_obj = cli.update_file(args.uuid, args.new_file)
+                if json_obj:
+                    json_obj['time'] = self.ls.last_req_time
+                    json_obj['new'] = args.new_file
+                    self.log.info(
+                        "The file '%(name)s' (%(uuid)s) was updated with %(new)s. (%(time)ss)",
+                        json_obj)
+                else:
+                    return False
             else:
-                json_obj['original_name'] = original_name
-                message_ok = "The former document '%(original_name)s' (renamed to '%(name)s') was successfully updated"
-                self.pprint(message_ok, json_obj)
+                original_name = document.get('name')
+                rbu = cli.get_rbu()
+                rbu.copy(document)
+                rbu.load_from_args(args)
+                json_obj = cli.update(rbu.to_resource())
+                if json_obj.get('name') == original_name:
+                    message_ok = "The following document '%(name)s' was successfully updated"
+                    self.pprint(message_ok, json_obj)
+                else:
+                    json_obj['original_name'] = original_name
+                    message_ok = "The former document '%(original_name)s' (renamed to '%(name)s') was successfully updated"
+                    self.pprint(message_ok, json_obj)
             if self.verbose or self.debug:
                 self.pretty_json(json_obj)
             return True
@@ -375,4 +388,5 @@ def add_parser(subparsers, name, desc, config):
                         help="document meta data")
     parser.add_argument('--description', action="store",
                         help="document description")
+    parser.add_argument('--file', dest='new_file')
     parser.set_defaults(__func__=DocumentsUpdateCommand(config))
