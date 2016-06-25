@@ -321,23 +321,6 @@ class LinShareTest(unittest.TestCase):
             print i + " : " + str(getattr(args, i))
 
 
-def fred():
-    return deepcopy(
-       {
-         "ciphered": False,
-         "creationDate": 1424735870159,
-         "description": "",
-         "expirationDate": 1432425468866,
-         "metaData": None,
-         "modificationDate": 1424735870385,
-         "name": "aa",
-         "sha256sum":
-           "916e2eab1fbc18c548a1ac89eb157b7a44e313f8116958984eca2d99eaba6d",
-         "size": 10140,
-         "type": "text/plain",
-         "uuid": "f62a1fad-0692-4ec8-8cde-68f1cc3f9b49"
-       })
-
 # -----------------------------------------------------------------------------
 @patch('linshareapi.core.CoreCli.auth', return_value=True)
 @patch('linshareapi.user.documents.Documents.list',
@@ -551,8 +534,52 @@ class TestDocumentsList(LinShareTest):
         else:
             self.assertEqual(len(output), 9)
 
-    # def test_threads_list(self):
-    #    self.assertTrue(self.run_default("threads list"))
+
+
+DATA_THREADS = [
+  {
+    "creationDate": 1466718451738,
+    "domain": "MySubDomain",
+    "modificationDate": 1466718451741,
+    "name": "thread1",
+    "uuid": "d23a1449-f7ce-4c85-b48f-eb2dec157c87"
+  },
+  {
+    "creationDate": 1466718453993,
+    "domain": "MySubDomain",
+    "modificationDate": 1466718453997,
+    "name": "thread2",
+    "uuid": "39c72829-5d15-4eca-b62a-9d409d5021cf"
+  },
+  {
+    "creationDate": 1466718456795,
+    "domain": "MySubDomain",
+    "modificationDate": 1466718456797,
+    "name": "thread3",
+    "uuid": "ed5d85a6-cdc9-42b9-b697-c11ab658cc01"
+  }
+]
+
+
+# -----------------------------------------------------------------------------
+@patch('linshareapi.core.CoreCli.auth', return_value=True)
+@patch('linshareapi.user.threads.Threads.list',
+    new_callable=MockServerResults(DATA_THREADS))
+class TestThreadsList(LinShareTest):
+
+    ##########################
+    # * header : 3 lines
+    # * content : 3 threads
+    # * footer : 3 lines
+    DATA_DOCUMENTS_HEIGHT = 9
+    DATA_DOCUMENTS_WIDTH = 109
+
+    def test_threads_list(self, *args):
+        """retrieve default threads list"""
+        command = "threads list"
+        output = self.run_default0(command)
+        self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
+        self.assertEqual(len(output[0]), self.DATA_DOCUMENTS_WIDTH)
 
     # def test_users_list(self):
     #    self.assertTrue(self.run_default("users list"))
