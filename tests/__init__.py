@@ -11,18 +11,25 @@ import logging
 LOG = logging.getLogger('core')
 LOG.info("loading tests")
 
+VERSIONS = [0, 1]
+
+
+def load_tests(loader, version, clazz):
+    """TODO"""
+    suit = unittest.TestSuite()
+    for i in loader.loadTestsFromTestCase(clazz):
+        i.api_version = version
+        suit.addTest(i)
+    return suit
 
 def get_all_tests():
+    """TODO"""
     loader = unittest.TestLoader()
-    suite = unittest.TestSuite()
-    for version in [0, 1]:
-        for i in loader.loadTestsFromTestCase(TestDocumentsList):
-            i.api_version = version
-            suite.addTest(i)
-        for i in loader.loadTestsFromTestCase(TestThreadsList):
-            i.api_version = version
-            suite.addTest(i)
-    return suite
+    suites = unittest.TestSuite()
+    for version in VERSIONS:
+        suites.addTest(load_tests(loader, version, TestDocumentsList))
+        suites.addTest(load_tests(loader, version, TestThreadsList))
+    return suites
 
 if __name__ == '__main__':
     suite = get_all_tests()
