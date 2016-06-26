@@ -13,8 +13,18 @@ LOG.info("loading tests")
 VERSIONS = [0, 1]
 
 
-def load_tests(loader, version, clazz, key, value):
-    """TODO"""
+def load_tests(loader, commands, version):
+    """Create all tests"""
+    suites = unittest.TestSuite()
+    for key, val in commands.items():
+        if val.get('skip'):
+            continue
+        suites.addTest(load_tests_by_version(loader, version,
+                                             AdminGenericTestList, key, val))
+    return suites
+
+def load_tests_by_version(loader, version, clazz, key, value):
+    """Create all tests"""
     suit = unittest.TestSuite()
     for i in loader.loadTestsFromTestCase(clazz):
         i.api_version = version
@@ -24,40 +34,87 @@ def load_tests(loader, version, clazz, key, value):
 
 
 def get_all_tests():
-    """TODO"""
+    """Build all tests"""
     loader = unittest.TestLoader()
     suites = unittest.TestSuite()
+
+    # version 0
+    keyerror = False
+    keyerror_extended = False
     commands = {
         'threads': {
-            'delete': False
+            'delete': False,
+            'fields': False,
             },
         'tmembers': {
-            'skip': True
+            'skip': True,
             },
         'users': {
-            'skip': True
+            'skip': True,
             },
         'iusers': {},
         'domains': {
-            'delete': False
+            'delete': False,
+            'keyerror' : keyerror,
+            'keyerror_extended' : keyerror_extended,
             },
         'ldap': {
-            'delete': False
+            'delete': False,
+            'keyerror' : keyerror,
+            'keyerror_extended' : keyerror_extended,
             },
         'dpatterns': {
-            'delete': False
+            'delete': False,
+            'keyerror' : keyerror,
+            'keyerror_extended' : keyerror_extended,
             },
         'funcs': {
-            'delete': False
+            'delete': False,
             },
         'domainpolicy': {
-            'delete': False
+            'delete': False,
             },
     }
-    for key, val in commands.items():
-        if val.get('skip'):
-            continue
-        suites.addTest(load_tests(loader, 0, AdminGenericTestList, key, val))
+    suites.addTest(load_tests(loader, commands, 0))
+
+    # version 1
+    keyerror = True
+    keyerror_extended = True
+    commands = {
+        'threads': {
+            'delete': False,
+            'fields': False,
+            },
+        'tmembers': {
+            'skip': True,
+            },
+        'users': {
+            'skip': True,
+            },
+        'iusers': {},
+        'domains': {
+            'delete': False,
+            'keyerror' : keyerror,
+            'keyerror_extended' : keyerror_extended,
+            },
+        'ldap': {
+            'delete': False,
+            'keyerror' : keyerror,
+            'keyerror_extended' : keyerror_extended,
+            },
+        'dpatterns': {
+            'delete': False,
+            'keyerror' : keyerror,
+            'keyerror_extended' : keyerror_extended,
+            },
+        'funcs': {
+            'delete': False,
+            },
+        'domainpolicy': {
+            'delete': False,
+            },
+    }
+    suites.addTest(load_tests(loader, commands, 1))
     return suites
 
 if __name__ == '__main__':

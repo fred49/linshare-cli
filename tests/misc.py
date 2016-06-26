@@ -5,6 +5,7 @@
 # -----------------------------------------------------------------------------
 # Imports
 
+import re
 import logging
 from tests.core import LinShareTestCase
 
@@ -105,7 +106,36 @@ class AdminGenericTestList(LinShareTestCase):
         self.assertIsNotNone(self.command_to_test, "Missing command to test")
         command = "{c} {s}".format(c=self.command_to_test, s="list")
         try:
+            self.run_default0(command)
+        except SystemExit as ex:
+            print ex
+            self.assertTrue(False, ex.msg)
+
+    @SkipIfDisable('keyerror')
+    def test_list_key_error(self):
+        """Generic tests for sub command 'list' searching for KeyError"""
+        self.assertIsNotNone(self.command_to_test, "Missing command to test")
+        command = "{c} {s}".format(c=self.command_to_test, s="list")
+        try:
             output = self.run_default0(command)
+            regex = re.compile("WARN: KeyError", re.IGNORECASE)
+            for i in output:
+                self.assertFalse(regex.match(i), "OUTPUT: " + i)
+        except SystemExit as ex:
+            print ex
+            self.assertTrue(False, ex.msg)
+
+    @SkipIfDisable('keyerror_extended')
+    def test_list_key_error_extended(self):
+        """Generic tests for sub command 'list --extended'
+        searching for KeyError"""
+        self.assertIsNotNone(self.command_to_test, "Missing command to test")
+        command = "{c} {s}".format(c=self.command_to_test, s="list --extended")
+        try:
+            output = self.run_default0(command)
+            regex = re.compile("WARN: KeyError", re.IGNORECASE)
+            for i in output:
+                self.assertFalse(regex.match(i), "OUTPUT: " + i)
         except SystemExit as ex:
             print ex
             self.assertTrue(False, ex.msg)
@@ -240,5 +270,12 @@ class AdminGenericTestList(LinShareTestCase):
         except SystemExit as ex:
             self.assertTrue(False, ex.msg)
 
-
-# fields
+    @SkipIfDisable('fields')
+    def test_list_fields(self):
+        """Generic tests for sub command 'list -k test '"""
+        self.assertNotEqual(self.command_to_test, "", "Missing command to test")
+        command = "{c} {s}".format(c=self.command_to_test, s="list -k test ")
+        try:
+            output = self.run_default0(command)
+        except SystemExit as ex:
+            self.assertTrue(False, ex.msg)

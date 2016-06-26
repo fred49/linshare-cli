@@ -114,7 +114,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         raise NotImplementedError(
             "You must implement the __get_cli_object method.")
 
-    def _list(self, args, cli, table, json_obj, formatters=None, filters=None):
+    def _list(self, args, cli, table, json_obj, formatters=None, filters=None,
+              ignore_exceptions={}):
         self.log.debug("table.sortby : %s", table.sortby)
         if table.sortby is None:
             table.sortby = self.DEFAULT_SORT
@@ -127,7 +128,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         self.log.debug("final table.sortby : %s", table.sortby)
         for key in self.ACTIONS.keys():
             if getattr(args, key, False):
-                table.load(json_obj, filters, formatters)
+                table.load(json_obj, filters, formatters, ignore_exceptions)
                 rows = table.get_raw()
                 if len(rows) == 0:
                     self.pprint(self.MSG_RS_NOT_FOUND)
@@ -140,7 +141,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                     uuids = [row.get(self.RESOURCE_IDENTIFIER) for row in rows]
                     method = getattr(self, self.ACTIONS.get(key))
                     return method(args, cli, uuids)
-        table.show_table(json_obj, filters, formatters)
+        table.show_table(json_obj, filters, formatters, ignore_exceptions)
         meta = {'count': len(table.get_raw())}
         self.pprint(self.DEFAULT_TOTAL, meta)
         return True
@@ -630,7 +631,8 @@ class BaseTable(object):
     def get_csv(self):
         raise NotImplementedError()
 
-    def load(self, data, filters=None, formatters=None):
+    def load(self, json_obj, filters=None, formatters=None,
+             ignore_exceptions={}):
         raise NotImplementedError()
 
 
@@ -655,8 +657,9 @@ class VTable(BaseTable):
             self.sortby = k
             break
 
-    def show_table(self, json_obj, filters=None, formatters=None):
-        self.load(json_obj, filters, formatters)
+    def show_table(self, json_obj, filters=None, formatters=None,
+                   ignore_exceptions={}):
+        self.load(json_obj, filters, formatters, ignore_exceptions)
         if self.json:
             print self.get_json()
             return
@@ -666,7 +669,8 @@ class VTable(BaseTable):
         out = self.get_string()
         print unicode(out)
 
-    def load(self, data, filters=None, formatters=None):
+    def load(self, data, filters=None, formatters=None,
+             ignore_exceptions={}):
         for row in data:
             if self.filters(row, filters):
                 if not self.raw:
@@ -773,8 +777,8 @@ class HTable(VeryPrettyTable, BaseTable):
 
     vertical = False
 
-    def load(self, json_obj, filters=None, formatters=None):
-        ignore_exceptions = {}
+    def load(self, json_obj, filters=None, formatters=None,
+             ignore_exceptions={}):
         for json_row in json_obj:
             data = OrderedDict()
             for key in self.keys:
@@ -800,8 +804,9 @@ class HTable(VeryPrettyTable, BaseTable):
             if limit > 0:
                 self.end = self.start + limit
 
-    def show_table(self, json_obj, filters=None, formatters=None):
-        self.load(json_obj, filters, formatters)
+    def show_table(self, json_obj, filters=None, formatters=None,
+                   ignore_exceptions={}):
+        self.load(json_obj, filters, formatters, ignore_exceptions)
         out = self.get_string(fields=self.keys)
         print unicode(out)
 

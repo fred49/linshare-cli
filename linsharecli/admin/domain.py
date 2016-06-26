@@ -28,6 +28,7 @@ from __future__ import unicode_literals
 
 from linshareapi.cache import Time
 from linsharecli.common.filters import PartialOr
+from linsharecli.common.formatters import NoneFormatter
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
@@ -95,7 +96,15 @@ class DomainsListCommand(DomainsCommand):
         json_obj = cli.list()
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
-        return self._list(args, cli, table, json_obj, filters=filters)
+        formatters = [NoneFormatter("parent")]
+        ignore_exceptions = {
+            "parent": True,
+            "authShowOrder": True,
+        }
+        return self._list(args, cli, table, json_obj,
+                          filters=filters,
+                          formatters=formatters,
+                          ignore_exceptions=ignore_exceptions)
 
     def complete_fields(self, args, prefix):
         super(DomainsListCommand, self).__call__(args)
