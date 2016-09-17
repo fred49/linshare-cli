@@ -85,6 +85,7 @@ setup(
                         'progressbar',
                         'veryprettytable',
                         'hurry.filesize',
+                        'mock',
                         ],
     scripts = glob.glob('bin/*'),
 )
