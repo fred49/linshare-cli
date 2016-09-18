@@ -3,8 +3,8 @@
 # PYTHON_ARGCOMPLETE_OK
 
 
-from tests.documents import TestDocumentsList
-from tests.threads import TestThreadsList
+from linsharecli.tests.documents import TestDocumentsList
+from linsharecli.tests.threads import TestThreadsList
 import unittest
 import logging
 

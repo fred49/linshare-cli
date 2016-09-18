@@ -10,8 +10,8 @@ import urllib2
 from mock import patch
 from mock import Mock
 from copy import deepcopy
-from tests.core import MockServerResults
-from tests.core import LinShareTestCase
+from linsharecli.tests.core import MockServerResults
+from linsharecli.tests.core import LinShareTestCase
 
 from linsharecli.user.document import add_parser as add_document_parser
 from linsharecli.user.share import add_parser as add_share_parser

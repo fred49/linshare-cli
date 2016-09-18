@@ -3,7 +3,7 @@
 # PYTHON_ARGCOMPLETE_OK
 
 
-from tests.misc import AdminGenericTestList
+from linsharecli.tests.misc import AdminGenericTestList
 import unittest
 import logging
 

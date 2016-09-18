@@ -7,7 +7,7 @@
 
 import re
 import logging
-from tests.core import LinShareTestCase
+from linsharecli.tests.core import LinShareTestCase
 
 from linsharecli.admin.thread import add_parser as add_threads_parser
 from linsharecli.admin.tmember import add_parser as add_thread_members_parser

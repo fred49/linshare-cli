@@ -9,8 +9,8 @@ import logging
 from mock import patch
 from mock import Mock
 from copy import deepcopy
-from tests.core import MockServerResults
-from tests.core import LinShareTestCase
+from linsharecli.tests.core import MockServerResults
+from linsharecli.tests.core import LinShareTestCase
 
 from linsharecli.user.thread import add_parser as add_threads_parser
 
