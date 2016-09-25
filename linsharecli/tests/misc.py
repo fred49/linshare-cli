@@ -50,6 +50,9 @@ class AdminGenericTestList(LinShareTestCase):
     """test list sub comand for all admin commands"""
 
     command_to_test = None
+    host = "http://127.0.0.1:8080"
+    user = "root@localhost.localdomain"
+    password = "adminlinshare"
 
     def setUp(self):
         super(AdminGenericTestList, self).setUp()
@@ -83,9 +86,9 @@ class AdminGenericTestList(LinShareTestCase):
         """Get pre-populated argparse namespace containing
         configuration and credentials for linshare."""
         namespace = super(AdminGenericTestList, self).get_default_ns()
-        namespace.host = "http://127.0.0.1:8080"
-        namespace.user = "root@localhost.localdomain"
-        namespace.password = "adminlinshare"
+        namespace.host = self.host
+        namespace.user = self.user
+        namespace.password = self.password
         return namespace
 
     def set_command_to_test(self, command, config):
@@ -101,6 +104,11 @@ class AdminGenericTestList(LinShareTestCase):
         else:
             return True
 
+    def logSystemExit(self, ex):
+        LOG.error("SystemExit : ")
+        LOG.error(ex.message)
+        raise AssertionError("unexpected failure ! Unsupportted command ?")
+
     def test_list(self):
         """Generic tests for sub command 'list'"""
         self.assertIsNotNone(self.command_to_test, "Missing command to test")
@@ -108,8 +116,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             self.run_default0(command)
         except SystemExit as ex:
-            print ex
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     @SkipIfDisable('keyerror')
     def test_list_key_error(self):
@@ -122,8 +129,7 @@ class AdminGenericTestList(LinShareTestCase):
             for i in output:
                 self.assertFalse(regex.match(i), "OUTPUT: " + i)
         except SystemExit as ex:
-            print ex
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     @SkipIfDisable('keyerror_extended')
     def test_list_key_error_extended(self):
@@ -137,8 +143,7 @@ class AdminGenericTestList(LinShareTestCase):
             for i in output:
                 self.assertFalse(regex.match(i), "OUTPUT: " + i)
         except SystemExit as ex:
-            print ex
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     def test_list_extended(self):
         """Generic tests for sub command 'list --extended'"""
@@ -147,7 +152,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     def test_list_vertical(self):
         """Generic tests for sub command 'list --vertical'"""
@@ -156,7 +161,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     def test_list_vertical_extended(self):
         """Generic tests for sub command 'list --extended --vertical'"""
@@ -166,7 +171,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     def test_list_limit(self):
         """Generic tests for sub command 'list --limit 10'"""
@@ -175,7 +180,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     def test_list_start(self):
         """Generic tests for sub command 'list --start 0'"""
@@ -184,7 +189,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     def test_list_end(self):
         """Generic tests for sub command 'list --end 0'"""
@@ -193,7 +198,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     def test_list_reverse(self):
         """Generic tests for sub command 'list --reverse '"""
@@ -202,7 +207,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     def test_list_json(self):
         """Generic tests for sub command 'list --json '"""
@@ -211,7 +216,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     def test_list_csv_no_headers(self):
         """Generic tests for sub command 'list --csv --no-headers '"""
@@ -221,7 +226,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     def test_list_csv(self):
         """Generic tests for sub command 'list --csv '"""
@@ -230,7 +235,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     def test_list_raw(self):
         """Generic tests for sub command 'list --raw '"""
@@ -239,7 +244,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     def test_list_json_raw_json(self):
         """Generic tests for sub command 'list --json --raw-json '"""
@@ -249,7 +254,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     def test_list_count(self):
         """Generic tests for sub command 'list --count '"""
@@ -258,7 +263,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     @SkipIfDisable('delete')
     def test_list_delete(self):
@@ -268,7 +273,7 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
 
     @SkipIfDisable('fields')
     def test_list_fields(self):
@@ -278,4 +283,4 @@ class AdminGenericTestList(LinShareTestCase):
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
-            self.assertTrue(False, ex.msg)
+            self.logSystemExit(ex)
