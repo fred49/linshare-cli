@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with LinShare user cli.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Copyright 2013 Frédéric MARTIN
+# Copyright 2013-2016 Frédéric MARTIN
 #
 # Contributors list :
 #
@@ -47,6 +47,7 @@ from linsharecli.user.thread import add_parser as add_threads_parser
 from linsharecli.user.tmember import add_parser as add_tmembers_parser
 from linsharecli.user.tdocuments import add_parser as add_tdocuments_parser
 from linsharecli.user.user import add_parser as add_users_parser
+from linsharecli.user.guest import add_parser as add_guest_parser
 from linsharecli.user.core import add_parser as add_core_parser
 import linsharecli
 
@@ -208,6 +209,7 @@ section 'server-4'""")
                                   "rshares",
                                   "Alias of received_share command", self.config)
         add_users_parser(subparsers, "users", "users", self.config)
+        add_guest_parser(subparsers, "guests", "guests", self.config)
         add_core_parser(subparsers, self.config)
 
 

@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with LinShare cli.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Copyright 2014 Frédéric MARTIN
+# Copyright 2014-2016 Frédéric MARTIN
 #
 # Contributors list :
 #
@@ -91,3 +91,16 @@ class NoneFormatter(Formatter):
         parameter = row.get(self.prop)
         if parameter is None:
             row[self.prop] = ""
+
+
+# -----------------------------------------------------------------------------
+class OwnerFormatter(Formatter):
+    """Convert resource owner (user) value to a readable name"""
+
+    def __init__(self, prop):
+        super(OwnerFormatter, self).__init__(prop)
+
+    def __call__(self, row, context=None):
+        parameter = row.get(self.prop)
+        if parameter:
+            row[self.prop] = '{firstName} {lastName} <{mail}>'.format(**parameter)
