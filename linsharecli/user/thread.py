@@ -61,6 +61,7 @@ class ThreadsCommand(DefaultCommand):
 class ThreadsListCommand(ThreadsCommand):
     """ List all threads store."""
     IDENTIFIER = "name"
+    DEFAULT_SORT = "name"
 
     @Time('linsharecli.threads', label='Global time : %(time)s')
     def __call__(self, args):
