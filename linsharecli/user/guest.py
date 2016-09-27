@@ -31,6 +31,7 @@ from linsharecli.user.core import DefaultCommand
 from linsharecli.common.filters import PartialMultipleAnd
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import OwnerFormatter
+from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from argtoolbox import DefaultCompleter as Completer
@@ -85,11 +86,47 @@ class GuestsListCommand(GuestsCommand):
             PartialOr("uuid", args.uuid),
             PartialOr(self.IDENTIFIER, args.pattern, True)
         ]
+        formatters = [
+            OwnerFormatter('owner'),
+            DateFormatter('creationDate'),
+            DateFormatter('modificationDate'),
+            DateFormatter('expirationDate')
+        ]
         return self._list(args, cli, table, json_obj, filters=filters,
-                          formatters=OwnerFormatter('owner'))
+                          formatters=formatters)
 
     def complete_fields(self, args, prefix):
         super(GuestsListCommand, self).__call__(args)
+        cli = self.ls.guests
+        return cli.get_rbu().get_keys(True)
+
+
+# -----------------------------------------------------------------------------
+class GuestsInfoCommand(GuestsCommand):
+    """ List all guests store into LinShare."""
+
+    @Time('linsharecli.guests', label='Global time : %(time)s')
+    def __call__(self, args):
+        super(GuestsInfoCommand, self).__call__(args)
+        cli = self.ls.guests
+        # args.extended = True
+        # args.vertical = True
+        table = self.get_table(args, cli, self.IDENTIFIER)
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
+        json_obj = []
+        for uuid in args.uuids:
+            json_obj.append(cli.get(uuid))
+        formatters = [
+            OwnerFormatter('owner'),
+            DateFormatter('creationDate'),
+            DateFormatter('modificationDate'),
+            DateFormatter('expirationDate')
+        ]
+        return self._list(args, cli, table, json_obj,
+                          formatters=formatters)
+
+    def complete_fields(self, args, prefix):
+        super(GuestsInfoCommand, self).__call__(args)
         cli = self.ls.guests
         return cli.get_rbu().get_keys(True)
 
@@ -187,3 +224,11 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('--can-upload', action="store", help="true or false")
     parser.add_argument('--restricted', action="store_false")
     parser.set_defaults(__func__=GuestsUpdateCommand(config))
+
+    # command : info
+    parser = subparsers2.add_parser(
+        'info',
+        help="info guests")
+    parser.add_argument('uuids', nargs='+').completer = Completer()
+    add_list_parser_options(parser, cdate=True)
+    parser.set_defaults(__func__=GuestsInfoCommand(config))
