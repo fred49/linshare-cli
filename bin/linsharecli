@@ -48,6 +48,7 @@ from linsharecli.user.tmember import add_parser as add_tmembers_parser
 from linsharecli.user.tdocuments import add_parser as add_tdocuments_parser
 from linsharecli.user.user import add_parser as add_users_parser
 from linsharecli.user.guest import add_parser as add_guest_parser
+from linsharecli.user.contactslists import add_parser as add_contactslists_parser
 from linsharecli.user.core import add_parser as add_core_parser
 import linsharecli
 
@@ -210,6 +211,7 @@ section 'server-4'""")
                                   "Alias of received_share command", self.config)
         add_users_parser(subparsers, "users", "users", self.config)
         add_guest_parser(subparsers, "guests", "guests", self.config)
+        add_contactslists_parser(subparsers, "contactslist", "contactslist", self.config)
         add_core_parser(subparsers, self.config)
 
 
