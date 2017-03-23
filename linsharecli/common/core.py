@@ -273,9 +273,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
     def _run(self, method, message_ok, err_suffix, *args):
         try:
             json_obj = method(*args)
-            self.log.info(message_ok, json_obj)
             if self.debug:
                 self.pretty_json(json_obj)
+            self.log.info(message_ok, json_obj)
             return True
         except LinShareException as ex:
             self.log.debug("LinShareException : " + str(ex.args))
