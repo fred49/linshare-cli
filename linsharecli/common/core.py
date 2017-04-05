@@ -68,6 +68,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
     MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s resources can not be updated."
     MSG_RS_CREATED = "The resource '%(label)s' (%(uuid)s) was successfully created. (%(time)s s)"
 
+    CFG_DELETE_MODE = 0
+    CFG_DELETE_ARG_ATTR = "parent_uuid"
+
     ACTIONS = {
         'delete' : '_delete_all',
         'download' : '_download_all',
@@ -209,7 +212,12 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         res = 0
         for uuid in uuids:
             position += 1
-            status = self._delete(args, cli, uuid, position, count)
+            if self.CFG_DELETE_MODE == 0:
+                status = self._delete(args, cli, uuid, position, count)
+            elif self.CFG_DELETE_MODE == 1:
+                status = self._delete_with_parent(args, cli, uuid, position, count)
+            else:
+                raise NotImplementedError()
             res += abs(status - 1)
         if res > 0:
             meta = {'count': res}
@@ -231,6 +239,35 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 json_obj = cli.get(uuid)
             else:
                 json_obj = cli.delete(uuid)
+                meta['time'] = self.ls.last_req_time
+            if not json_obj:
+                meta = {'uuid': uuid}
+                self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
+                return False
+            meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
+            self.pprint(self.MSG_RS_DELETED, meta)
+            return True
+        except urllib2.HTTPError as ex:
+            self.log.error("Delete error : %s", ex)
+            return False
+
+    def _delete_with_parent(self, args, cli, uuid, position=None, count=None):
+        try:
+            if not position:
+                position = 1
+                count = 1
+            meta = {}
+            meta['uuid'] = uuid
+            meta['time'] = " -"
+            meta['position'] = position
+            meta['count'] = count
+            parent_uuid = getattr(args, self.CFG_DELETE_ARG_ATTR, None)
+            if not parent_uuid:
+                raise ValueError("missing required arg : " + self.CFG_DELETE_ARG_ATTR)
+            if getattr(args, "dry_run", False):
+                json_obj = cli.get(parent_uuid, uuid)
+            else:
+                json_obj = cli.delete(parent_uuid, uuid)
                 meta['time'] = self.ls.last_req_time
             if not json_obj:
                 meta = {'uuid': uuid}
