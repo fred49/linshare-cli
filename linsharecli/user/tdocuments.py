@@ -145,7 +145,7 @@ class ThreadMembersCommand(DefaultCommand):
             meta['position'] = position
             meta['count'] = count
             if getattr(args, "dry_run", False):
-                json_obj = cli.get(uuid)
+                json_obj = cli.get(args.thread_uuid, uuid)
             else:
                 json_obj = cli.delete(args.thread_uuid, uuid)
                 meta['time'] = self.ls.last_req_time
