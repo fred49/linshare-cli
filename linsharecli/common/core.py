@@ -68,6 +68,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
     MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s resources can not be updated."
     MSG_RS_CREATED = "The resource '%(label)s' (%(uuid)s) was successfully created. (%(time)s s)"
 
+    CFG_DOWNLOAD_MODE = 0
+    CFG_DOWNLOAD_ARG_ATTR = "parent_uuid"
     CFG_DELETE_MODE = 0
     CFG_DELETE_ARG_ATTR = "parent_uuid"
 
@@ -170,7 +172,12 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         res = 0
         for uuid in uuids:
             position += 1
-            status = self._download(args, cli, uuid, position, count)
+            if self.CFG_DOWNLOAD_MODE == 0:
+                status = self._download(args, cli, uuid, position, count)
+            elif self.CFG_DOWNLOAD_MODE == 1:
+                status = self._download_with_parent(args, cli, uuid, position, count)
+            else:
+                raise NotImplementedError()
             res += abs(status - 1)
         if res > 0:
             meta = {'count': res}
@@ -194,6 +201,37 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 meta['name'] = json_obj.get('name')
             else:
                 file_name, req_time = cli.download(uuid, directory)
+                meta['name'] = file_name
+                meta['time'] = req_time
+            self.pprint(self.MSG_RS_DOWNLOADED, meta)
+            return True
+        except urllib2.HTTPError as ex:
+            meta['code'] = ex.code
+            meta['ex'] = str(ex)
+            if ex.code == 404:
+                self.pprint_error("http error : %(ex)s", meta)
+                self.pprint_error("Can not download the missing document : %(uuid)s", meta)
+            return False
+
+    def _download_with_parent(self, args, cli, uuid, position=None, count=None):
+        directory = getattr(args, "directory", None)
+        if directory:
+            if not os.path.isdir(directory):
+                os.makedirs(directory)
+        meta = {}
+        meta['uuid'] = uuid
+        meta['time'] = " -"
+        meta['position'] = position
+        meta['count'] = count
+        try:
+            parent_uuid = getattr(args, self.CFG_DOWNLOAD_ARG_ATTR, None)
+            if not parent_uuid:
+                raise ValueError("missing required arg : " + self.CFG_DOWNLOAD_ARG_ATTR)
+            if getattr(args, "dry_run", False):
+                json_obj = cli.get(parent_uuid, uuid)
+                meta['name'] = json_obj.get('name')
+            else:
+                file_name, req_time = cli.download(parent_uuid, uuid, directory)
                 meta['name'] = file_name
                 meta['time'] = req_time
             self.pprint(self.MSG_RS_DOWNLOADED, meta)
