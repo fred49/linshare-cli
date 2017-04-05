@@ -77,6 +77,12 @@ class ThreadMembersCommand(DefaultCommand):
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One document can not be downloaded."
     MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%(count)s documents can not be downloaded."
 
+    CFG_DOWNLOAD_MODE = 1
+    CFG_DOWNLOAD_ARG_ATTR = "thread_uuid"
+    CFG_DELETE_MODE = 1
+    CFG_DELETE_ARG_ATTR = "thread_uuid"
+
+
     ACTIONS = {
         'delete' : '_delete_all',
         'download' : '_download_all',
@@ -108,57 +114,6 @@ class ThreadMembersCommand(DefaultCommand):
             self.log.debug("LinShareException : " + str(ex.args))
             self.log.error(ex.args[1] + " : " + err_suffix)
         return False
-
-    def _download(self, args, cli, uuid, position=None, count=None):
-        directory = getattr(args, "directory", None)
-        if directory:
-            if not os.path.isdir(directory):
-                os.makedirs(directory)
-        meta = {}
-        meta['uuid'] = uuid
-        meta['time'] = " -"
-        meta['position'] = position
-        meta['count'] = count
-        try:
-            if getattr(args, "dry_run", False):
-                json_obj = cli.get(uuid)
-                meta['name'] = json_obj.get('name')
-            else:
-                file_name, req_time = cli.download(args.thread_uuid, uuid, directory)
-                meta['name'] = file_name
-                meta['time'] = req_time
-            self.pprint(self.MSG_RS_DOWNLOADED, meta)
-            return 0
-        except urllib2.HTTPError as ex:
-            meta['code'] = ex.code
-            meta['ex'] = str(ex)
-            if ex.code == 404:
-                self.pprint_error("http error : %(ex)s", meta)
-                self.pprint_error("Can not download the missing document : %(uuid)s", meta)
-            return 1
-
-    def _delete(self, args, cli, uuid, position=None, count=None):
-        try:
-            meta = {}
-            meta['uuid'] = uuid
-            meta['time'] = " -"
-            meta['position'] = position
-            meta['count'] = count
-            if getattr(args, "dry_run", False):
-                json_obj = cli.get(args.thread_uuid, uuid)
-            else:
-                json_obj = cli.delete(args.thread_uuid, uuid)
-                meta['time'] = self.ls.last_req_time
-            if not json_obj:
-                meta = {'uuid': uuid}
-                self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
-                return 1
-            meta['name'] = json_obj.get('name')
-            self.pprint(self.MSG_RS_DELETED, meta)
-            return 0
-        except urllib2.HTTPError as ex:
-            self.log.error("Delete error : %s", ex)
-            return 1
 
 
 # -----------------------------------------------------------------------------
