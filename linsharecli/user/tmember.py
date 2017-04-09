@@ -30,12 +30,11 @@ import urllib2
 from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.filters import PartialOr
-#from linsharecli.common.formatters import DateFormatter
+# from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linshareapi.core import LinShareException
 from argtoolbox import DefaultCompleter as Completer
-
 
 
 # -----------------------------------------------------------------------------
@@ -71,13 +70,21 @@ class ThreadMembersCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Thread members found : %(count)s"
     MSG_RS_NOT_FOUND = "No thread members could be found."
-    MSG_RS_DELETED = "%(position)s/%(count)s: The thread '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
-    MSG_RS_CAN_NOT_BE_DELETED = "The thread '%(uuid)s' can not be deleted."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s thread(s) can not be deleted."
+    MSG_RS_DELETED = ("%(position)s/%(count)s: "
+                      "The thread '%(name)s' (%(uuid)s) was deleted. "
+                      "(%(time)s s)"
+                      )
+    MSG_RS_CAN_NOT_BE_DELETED = ("The thread entry '%(uuid)s' "
+                                 "can not be deleted."
+                                 )
+    MSG_RS_CAN_NOT_BE_DELETED_M = ("%(count)s thread entries "
+                                   "can not be deleted."
+                                   "fred"
+                                   )
 
     ACTIONS = {
-        'delete' : '_delete_all',
-        'count_only' : '_count_only',
+        'delete': '_delete_all',
+        'count_only': '_count_only',
     }
 
     def _delete(self, args, cli, uuid, position=None, count=None):
@@ -103,14 +110,15 @@ class ThreadMembersCommand(DefaultCommand):
             self.log.error("Delete error : %s", ex)
             return 1
 
-
     def complete(self, args, prefix):
         super(ThreadMembersCommand, self).__call__(args)
-        #from argcomplete import debug
-        #debug("\n------------ test -----------------")
+        # from argcomplete import debug
+        # debug("\n------------ test -----------------")
         json_obj = self.ls.thread_members.list(args.thread_uuid)
         return (
-            v.get('userUuid') for v in json_obj if v.get('userUuid').startswith(prefix))
+            v.get('userUuid') for v in json_obj if v.get(
+                'userUuid'
+            ).startswith(prefix))
 
     def complete_threads(self, args, prefix):
         super(ThreadMembersCommand, self).__call__(args)
@@ -130,7 +138,6 @@ class ThreadMembersCommand(DefaultCommand):
             warn("Completion need at least 3 characters.")
             warn("---------------------------------------")
 
-
     def _run(self, method, message_ok, err_suffix, *args):
         try:
             json_obj = method(*args)
@@ -142,7 +149,6 @@ class ThreadMembersCommand(DefaultCommand):
             self.log.debug("LinShareException : " + str(ex.args))
             self.log.error(ex.args[1] + " : " + err_suffix)
         return False
-
 
 
 # -----------------------------------------------------------------------------
@@ -158,7 +164,7 @@ class ThreadMembersListCommand(ThreadMembersCommand):
         # Filters
         filters = PartialOr(self.IDENTIFIER, args.identifiers, True)
         # Formatters
-        #formatters = [DateFormatter('creationDate'),
+        # formatters = [DateFormatter('creationDate'),
         #            DateFormatter('modificationDate')]
         return self._list(args, cli, table, json_obj, filters=filters)
 
@@ -198,8 +204,7 @@ class ThreadMembersUpdateCommand(ThreadMembersCommand):
         rbu.load_from_args(args)
         return self._run(
             self.ls.thread_members.update,
-            "The following thread members '%(name)s' was successfully \
-updated",
+            "The following thread members '%(name)s' was successfully updated",
             args.uuid,
             rbu.to_resource())
 
@@ -259,5 +264,6 @@ def add_parser(subparsers, name, desc, config):
         'update', help="update thread.")
     parser.add_argument(
         'userUuid', action="store", help="").completer = Completer()
-    parser.add_argument('role', choices=["admin", "normal","restricted"], help="")
+    parser.add_argument('role', choices=["admin", "normal", "restricted"],
+                        help="")
     parser.set_defaults(__func__=ThreadMembersUpdateCommand(config))
