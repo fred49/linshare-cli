@@ -58,8 +58,10 @@ import linsharecli
 
 
 sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
+
+
 # Not use full ?
-#sys.stdin = codecs.getreader(locale.getpreferredencoding())(sys.stdin)
+# sys.stdin = codecs.getreader(locale.getpreferredencoding())(sys.stdin)
 
 # -----------------------------------------------------------------------------
 class LinShareCliProgram(BasicProgram):
@@ -75,11 +77,12 @@ class LinShareCliProgram(BasicProgram):
             required=True))
         section_server.add_element(Element(
             'api_version',
-            default=int(os.getenv('LS_API', 1)),
+            default=int(os.getenv('LS_API', 2)),
             e_type=int,
-            desc="""The linshare api version to be used. Default '1'.
+            desc="""The linshare api version to be used. Default '2'.
 * For LinShare Core = 1.7.x, use api_version=0.
 * For LinShare Core >= 1.8.x, use api_version=1.
+* For LinShare Core >= 2.0.x, use api_version=2.
 The default value can be overriden by the env variable LS_API, which can be
 overriden by this parameter."""))
 
@@ -93,7 +96,9 @@ overriden by this parameter."""))
 
         section_server.add_element(Element(
             'base_url',
-            desc="Default value is 'linshare/webservice/rest'"))
+            desc="""This parameter is dynamically computed according api_version value.
+For api_version=2, its default value will be 'linshare/webservice/rest/user/v2'.
+You can also override it according your environment."""))
 
         section_server.add_element(Element(
             'nocache',
@@ -196,12 +201,28 @@ section 'server-4'""")
         subparsers = self.parser.add_subparsers()
         add_document_parser(subparsers, "documents", "Documents management",
                             self.config)
-        add_threads_parser(subparsers, "threads", "threads management",
-                           self.config)
-        add_tmembers_parser(subparsers, "tmembers",
-                            "thread members management", self.config)
-        add_tdocuments_parser(subparsers, "tdocuments", "thread documents ",
-                              self.config)
+
+        cmd_name = "threads"
+        cmd_desc = "threads management"
+        if self.config.server.api_version.value >= 2:
+            cmd_name = "workgroups"
+            cmd_desc = "workgroups management"
+        add_threads_parser(subparsers, cmd_name, cmd_desc, self.config)
+
+        cmd_name = "tmembers"
+        cmd_desc = "thread members management"
+        if self.config.server.api_version.value >= 2:
+            cmd_name = "wg-members"
+            cmd_desc = "workgroup members management"
+        add_tmembers_parser(subparsers, cmd_name, cmd_desc, self.config)
+
+        cmd_name = "tdocuments"
+        cmd_desc = "thread documents management"
+        if self.config.server.api_version.value >= 2:
+            cmd_name = "wg-content"
+            cmd_desc = "workgroup content management"
+        add_tdocuments_parser(subparsers, cmd_name, cmd_desc, self.config)
+
         add_share_parser(subparsers, "shares", "Created shares management",
                          self.config)
         add_received_share_parser(subparsers,
