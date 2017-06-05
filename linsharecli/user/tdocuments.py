@@ -26,24 +26,23 @@
 
 from __future__ import unicode_literals
 
-import os
-import urllib2
 from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
 from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.formatters import SizeFormatter
+from linsharecli.common.formatters import LastAuthorFormatter
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
 from linshareapi.core import LinShareException
-from argtoolbox import DefaultCompleter as Completer
-
+from linshareapi.core import ResourceBuilder
+# from argtoolbox import DefaultCompleter as Completer
 
 
 # -----------------------------------------------------------------------------
-class ThreadCompleter(object):
+class WorkgroupCompleter(object):
 
     def __init__(self, config):
         self.config = config
@@ -58,7 +57,7 @@ class ThreadCompleter(object):
                 debug("\t - " + str(j))
             debug("\n------------ ThreadCompleter -----------------\n")
             args = kwargs.get('parsed_args')
-            thread_cmd = ThreadDocumentsListCommand(self.config)
+            thread_cmd = WgNodeContentListCommand(self.config)
             return thread_cmd.complete_threads(args, prefix)
         # pylint: disable-msg=W0703
         except Exception as ex:
@@ -66,21 +65,26 @@ class ThreadCompleter(object):
 
 
 # -----------------------------------------------------------------------------
-class ThreadMembersCommand(DefaultCommand):
+class WgNodesCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Documents found : %(count)s"
     MSG_RS_NOT_FOUND = "No documents could be found."
-    MSG_RS_DELETED = "%(position)s/%(count)s: The document '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
+    MSG_RS_DELETED = ("%(position)s/%(count)s: "
+                      "The document '%(name)s' (%(uuid)s) was deleted. "
+                      "(%(time)s s)")
     MSG_RS_CAN_NOT_BE_DELETED = "The document '%(uuid)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s document(s) can not be deleted."
-    MSG_RS_DOWNLOADED = "%(position)s/%(count)s: The document '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
+    MSG_RS_DOWNLOADED = ("%(position)s/%(count)s: "
+                         "The document '%(name)s' (%(uuid)s) was downloaded. "
+                         "(%(time)s s)")
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One document can not be downloaded."
-    MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%(count)s documents can not be downloaded."
+    MSG_RS_CAN_NOT_BE_DOWNLOADED_M = ("%(count)s "
+                                      "documents can not be downloaded.")
 
     CFG_DOWNLOAD_MODE = 1
-    CFG_DOWNLOAD_ARG_ATTR = "thread_uuid"
+    CFG_DOWNLOAD_ARG_ATTR = "wg_uuid"
     CFG_DELETE_MODE = 1
-    CFG_DELETE_ARG_ATTR = "thread_uuid"
+    CFG_DELETE_ARG_ATTR = "wg_uuid"
 
     ACTIONS = {
         'delete': '_delete_all',
@@ -89,16 +93,17 @@ class ThreadMembersCommand(DefaultCommand):
     }
 
     def complete(self, args, prefix):
-        super(ThreadMembersCommand, self).__call__(args)
+        super(WgNodesCommand, self).__call__(args)
         # from argcomplete import debug
         # debug("\n------------ test -----------------")
-        json_obj = self.ls.thread_members.list(args.thread_uuid)
+        json_obj = self.ls.thread_members.list(args.wg_uuid)
         return (
-            v.get('userUuid') for v in json_obj if v.get('userUuid').startswith(prefix))
+            v.get('userUuid') for v in json_obj if v.get(
+                'userUuid').startswith(prefix))
 
     def complete_threads(self, args, prefix):
         """TODO"""
-        super(ThreadMembersCommand, self).__call__(args)
+        super(WgNodesCommand, self).__call__(args)
         json_obj = self.ls.threads.list()
         return (v.get('uuid')
                 for v in json_obj if v.get('uuid').startswith(prefix))
@@ -117,9 +122,9 @@ class ThreadMembersCommand(DefaultCommand):
 
 
 # -----------------------------------------------------------------------------
-class ThreadDocumentsUploadCommand(ThreadMembersCommand):
+class ThreadDocumentsUploadCommand(WgNodesCommand):
     """ Upload a file to LinShare using its rest api. return the uploaded
-    document uuid  """
+document uuid  """
 
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
@@ -128,46 +133,51 @@ class ThreadDocumentsUploadCommand(ThreadMembersCommand):
         position = 0
         for file_path in args.files:
             position += 1
-            json_obj = self.ls.thread_entries.upload(args.thread_uuid, file_path, args.description)
+            json_obj = self.ls.thread_entries.upload(
+                args.wg_uuid, file_path, args.description)
             if json_obj:
                 json_obj['time'] = self.ls.last_req_time
                 json_obj['position'] = position
                 json_obj['count'] = count
                 self.log.info(
-                    "%(position)s/%(count)s: The file '%(name)s' (%(uuid)s) was uploaded. (%(time)ss)",
+                    ("%(position)s/%(count)s: "
+                     "The file '%(name)s' (%(uuid)s) was uploaded. "
+                     "(%(time)ss)"),
                     json_obj)
         return True
 
 
 # -----------------------------------------------------------------------------
-class ThreadDocumentsListCommand(ThreadMembersCommand):
+class WgNodeContentListCommand(WgNodesCommand):
     """ List all thread members."""
 
-    @Time('linsharecli.tdocument', label='Global time : %(time)s')
+    @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
-        super(ThreadDocumentsListCommand, self).__call__(args)
-        cli = self.ls.thread_entries
+        super(WgNodeContentListCommand, self).__call__(args)
+        cli = self.ls.workgroup_nodes
         table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list(args.thread_uuid)
+        json_obj = cli.list(args.wg_uuid)
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.names, True),
                    PartialDate("creationDate", args.cdate)]
         # Formatters
         formatters = [DateFormatter('creationDate'),
-                      SizeFormatter('size'),
+                      DateFormatter('uploadDate'),
+                      SizeFormatter('size', "-"),
+                      LastAuthorFormatter('lastAuthor'),
                       DateFormatter('modificationDate')]
         return self._list(args, cli, table, json_obj, formatters, filters)
 
     def complete_fields(self, args, prefix):
-        super(ThreadDocumentsListCommand, self).__call__(args)
+        super(WgNodeContentListCommand, self).__call__(args)
         cli = self.ls.thread_entries
         return cli.get_rbu().get_keys(True)
 
 
 # -----------------------------------------------------------------------------
-class ThreadDocumentsDownloadCommand(ThreadDocumentsListCommand):
+class ThreadDocumentsDownloadCommand(WgNodeContentListCommand):
 
-    @Time('linsharecli.tdocument', label='Global time : %(time)s')
+    @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadDocumentsDownloadCommand, self).__call__(args)
         cli = self.ls.thread_entries
@@ -175,9 +185,9 @@ class ThreadDocumentsDownloadCommand(ThreadDocumentsListCommand):
 
 
 # -----------------------------------------------------------------------------
-class ThreadDocumentsDeleteCommand(ThreadDocumentsListCommand):
+class ThreadDocumentsDeleteCommand(WgNodeContentListCommand):
 
-    @Time('linsharecli.tdocument', label='Global time : %(time)s')
+    @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadDocumentsDeleteCommand, self).__call__(args)
         cli = self.ls.thread_entries
@@ -185,35 +195,49 @@ class ThreadDocumentsDeleteCommand(ThreadDocumentsListCommand):
 
 
 # -----------------------------------------------------------------------------
+class FolderCreateCommand(WgNodesCommand):
+
+    @Time('linsharecli.threads', label='Global time : %(time)s')
+    def __call__(self, args):
+        super(FolderCreateCommand, self).__call__(args)
+        cli = self.ls.workgroup_folders
+        rbu = cli.get_rbu()
+        rbu.load_from_args(args)
+        return self._run(
+            cli.create,
+            ("The following folder '%(name)s' "
+             "(%(uuid)s) was successfully created"),
+            args.name,
+            rbu.to_resource())
+
+
+# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     parser_tmp = subparsers.add_parser(name, help=desc)
     parser_tmp.add_argument(
-        '-u',
-        '--uuid',
-        action="store",
-        dest="thread_uuid",
-        help="thread uuid",
-        required=True).completer = ThreadCompleter(config)
+        'wg_uuid',
+        help="workgroup uuid"
+        ).completer = WorkgroupCompleter(config)
 
     subparsers2 = parser_tmp.add_subparsers()
 
     # command : list
     parser = subparsers2.add_parser(
         'list',
-        help="list documents from linshare")
+        help="list workgroup nodes from linshare")
     parser.add_argument(
         'names', nargs="*",
         help="Filter documents by their names")
     add_list_parser_options(
-        parser, download=True, delete=True, cdate=True)[3]
-    parser.set_defaults(__func__=ThreadDocumentsListCommand(config))
+        parser, download=True, delete=True, cdate=True)
+    parser.set_defaults(__func__=WgNodeContentListCommand(config))
 
     # command : delete
     parser = subparsers2.add_parser(
         'delete',
         help="delete thread members")
     add_delete_parser_options(parser)
-    parser.set_defaults(__func__=ThreadDocumentsListCommand(config))
+    parser.set_defaults(__func__=WgNodeContentListCommand(config))
 
     # command : download
     parser = subparsers2.add_parser(
@@ -230,4 +254,10 @@ def add_parser(subparsers, name, desc, config):
                         required=False, help="Optional description.")
     parser.add_argument('files', nargs='+')
     parser.set_defaults(__func__=ThreadDocumentsUploadCommand(config))
+
+    # command : create
+    parser = subparsers2.add_parser(
+        'create', help="create thread.")
+    parser.add_argument('name', action="store", help="")
+    parser.set_defaults(__func__=FolderCreateCommand(config))
 

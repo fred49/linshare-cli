@@ -72,13 +72,17 @@ class DateFormatter(Formatter):
 class SizeFormatter(Formatter):
     """TODO"""
 
-    def __init__(self, prop):
+    def __init__(self, prop, empty=None):
         super(SizeFormatter, self).__init__(prop)
+        self.empty = empty
 
     def __call__(self, row, context=None):
         lsize = row.get(self.prop)
         if lsize is not None:
             row[self.prop] = filesize(lsize, system=si)
+        else:
+            if self.empty:
+                row[self.prop] = self.empty
 
 
 # -----------------------------------------------------------------------------
@@ -108,7 +112,8 @@ class OwnerFormatter(Formatter):
     def __call__(self, row, context=None):
         parameter = row.get(self.prop)
         if parameter:
-            row[self.prop] = '{firstName} {lastName} <{mail}>'.format(**parameter)
+            row[self.prop] = '{firstName} {lastName} <{mail}>'.format(
+                **parameter)
 
 
 # -----------------------------------------------------------------------------
@@ -158,3 +163,15 @@ class UserProvidersFormatter(Formatter):
                           )
                 output.append(display.format(**param))
             row[self.prop] = ",".join(output)
+
+class LastAuthorFormatter(Formatter):
+    """Convert resource owner (user) value to a readable name"""
+
+    def __init__(self, prop):
+        super(LastAuthorFormatter, self).__init__(prop)
+
+    def __call__(self, row, context=None):
+        parameter = row.get(self.prop)
+        if parameter:
+            row[self.prop] = '{name} <{mail}>'.format(
+                **parameter)
