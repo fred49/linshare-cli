@@ -888,3 +888,46 @@ class HTable(VeryPrettyTable, BaseTable):
     def get_raw(self):
         options = self._get_options({'fields': self.keys})
         return self._get_rows(options)
+
+
+# -----------------------------------------------------------------------------
+class CreateAction(object):
+
+    def __init__(self, command, args, cli, rbu=None):
+        self.cli = cli
+        self.confirm_msg = command.MSG_RS_CREATED
+        self.identifier = command.RESOURCE_IDENTIFIER
+        self.err_suffix = getattr(args, command.IDENTIFIER)
+        self.debug = command.debug
+        self.cli_mode = args.cli_mode
+        self.log = command.log
+        if rbu is None:
+            self.rbu = self.cli.get_rbu()
+            self.rbu.load_from_args(args)
+        else:
+            self.rbu = rbu
+
+    def pretty_json(self, obj):
+        """Just a pretty printer for a json object."""
+        print json.dumps(obj, sort_keys=True, indent=2)
+
+    def execute(self):
+        try:
+            json_obj = self._execute()
+            if json_obj is None:
+                self.log.error("Missing return statement for _execute method")
+                return False
+            if self.debug:
+                self.pretty_json(json_obj)
+            if self.cli_mode:
+                print json_obj.get(self.identifier)
+                return True
+            self.log.info(self.confirm_msg, json_obj)
+            return True
+        except LinShareException as ex:
+            self.log.debug("LinShareException : " + str(ex.args))
+            self.log.error(ex.args[1] + " : " + str(self.err_suffix))
+        return False
+
+    def _execute(self):
+        return self.cli.create(self.rbu.to_resource())

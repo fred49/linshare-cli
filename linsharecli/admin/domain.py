@@ -32,6 +32,7 @@ from linsharecli.common.formatters import NoneFormatter
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
+from linsharecli.common.core import CreateAction
 from argtoolbox import DefaultCompleter as Completer
 
 
@@ -45,11 +46,11 @@ class DomainsCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Domain found : %(count)s"
     MSG_RS_NOT_FOUND = "No domain could be found."
-    MSG_RS_DELETED = "%(position)s/%(count)s: The domain '%(label)s' (%(uuid)s) was deleted. (%(time)s s)"
-    MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(label)s'  '%(uuid)s' can not be deleted."
+    MSG_RS_DELETED = "%(position)s/%(count)s: The domain '%(label)s' (%(identifier)s) was deleted. (%(time)s s)"
+    MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(label)s'  '%(identifier)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain (s) can not be deleted."
-    MSG_RS_UPDATED = "The domain '%(label)s' (%(uuid)s) was successfully updated. (%(time)s s)"
-    MSG_RS_CREATED = "The domain '%(label)s' (%(uuid)s) was successfully created. (%(time)s s)"
+    MSG_RS_UPDATED = "The domain '%(label)s' (%(identifier)s) was successfully updated."
+    MSG_RS_CREATED = "The domain '%(label)s' (%(identifier)s) was successfully created."
 
     def init_old_language_key(self):
         """For  api >= 1.6 and api <= 1.8"""
@@ -120,13 +121,10 @@ class DomainsCreateCommand(DomainsCommand):
 
     def __call__(self, args):
         super(DomainsCreateCommand, self).__call__(args)
-        rbu = self.ls.domains.get_rbu()
-        rbu.load_from_args(args)
-        return self._run(
-            self.ls.domains.create,
-            "The following domain '%(identifier)s' was successfully created",
-            args.identifier,
-            rbu.to_resource())
+        if self.api_version == 0:
+            self.init_old_language_key()
+        act = CreateAction(self, args, self.ls.domains)
+        return act.execute()
 
     def complete(self, args, prefix):
         super(DomainsCreateCommand, self).__call__(args)
@@ -400,6 +398,7 @@ def add_parser(subparsers, name, desc, config):
     parser_tmp2.add_argument(
         '--mail-config', dest="mail_config", action="store",
         help="TODO").completer = Completer("complete_mail")
+    parser_tmp2.add_argument('--cli-mode', action="store_true", help="")
     parser_tmp2.set_defaults(__func__=DomainsCreateCommand(config))
 
     # command : update

@@ -31,6 +31,7 @@ from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_delete_parser_options
+from linsharecli.common.core import CreateAction
 from argtoolbox import DefaultCompleter as Completer
 
 
@@ -47,8 +48,8 @@ class DomainPatternsCommand(DefaultCommand):
     MSG_RS_DELETED = "%(position)s/%(count)s: The domain pattern '%(label)s' (%(uuid)s) was deleted. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DELETED = "The domain pattern '%(label)s'  '%(uuid)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain pattern(s) can not be deleted."
-    MSG_RS_UPDATED = "The domain pattern '%(label)s' (%(uuid)s) was successfully updated. (%(time)s s)"
-    MSG_RS_CREATED = "The domain pattern '%(label)s' (%(uuid)s) was successfully created. (%(time)s s)"
+    MSG_RS_UPDATED = "The domain pattern '%(label)s' (%(uuid)s) was successfully updated."
+    MSG_RS_CREATED = "The domain pattern '%(label)s' (%(uuid)s) was successfully created."
 
     def init_old_language_key(self):
         """For  api >= 1.6 and api <= 1.8"""
@@ -146,12 +147,8 @@ class DomainPatternsCreateCommand(DomainPatternsCommand):
                     rbu.set_value('description', "")
                     break
         rbu.load_from_args(args)
-        return self._run(
-            self.ls.domain_patterns.create,
-            "The following domain pattern '%(identifier)s' was successfully \
-created",
-            args.identifier,
-            rbu.to_resource())
+        act = CreateAction(self, args, self.ls.domain_patterns, rbu)
+        return act.execute()
 
 
 # -----------------------------------------------------------------------------
@@ -172,12 +169,11 @@ class DomainPatternsCreateCommand2(DomainPatternsCommand):
                     rbu.set_value('description', "")
                     break
         rbu.load_from_args(args)
-        return self._run(
-            self.ls.domain_patterns.create,
-            "The following domain pattern '%(label)s' (%(uuid)s) was successfully \
-created",
-            args.label,
-            rbu.to_resource())
+        class MyCreateAction(CreateAction):
+            def _execute(self):
+                return self.cli.create(self.rbu.to_resource())
+        act = MyCreateAction(self, args, self.ls.domain_patterns, rbu)
+        return act.execute()
 
     def complete(self, args, prefix):
         super(DomainPatternsCreateCommand2, self).__call__(args)
@@ -255,6 +251,7 @@ def add_parser(subparsers, name, desc, config):
                              action="store", help="")
     parser_tmp2.add_argument('--auto-complete-command-on-first-and-last-name',
                              action="store", help="")
+    parser_tmp2.add_argument('--cli-mode', action="store_true", help="")
     if api_version == 0:
         parser_tmp2.add_argument('identifier', action="store", help="")
         parser_tmp2.set_defaults(__func__=DomainPatternsCreateCommand(config))

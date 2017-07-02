@@ -31,6 +31,7 @@ from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
 from linsharecli.common.core import add_list_parser_options
+from linsharecli.common.core import CreateAction
 
 
 # -----------------------------------------------------------------------------
@@ -84,14 +85,8 @@ class DomainPoliciesCreateCommand(DomainPoliciesCommand):
     @Time('linshareadmcli.domain_policies', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainPoliciesCreateCommand, self).__call__(args)
-        rbu = self.ls.domain_policies.get_rbu()
-        rbu.load_from_args(args)
-        return self._run(
-            self.ls.domain_policies.create,
-            "The following domain policy '%(identifier)s' was successfully \
-created",
-            args.identifier,
-            rbu.to_resource())
+        act = CreateAction(self, args, self.ls.domain_policies)
+        return act.execute()
 
 
 # -----------------------------------------------------------------------------
@@ -156,6 +151,7 @@ def add_parser(subparsers, name, desc, config):
         'create', help="create domain policies.")
     parser_tmp2.add_argument('identifier', action="store", help="")
     parser_tmp2.add_argument('--description', action="store", help="")
+    parser_tmp2.add_argument('--cli-mode', action="store_true", help="")
     parser_tmp2.set_defaults(__func__=DomainPoliciesCreateCommand(config))
 
     # command : update

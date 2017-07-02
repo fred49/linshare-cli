@@ -28,6 +28,7 @@ from __future__ import unicode_literals
 
 from linshareapi.cache import Time
 from linsharecli.common.core import add_list_parser_options
+from linsharecli.common.core import CreateAction
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_delete_parser_options
@@ -106,15 +107,8 @@ class LdapConnectionsCreateCommand(LdapConnectionsCommand):
         self.log.debug("api_version : " + str(self.api_version))
         if self.api_version == 0:
             self.init_old_language_key()
-        identifier = getattr(args, self.IDENTIFIER)
-        rbu = self.ls.ldap_connections.get_rbu()
-        rbu.load_from_args(args)
-        return self._run(
-            self.ls.ldap_connections.create,
-            self.MSG_RS_CREATED,
-            identifier,
-            rbu.to_resource())
-
+        act = CreateAction(self, args, self.ls.ldap_connections)
+        return act.execute()
 
 # -----------------------------------------------------------------------------
 class LdapConnectionsUpdateCommand(LdapConnectionsCommand):
@@ -189,6 +183,7 @@ def add_parser(subparsers, name, desc, config):
                              required=True)
     parser_tmp2.add_argument('--principal', action="store", help="")
     parser_tmp2.add_argument('--credential', action="store", help="")
+    parser_tmp2.add_argument('--cli-mode', action="store_true", help="")
     if api_version == 0:
         parser_tmp2.add_argument('identifier', action="store", help="")
         parser_tmp2.set_defaults(__func__=LdapConnectionsCreateCommand(config))
