@@ -229,9 +229,15 @@ class DomainProvidersCreateCommand(DomainsCommand):
         rbu.load_from_args(args)
         providers = [{
             "baseDn": args.basedn,
-            "domainPatternId": args.dpattern,
-            "ldapConnectionId": args.ldap
+            "userLdapPatternUuid": args.dpattern,
+            "ldapConnectionUuid": args.ldap
         }]
+        if self.api_version < 2:
+            providers = [{
+                "baseDn": args.basedn,
+                "domainPatternId": args.dpattern,
+                "ldapConnectionId": args.ldap
+            }]
         rbu.set_value("providers", providers)
         return self._run(
             self.ls.domains.update,
@@ -308,11 +314,16 @@ class DomainProvidersUpdateCommand(DomainsCommand):
         rbu.copy(resource)
         rbu.load_from_args(args)
         resource = rbu.to_resource()
+        ldap_uuid = "ldapConnectionUuid"
+        ldap_pattern_uuid = "userLdapPatternUuid"
+        if self.api_version < 2:
+            ldap_uuid = "ldapConnectionId"
+            ldap_pattern_uuid = "domainPatternId"
         for i in resource['providers']:
             if args.ldap is not None:
-                i['ldapConnectionId'] = args.ldap
+                i[ldap_uuid] = args.ldap
             if args.dpattern is not None:
-                i['domainPatternId'] = args.dpattern
+                i[ldap_pattern_uuid] = args.dpattern
             if args.basedn is not None:
                 i['baseDn'] = args.basedn
         return self._run(
