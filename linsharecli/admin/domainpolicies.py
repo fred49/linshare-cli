@@ -50,6 +50,7 @@ class DomainPoliciesCommand(DefaultCommand):
     MSG_RS_DOWNLOADED = "%(position)s/%(count)s: The domain policy '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One domain policy can not be downloaded."
     MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%s domain policies can not be downloaded."
+    MSG_RS_CREATED = "The domain policy '%(identifier)s' (%(uuid)s) was successfully created. (%(_time)s s)"
 
     def complete(self, args, prefix):
         super(DomainPoliciesCommand, self).__call__(args)

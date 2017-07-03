@@ -31,6 +31,7 @@ import sys
 import os
 import logging
 import json
+import time
 import getpass
 import datetime
 import argtoolbox
@@ -66,7 +67,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
     MSG_RS_UPDATED = "The resource '%(name)s' (%(uuid)s) was successfully updated. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_UPDATED = "One resource can not be updated."
     MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s resources can not be updated."
-    MSG_RS_CREATED = "The resource '%(label)s' (%(uuid)s) was successfully created. (%(time)s s)"
+    MSG_RS_CREATED = "The resource '%(name)s' (%(uuid)s) was successfully created. (%(_time)s s)"
 
     CFG_DOWNLOAD_MODE = 0
     CFG_DOWNLOAD_ARG_ATTR = "parent_uuid"
@@ -913,7 +914,10 @@ class CreateAction(object):
 
     def execute(self):
         try:
+            start = time.time()
             json_obj = self._execute()
+            end = time.time()
+            json_obj['_time'] = end - start
             if json_obj is None:
                 self.log.error("Missing return statement for _execute method")
                 return False

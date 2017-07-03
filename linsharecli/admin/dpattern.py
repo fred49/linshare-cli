@@ -49,7 +49,7 @@ class DomainPatternsCommand(DefaultCommand):
     MSG_RS_CAN_NOT_BE_DELETED = "The domain pattern '%(label)s'  '%(uuid)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain pattern(s) can not be deleted."
     MSG_RS_UPDATED = "The domain pattern '%(label)s' (%(uuid)s) was successfully updated."
-    MSG_RS_CREATED = "The domain pattern '%(label)s' (%(uuid)s) was successfully created."
+    MSG_RS_CREATED = "The domain pattern '%(label)s' (%(uuid)s) was successfully created. (%(_time)s s)"
 
     def init_old_language_key(self):
         """For  api >= 1.6 and api <= 1.8"""
