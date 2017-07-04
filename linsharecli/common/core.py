@@ -893,24 +893,36 @@ class HTable(VeryPrettyTable, BaseTable):
 
 # -----------------------------------------------------------------------------
 class CreateAction(object):
+    """TODO"""
 
     def __init__(self, command, args, cli, rbu=None):
         self.cli = cli
         self.confirm_msg = command.MSG_RS_CREATED
         self.identifier = command.RESOURCE_IDENTIFIER
-        self.err_suffix = getattr(args, command.IDENTIFIER)
+        self.err_suffix = getattr(args, command.IDENTIFIER, None)
         self.debug = command.debug
         self.cli_mode = args.cli_mode
         self.log = command.log
+        self.data = None
         if rbu is None:
-            self.rbu = self.cli.get_rbu()
-            self.rbu.load_from_args(args)
+            rbu = self.cli.get_rbu()
+            rbu.load_from_args(args)
+            self.data = rbu.to_resource()
         else:
-            self.rbu = rbu
+            self.data = rbu
 
-    def pretty_json(self, obj):
+    def pprint(self, msg, meta={}):
+        msg = msg % meta
+        self.log.debug(msg)
+        print msg
+
+    def pretty_json(self, obj, title=None):
         """Just a pretty printer for a json object."""
-        print json.dumps(obj, sort_keys=True, indent=2)
+        if title:
+            title += " : "
+        else:
+            title = ""
+        self.log.debug(title + json.dumps(obj, sort_keys=True, indent=2))
 
     def execute(self):
         try:
@@ -922,11 +934,11 @@ class CreateAction(object):
                 self.log.error("Missing return statement for _execute method")
                 return False
             if self.debug:
-                self.pretty_json(json_obj)
+                self.pretty_json(json_obj, "Json object returned by the server")
             if self.cli_mode:
                 print json_obj.get(self.identifier)
                 return True
-            self.log.info(self.confirm_msg, json_obj)
+            self.pprint(self.confirm_msg, json_obj)
             return True
         except LinShareException as ex:
             self.log.debug("LinShareException : " + str(ex.args))
@@ -934,4 +946,6 @@ class CreateAction(object):
         return False
 
     def _execute(self):
-        return self.cli.create(self.rbu.to_resource())
+        if self.debug:
+            self.pretty_json(self.data, "Json object sent to the server")
+        return self.cli.create(self.data)

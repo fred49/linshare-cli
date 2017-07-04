@@ -33,6 +33,7 @@ from linsharecli.common.filters import PartialOr
 # from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
+from linsharecli.common.core import CreateAction
 from linshareapi.core import LinShareException
 from argtoolbox import DefaultCompleter as Completer
 
@@ -70,22 +71,25 @@ class ThreadMembersCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Thread members found : %(count)s"
     MSG_RS_NOT_FOUND = "No thread members could be found."
-    MSG_RS_DELETED = ("%(position)s/%(count)s: "
-                      "The thread '%(name)s' (%(uuid)s) was deleted. "
-                      "(%(time)s s)"
-                      )
-    MSG_RS_CAN_NOT_BE_DELETED = ("The thread entry '%(uuid)s' "
-                                 "can not be deleted."
-                                 )
-    MSG_RS_CAN_NOT_BE_DELETED_M = ("%(count)s thread entries "
-                                   "can not be deleted."
-                                   "fred"
-                                   )
+    MSG_RS_DELETED = (
+        "%(position)s/%(count)s: "
+        "The thread member (%(uuid)s) was deleted.")
+    MSG_RS_CAN_NOT_BE_DELETED = (
+        "The thread member '%(uuid)s' can not be deleted.")
+    MSG_RS_CAN_NOT_BE_DELETED_M = (
+        "%(count)s thread entries can not be deleted.")
+    MSG_RS_CREATED = (
+        "The thread member '%(firstName)s %(lastName)s' "
+        "(%(userUuid)s) was successfully created. (%(_time)s s)")
 
     ACTIONS = {
         'delete': '_delete_all',
         'count_only': '_count_only',
     }
+
+    def init_old_language_key(self):
+        """For api <= 2"""
+        pass
 
     def _delete(self, args, cli, uuid, position=None, count=None):
         try:
@@ -102,13 +106,13 @@ class ThreadMembersCommand(DefaultCommand):
             if not json_obj:
                 meta = {'uuid': uuid}
                 self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
-                return 1
+                return False
             meta['name'] = json_obj.get('name')
             self.pprint(self.MSG_RS_DELETED, meta)
-            return 0
+            return True
         except urllib2.HTTPError as ex:
             self.log.error("Delete error : %s", ex)
-            return 1
+            return False
 
     def complete(self, args, prefix):
         super(ThreadMembersCommand, self).__call__(args)
@@ -180,19 +184,24 @@ class ThreadMembersCreateCommand(ThreadMembersCommand):
     @Time('linsharecli.tmembers', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadMembersCreateCommand, self).__call__(args)
+        if self.api_version < 2:
+            self.init_old_language_key()
         rbu = self.ls.thread_members.get_rbu()
         rbu.load_from_args(args)
         data = rbu.to_resource()
-        print data
-        user = self.ls.users.get(data.get('userMail'))
+        user_mail = args.mail
+        user = self.ls.users.get(user_mail)
+        if not user:
+            self.log.error("Can not find an user using this email: %s",
+                           user_mail)
+            return False
+        if self.debug:
+            self.pretty_json(user)
         data['userDomainId'] = user.get('domain')
-        return self.ls.thread_members.create(data)
-        return self._run(
-            self.ls.thread_members.create,
-            "The following thread members '%(name)s' was successfully \
-created",
-            args.user_mail,
-            rbu.to_resource())
+        act = CreateAction(self, args, self.ls.thread_members, data)
+        # workaround : can not get resource identifier using command.IDENTIFIER
+        act.err_suffix = user_mail
+        return act.execute()
 
 
 # -----------------------------------------------------------------------------
@@ -252,11 +261,13 @@ def add_parser(subparsers, name, desc, config):
         'create', help="create thread member.")
     parser.add_argument(
         '--mail',
-        dest="user_mail",
+        dest="mail",
+        required=True,
         help="").completer = Completer('complete_mail')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--admin', action="store_true", help="")
     group.add_argument('--readonly', action="store_true", help="")
+    parser.add_argument('--cli-mode', action="store_true", help="")
     parser.set_defaults(__func__=ThreadMembersCreateCommand(config))
 
     # command : update
