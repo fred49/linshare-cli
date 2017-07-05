@@ -166,7 +166,7 @@ class FunctionalityListCommand(FunctionalityCommand):
         table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         if args.sort_type:
             table.sortby = "type"
-        json_obj = cli.list(args.domain, args.only_parents)
+        json_obj = cli.list(args.domain, args.sub_funcs)
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.identifiers, True),
                    PartialOr("type", args.funct_type, True)]
@@ -493,7 +493,7 @@ def add_parser(subparsers, name, desc, config):
     filter_group.add_argument('--type', action="append",
                         dest="funct_type",
                         help="Filter on functionality type")
-    filter_group.add_argument('--only-parents', action="store_false",
+    filter_group.add_argument('--sub-funcs', action="store_true",
                         help="Sub functionalities will not be displayed, since core 1.7")
     sort_group = groups[1]
     sort_group.add_argument('--sort-type', action="store_true",
