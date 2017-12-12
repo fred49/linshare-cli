@@ -75,6 +75,7 @@ class LinShareCliProgram(BasicProgram):
             required=True))
         section_server.add_element(Element(
             'api_version',
+            required=True,
             default=int(os.getenv('LS_API', 2)),
             e_type=int,
             desc="""The linshare api version to be used. Default '1'.
@@ -239,6 +240,7 @@ Advanced debug:
 * If you need debug during class construction, config file loading,
 you just need to export _LINSHARE_CLI_USER_DEBUG=True
 * To debug auto completion, you need to export _ARC_DEBUG=1.
+* Disable SSL verification : export PYTHONHTTPSVERIFY=0
 
 ================================================================
 """)

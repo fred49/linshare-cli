@@ -82,22 +82,22 @@ class ThreadMembersCommand(DefaultCommand):
     CFG_DELETE_MODE = 1
     CFG_DELETE_ARG_ATTR = "thread_uuid"
 
-
     ACTIONS = {
-        'delete' : '_delete_all',
-        'download' : '_download_all',
-        'count_only' : '_count_only',
+        'delete': '_delete_all',
+        'download': '_download_all',
+        'count_only': '_count_only',
     }
 
     def complete(self, args, prefix):
         super(ThreadMembersCommand, self).__call__(args)
-        #from argcomplete import debug
-        #debug("\n------------ test -----------------")
+        # from argcomplete import debug
+        # debug("\n------------ test -----------------")
         json_obj = self.ls.thread_members.list(args.thread_uuid)
         return (
             v.get('userUuid') for v in json_obj if v.get('userUuid').startswith(prefix))
 
     def complete_threads(self, args, prefix):
+        """TODO"""
         super(ThreadMembersCommand, self).__call__(args)
         json_obj = self.ls.threads.list()
         return (v.get('uuid')
@@ -151,11 +151,11 @@ class ThreadDocumentsListCommand(ThreadMembersCommand):
         json_obj = cli.list(args.thread_uuid)
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.names, True),
-                 PartialDate("creationDate", args.cdate)]
+                   PartialDate("creationDate", args.cdate)]
         # Formatters
         formatters = [DateFormatter('creationDate'),
-                    SizeFormatter('size'),
-                    DateFormatter('modificationDate')]
+                      SizeFormatter('size'),
+                      DateFormatter('modificationDate')]
         return self._list(args, cli, table, json_obj, formatters, filters)
 
     def complete_fields(self, args, prefix):
