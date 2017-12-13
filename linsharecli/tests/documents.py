@@ -82,7 +82,7 @@ class TestDocumentsList(LinShareTestCase):
         output = self.run_default0(command)
         self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
         self.assertEqual(len(output[0]), self.DATA_DOCUMENTS_WIDTH)
-        self.assertRegexpMatches(output[-4], "^\| file5.*")
+        self.assertRegexpMatches(output[-4], r"^\| file5.*")
 
     def test_documents_list3(self, *args):
         """retrieve documents list reversed sorted by name"""
@@ -90,7 +90,7 @@ class TestDocumentsList(LinShareTestCase):
         output = self.run_default0(command)
         self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
         self.assertEqual(len(output[0]), self.DATA_DOCUMENTS_WIDTH)
-        self.assertRegexpMatches(output[-4], "^\| file0.*")
+        self.assertRegexpMatches(output[-4], r"^\| file0.*")
 
     def test_documents_list4(self, *args):
         """retrieve documents list with csv output"""
@@ -168,20 +168,20 @@ class TestDocumentsList(LinShareTestCase):
         self.assertEqual(output[0], "6 documents can not be downloaded.\n")
 
     @patch('linshareapi.user.documents.Documents.delete', return_value=deepcopy(
-           {
-             "ciphered": False,
-             "creationDate": 1424735870159,
-             "description": "",
-             "expirationDate": 1432425468866,
-             "metaData": None,
-             "modificationDate": 1424735870385,
-             "name": "aa",
-             "sha256sum":
-               "916e2eab1fbc18c548a1ac89eb157b7a44e313f8116958984eca2d99eaba6d",
-             "size": 10140,
-             "type": "text/plain",
-             "uuid": "f62a1fad-0692-4ec8-8cde-68f1cc3f9b49"
-           }))
+        {
+            "ciphered": False,
+            "creationDate": 1424735870159,
+            "description": "",
+            "expirationDate": 1432425468866,
+            "metaData": None,
+            "modificationDate": 1424735870385,
+            "name": "aa",
+            "sha256sum":
+            "916e2eab1fbc18c548a1ac89eb157b7a44e313f8116958984eca2d99eaba6d",
+            "size": 10140,
+            "type": "text/plain",
+            "uuid": "f62a1fad-0692-4ec8-8cde-68f1cc3f9b49"
+        }))
     def test_documents_list10(self, *args):
         """retrieve documents list and try to delete them"""
         command = "documents list --delete"
@@ -198,47 +198,50 @@ class TestDocumentsList(LinShareTestCase):
         self.assertEqual(output[0], "6 document(s) can not be deleted.\n")
 
     def test_documents_list12(self, *args):
-        """retrieve documents list and try to download them (all should failed)"""
-        FIRST_LINE = 3
-        LAST_LINE = -4
+        """
+        retrieve documents list and try to download them (all should failed)
+        """
+
+        first_line = 3
+        last_line = -4
         # start
         command = "documents list --start 2"
         output = self.run_default0(command)
         self.assertEqual(len(output), 10)
-        self.assertRegexpMatches(output[FIRST_LINE], "^\| file4.*")
-        self.assertRegexpMatches(output[LAST_LINE], "^\| file3.*")
+        self.assertRegexpMatches(output[first_line], r"^\| file4.*")
+        self.assertRegexpMatches(output[last_line], r"^\| file3.*")
         # start and sort by name
         command = "documents list --start 2 --sort-name"
         output = self.run_default0(command)
         self.assertEqual(len(output), 10)
-        self.assertRegexpMatches(output[FIRST_LINE], "^\| file2.*")
-        self.assertRegexpMatches(output[LAST_LINE], "^\| file5.*")
+        self.assertRegexpMatches(output[first_line], r"^\| file2.*")
+        self.assertRegexpMatches(output[last_line], r"^\| file5.*")
 
         # end
         command = "documents list --end 2"
         output = self.run_default0(command)
         self.assertEqual(len(output), 8)
-        self.assertRegexpMatches(output[FIRST_LINE], "^\| file2.*")
-        self.assertRegexpMatches(output[LAST_LINE], "^\| file3.*")
+        self.assertRegexpMatches(output[first_line], r"^\| file2.*")
+        self.assertRegexpMatches(output[last_line], r"^\| file3.*")
         # end and sort by name
         command = "documents list --end 2 --sort-name"
         output = self.run_default0(command)
         self.assertEqual(len(output), 8)
-        self.assertRegexpMatches(output[FIRST_LINE], "^\| file4.*")
-        self.assertRegexpMatches(output[LAST_LINE], "^\| file5.*")
+        self.assertRegexpMatches(output[first_line], r"^\| file4.*")
+        self.assertRegexpMatches(output[last_line], r"^\| file5.*")
 
         # limit and start
         command = "documents list --start 2 --limit 2"
         output = self.run_default0(command)
         self.assertEqual(len(output), 8)
-        self.assertRegexpMatches(output[FIRST_LINE], "^\| file4.*")
-        self.assertRegexpMatches(output[LAST_LINE], "^\| file1.*")
+        self.assertRegexpMatches(output[first_line], r"^\| file4.*")
+        self.assertRegexpMatches(output[last_line], r"^\| file1.*")
         # limit and  end
         command = "documents list --end 3 --limit 2"
         output = self.run_default0(command)
         self.assertEqual(len(output), 8)
-        self.assertRegexpMatches(output[FIRST_LINE], "^\| file1.*")
-        self.assertRegexpMatches(output[LAST_LINE], "^\| file2.*")
+        self.assertRegexpMatches(output[first_line], r"^\| file1.*")
+        self.assertRegexpMatches(output[last_line], r"^\| file2.*")
 
     @patch('linshareapi.user.shares.Shares.share',
            return_value=(204, "coucou", 2))
