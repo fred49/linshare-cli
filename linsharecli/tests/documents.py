@@ -32,13 +32,9 @@ def load_data(file_name):
     return json.load(template)
 
 
-DATA_DOCUMENTS = load_data('documents.list.json')
-DATA_CREATED_SHARE = load_data('documents.create.json')
-
-
 @patch('linshareapi.core.CoreCli.auth', return_value=True)
 @patch('linshareapi.user.documents.Documents.list',
-       new_callable=MockServerResults(DATA_DOCUMENTS))
+       new_callable=MockServerResults(load_data('documents.list.json')))
 # pylint: disable=unused-argument
 class TestDocumentsList(LinShareTestCase):
     """TODO"""
@@ -262,7 +258,7 @@ class TestDocumentsList(LinShareTestCase):
             self.assertTrue(True)
 
     @patch('linshareapi.user.shares.Shares2.create',
-           new_callable=MockServerResults(DATA_CREATED_SHARE))
+           new_callable=MockServerResults(load_data('documents.create.json')))
     def test_documents_list13b(self, *args):
         """retrieve documents list and share them"""
         command = "documents list file5 --share --mail bart.simpson@localhost"
