@@ -1,0 +1,37 @@
+[
+  {
+    "ciphered": null,
+    "creationDate": 1440945179751,
+    "description": null,
+    "document": {
+      "ciphered": false,
+      "creationDate": 1413644784988,
+      "description": "",
+      "expirationDate": null,
+      "metaData": null,
+      "modificationDate": 1440945181335,
+      "name": "fortest_499",
+      "sha256sum": null,
+      "size": 898,
+      "type": "text/plain",
+      "uuid": "09159704-c17b-46ef-ae26-6f9cce4e9d9a"
+    },
+    "downloaded": null,
+    "expirationDate": 1448893979725,
+    "message": null,
+    "modificationDate": 1440945179751,
+    "name": "fortest_499",
+    "recipient": {
+              "domain": "topdomain",
+              "firstName": "Bart",
+              "lastName": "Simpson",
+              "mail": "bart.simpson@nodomain.com",
+              "uuid": "27573c44-f896-42e7-ba0d-7bec7ba67568"
+            },
+    "sender": null,
+    "size": null,
+    "type": null,
+    "uuid": "9487e4f3-978e-4496-8bb6-1e7b283df0cc"
+  }
+]
+

@@ -1,0 +1,86 @@
+[
+  {
+    "ciphered": false,
+    "creationDate": 1423939307964,
+    "description": "",
+    "expirationDate": 1431628907886,
+    "metaData": null,
+    "modificationDate": 1423939308129,
+    "name": "file0",
+    "sha256sum": "30e14955ebf1352266dc2ff867e6810467e750abb9d3b36582b8af909fcb58",
+    "size": 1048576,
+    "type": "application/octet-stream",
+    "uuid": "bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810"
+  },
+
+  {
+    "ciphered": false,
+    "creationDate": 1423939308392,
+    "description": "",
+    "expirationDate": 1431628908366,
+    "metaData": null,
+    "modificationDate": 1423939308429,
+    "name": "file1",
+    "sha256sum": "30e14955ebf1352266dc2ff867e6810467e750abb9d3b36582b8af909fcb58",
+    "size": 1048576,
+    "type": "application/octet-stream",
+    "uuid": "aa1c3d54-5f84-4b6d-8c84-62f5b230135e"
+  },
+
+  {
+    "ciphered": false,
+    "creationDate": 1423939308880,
+    "description": "",
+    "expirationDate": 1431628908779,
+    "metaData": null,
+    "modificationDate": 1423939308912,
+    "name": "file2",
+    "sha256sum": "5647f05ec18958947d32874eeb788fa396a05dbab7c1b71f112ceb7e9b31eee",
+    "size": 2097152,
+    "type": "application/octet-stream",
+    "uuid": "fe2ee707-3c02-45a9-ae08-d88c47fb9aef"
+  },
+
+  {
+    "ciphered": false,
+    "creationDate": 1423939309188,
+    "description": "",
+    "expirationDate": 1431628909147,
+    "metaData": null,
+    "modificationDate": 1423939309267,
+    "name": "file3",
+    "sha256sum": "30e14955ebf1352266dc2ff867e6810467e750abb9d3b36582b8af909fcb58",
+    "size": 1048576,
+    "type": "application/octet-stream",
+    "uuid": "47cadd7a-4548-467a-8079-42b9681671e3"
+  },
+
+  {
+    "ciphered": false,
+    "creationDate": 1423939307567,
+    "description": "",
+    "expirationDate": null,
+    "metaData": null,
+    "modificationDate": 1423944517141,
+    "name": "file4",
+    "sha256sum": "30e14955ebf1352266dc2ff867e6810467e750abb9d3b36582b8af909fcb58",
+    "size": 1048576,
+    "type": "application/octet-stream",
+    "uuid": "b2ab14b0-2070-4a50-b51b-0bbe61861d3e"
+  },
+
+  {
+    "ciphered": false,
+    "creationDate": 1423939305959,
+    "description": "",
+    "expirationDate": null,
+    "metaData": null,
+    "modificationDate": 1423958403408,
+    "name": "file5",
+    "sha256sum": "30e14955ebf1352266dc2ff867e6810467e750abb9d3b36582b8af909fcb58",
+    "size": 1048576,
+    "type": "application/octet-stream",
+    "uuid": "26b3adbb-6e59-48fc-bd73-c84c01afb5de"
+  }
+
+]

@@ -1,15 +1,19 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
+"""
+TODO
+"""
 
-# -----------------------------------------------------------------------------
-# Imports
 
+import json
 import logging
 import urllib2
+
 from mock import patch
-from mock import Mock
+# from mock import Mock
 from copy import deepcopy
+import pkg_resources
 from linsharecli.tests.core import MockServerResults
 from linsharecli.tests.core import LinShareTestCase
 
@@ -21,130 +25,23 @@ from linsharecli.user.user import add_parser as add_users_parser
 
 LOG = logging.getLogger("documents")
 
-DATA_DOCUMENTS = [
-{
-    "ciphered": False,
-    "creationDate": 1423939307964,
-    "description": "",
-    "expirationDate": 1431628907886,
-    "metaData": None,
-    "modificationDate": 1423939308129,
-    "name": "file0",
-    "sha256sum": "30e14955ebf1352266dc2ff867e6810467e750abb9d3b36582b8af909fcb58",
-    "size": 1048576,
-    "type": "application/octet-stream",
-    "uuid": "bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810"
-},
-{
-    "ciphered": False,
-    "creationDate": 1423939308392,
-    "description": "",
-    "expirationDate": 1431628908366,
-    "metaData": None,
-    "modificationDate": 1423939308429,
-    "name": "file1",
-    "sha256sum": "30e14955ebf1352266dc2ff867e6810467e750abb9d3b36582b8af909fcb58",
-    "size": 1048576,
-    "type": "application/octet-stream",
-    "uuid": "aa1c3d54-5f84-4b6d-8c84-62f5b230135e"
-  },
-  {
-    "ciphered": False,
-    "creationDate": 1423939308880,
-    "description": "",
-    "expirationDate": 1431628908779,
-    "metaData": None,
-    "modificationDate": 1423939308912,
-    "name": "file2",
-    "sha256sum": "5647f05ec18958947d32874eeb788fa396a05dbab7c1b71f112ceb7e9b31eee",
-    "size": 2097152,
-    "type": "application/octet-stream",
-    "uuid": "fe2ee707-3c02-45a9-ae08-d88c47fb9aef"
-  },
-  {
-    "ciphered": False,
-    "creationDate": 1423939309188,
-    "description": "",
-    "expirationDate": 1431628909147,
-    "metaData": None,
-    "modificationDate": 1423939309267,
-    "name": "file3",
-    "sha256sum": "30e14955ebf1352266dc2ff867e6810467e750abb9d3b36582b8af909fcb58",
-    "size": 1048576,
-    "type": "application/octet-stream",
-    "uuid": "47cadd7a-4548-467a-8079-42b9681671e3"
-  },
-  {
-    "ciphered": False,
-    "creationDate": 1423939307567,
-    "description": "",
-    "expirationDate": None,
-    "metaData": None,
-    "modificationDate": 1423944517141,
-    "name": "file4",
-    "sha256sum": "30e14955ebf1352266dc2ff867e6810467e750abb9d3b36582b8af909fcb58",
-    "size": 1048576,
-    "type": "application/octet-stream",
-    "uuid": "b2ab14b0-2070-4a50-b51b-0bbe61861d3e"
-  },
-  {
-    "ciphered": False,
-    "creationDate": 1423939305959,
-    "description": "",
-    "expirationDate": None,
-    "metaData": None,
-    "modificationDate": 1423958403408,
-    "name": "file5",
-    "sha256sum": "30e14955ebf1352266dc2ff867e6810467e750abb9d3b36582b8af909fcb58",
-    "size": 1048576,
-    "type": "application/octet-stream",
-    "uuid": "26b3adbb-6e59-48fc-bd73-c84c01afb5de"
-  }
-]
 
-DATA_CREATED_SHARE = [
-      {
-              "ciphered": None,
-              "creationDate": 1440945179751,
-              "description": None,
-              "document": {
-                "ciphered": False,
-                "creationDate": 1413644784988,
-                "description": "",
-                "expirationDate": None,
-                "metaData": None,
-                "modificationDate": 1440945181335,
-                "name": "fortest_499",
-                "sha256sum": None,
-                "size": 898,
-                "type": "text/plain",
-                "uuid": "09159704-c17b-46ef-ae26-6f9cce4e9d9a"
-              },
-              "downloaded": None,
-              "expirationDate": 1448893979725,
-              "message": None,
-              "modificationDate": 1440945179751,
-              "name": "fortest_499",
-              "recipient": {
-                        "domain": "topdomain",
-                        "firstName": "Bart",
-                        "lastName": "Simpson",
-                        "mail": "bart.simpson@nodomain.com",
-                        "uuid": "27573c44-f896-42e7-ba0d-7bec7ba67568"
-                      },
-              "sender": None,
-              "size": None,
-              "type": None,
-              "uuid": "9487e4f3-978e-4496-8bb6-1e7b283df0cc"
-            }
-]
+def load_data(file_name):
+    """read file, parse content and return json object."""
+    template = pkg_resources.resource_stream(__name__, file_name)
+    return json.load(template)
 
 
-# -----------------------------------------------------------------------------
+DATA_DOCUMENTS = load_data('documents.list.json')
+DATA_CREATED_SHARE = load_data('documents.create.json')
+
+
 @patch('linshareapi.core.CoreCli.auth', return_value=True)
 @patch('linshareapi.user.documents.Documents.list',
        new_callable=MockServerResults(DATA_DOCUMENTS))
+# pylint: disable=unused-argument
 class TestDocumentsList(LinShareTestCase):
+    """TODO"""
 
     ##########################
     # * header : 3 lines
