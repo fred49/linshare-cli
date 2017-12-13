@@ -273,3 +273,83 @@ class TestDocumentsList(LinShareTestCase):
             self.assertEqual(len(output), 45)
         else:
             self.assertEqual(len(output), 9)
+
+
+class MockDeleteDocumentResult(object):
+    """TODO"""
+
+    def __init__(self, data, attr=None, arg_pos=0):
+        self.data = data
+        self.attr = attr
+        self.arg_pos = arg_pos
+
+    def __call__(self):
+        def get_data_copy(*args):
+            """TODO"""
+            data = deepcopy(self.data)
+            if self.attr:
+                data[self.attr] = "test-key-" + args[self.arg_pos]
+            return data
+        return get_data_copy
+
+
+@patch('linshareapi.core.CoreCli.auth', return_value=True)
+# pylint: disable=unused-argument
+class TestDocumentsDelete(LinShareTestCase):
+    """TODO"""
+
+    def setUp(self):
+        super(TestDocumentsDelete, self).setUp()
+        add_document_parser(self.subparsers, "documents",
+                            "Documents management",
+                            self.config)
+
+    @patch('linshareapi.user.documents.Documents.delete',
+           new_callable=MockDeleteDocumentResult(
+               load_data('documents.delete.json'), 'name', 1))
+    def test_documents_delete1(self, *args):
+        """retrieve documents list and try to download them (all failed)"""
+        command = "documents delete bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810"
+        output = self.run_default0(command)
+        self.assertEqual(len(output), 2)
+        self.assertRegexpMatches(
+            "".join(output),
+            ".*'test-key-bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810'.*")
+        self.assertRegexpMatches(
+            "".join(output),
+            ".*was deleted.*")
+
+    @patch('linshareapi.user.documents.Documents.delete', return_value=None)
+    def test_documents_delete2(self, *args):
+        """retrieve documents list and try to download them (all failed)"""
+        command = "documents delete bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810"
+        output = self.run_default0(command)
+        self.assertEqual(len(output), 3)
+        self.assertRegexpMatches(
+            "".join(output),
+            ".*'bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810'.*")
+        self.assertRegexpMatches(
+            "".join(output),
+            ".*can not be deleted.*")
+
+    @patch('linshareapi.user.documents.Documents.delete',
+           new_callable=MockDeleteDocumentResult(
+               load_data('documents.delete.json'), 'name', 1))
+    def test_documents_delete3(self, *args):
+        """retrieve documents list and try to download them (all failed)"""
+        uuids = [
+            'bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810',
+            'aa1c3d54-5f84-4b6d-8c84-62f5b230135e'
+        ]
+        command = " ".join(['documents', 'delete'] + uuids)
+        output = self.run_default0(command)
+        self.assertEqual(len(output), 3)
+        self.assertRegexpMatches(
+            "".join(output),
+            ".*'test-key-bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810'.*")
+        self.assertRegexpMatches(
+            "".join(output),
+            ".*'test-key-aa1c3d54-5f84-4b6d-8c84-62f5b230135e'.*")
+        self.assertRegexpMatches(
+            "".join(output),
+            ".*was deleted.*")

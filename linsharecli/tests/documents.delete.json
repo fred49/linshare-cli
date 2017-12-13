@@ -1,0 +1,13 @@
+{
+  "ciphered": false,
+  "creationDate": 1423939307964,
+  "description": "",
+  "expirationDate": 1431628907886,
+  "metaData": null,
+  "modificationDate": 1423939308129,
+  "name": "file1",
+  "sha256sum": "30e14955ebf1352266dc2ff867e6810467e750abb9d3b36582b8af909fcb58",
+  "size": 1048576,
+  "type": "application/octet-stream",
+  "uuid": "TODO"
+}

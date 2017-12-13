@@ -4,6 +4,7 @@
 
 
 from linsharecli.tests.documents import TestDocumentsList
+from linsharecli.tests.documents import TestDocumentsDelete
 from linsharecli.tests.threads import TestThreadsList
 import unittest
 import logging
@@ -29,6 +30,7 @@ def get_all_tests():
     for version in VERSIONS:
         suites.addTest(load_tests(loader, version, TestDocumentsList))
         suites.addTest(load_tests(loader, version, TestThreadsList))
+        suites.addTest(load_tests(loader, version, TestDocumentsDelete))
     return suites
 
 if __name__ == '__main__':
