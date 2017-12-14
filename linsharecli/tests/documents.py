@@ -6,14 +6,13 @@ TODO
 """
 
 
-import json
 import logging
 import urllib2
 
+from copy import deepcopy
 from mock import patch
 # from mock import Mock
-from copy import deepcopy
-import pkg_resources
+from linsharecli.tests.core import load_data
 from linsharecli.tests.core import MockServerResults
 from linsharecli.tests.core import LinShareTestCase
 
@@ -24,12 +23,6 @@ from linsharecli.user.thread import add_parser as add_threads_parser
 from linsharecli.user.user import add_parser as add_users_parser
 
 LOG = logging.getLogger("documents")
-
-
-def load_data(file_name):
-    """read file, parse content and return json object."""
-    template = pkg_resources.resource_stream(__name__, file_name)
-    return json.load(template)
 
 
 @patch('linshareapi.core.CoreCli.auth', return_value=True)
@@ -245,17 +238,12 @@ class TestDocumentsList(LinShareTestCase):
     @patch('linshareapi.user.shares.Shares.share',
            return_value=(204, "coucou", 2))
     def test_documents_list13(self, *args):
-        """retrieve documents list and download them"""
+        """retrieve documents list and share them"""
         command = "documents list file5 --share --mail bart.simpson@localhost"
         if self.api_version == 1:
             return True
-
-        # self.assertRaises(ValueError, self.run_default0(command))
-        try:
+        with self.assertRaises(ValueError):
             self.run_default0(command)
-            self.assertTrue(False)
-        except ValueError:
-            self.assertTrue(True)
 
     @patch('linshareapi.user.shares.Shares2.create',
            new_callable=MockServerResults(load_data('documents.create.json')))
@@ -264,7 +252,6 @@ class TestDocumentsList(LinShareTestCase):
         command = "documents list file5 --share --mail bart.simpson@localhost"
         if self.api_version == 0:
             return True
-
         output = self.run_default0(command)
         self.assertRegexpMatches("".join(output), ".*Bart Simpson.*")
         self.assertRegexpMatches("".join(output),
@@ -275,6 +262,7 @@ class TestDocumentsList(LinShareTestCase):
             self.assertEqual(len(output), 9)
 
 
+# pylint: disable=too-few-public-methods
 class MockDeleteDocumentResult(object):
     """TODO"""
 

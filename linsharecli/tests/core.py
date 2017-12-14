@@ -1,20 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
+"""TODO"""
 
 # -----------------------------------------------------------------------------
 # Imports
 
 import sys
 import os
+import json
 import unittest
 import argparse
 import codecs
 import logging
 import uuid
 import tempfile
-import mock
 from copy import deepcopy
+import mock
+import pkg_resources
 
 
 # debug level superior or equal to three may have side effect
@@ -33,20 +36,30 @@ STREAMHANDLER.setFormatter(DEBUG_LOGGING_FORMAT)
 LOG.addHandler(STREAMHANDLER)
 
 
-# -----------------------------------------------------------------------------
-class MockServerResults:
+def load_data(file_name):
+    """read file, parse content and return json object."""
+    template = pkg_resources.resource_stream(__name__, file_name)
+    return json.load(template)
+
+
+# pylint: disable=too-few-public-methods
+class MockServerResults(object):
+    """TODO"""
 
     def __init__(self, data):
         self.data = data
 
     def __call__(self):
+        # pylint: disable=unused-argument
         def get_data_copy(*args):
+            """TODO"""
             return deepcopy(self.data)
         return get_data_copy
 
 
 # -----------------------------------------------------------------------------
 class LinShareTestCase(unittest.TestCase):
+    """TODO"""
 
     api_version = int(os.getenv('_TEST_LINSHARE_CLI_USER_API_VERSION', 0))
 
@@ -114,11 +127,14 @@ class LinShareTestCase(unittest.TestCase):
             self.get_default_ns())
         try:
             return args.__func__(args)
+        # pylint: disable=broad-except
         except Exception as ex:
             sys.stdout = sys.stdout2
             print ex
             return False
 
+
+    # pylint: disable=no-self-use
     def get_temp_file(self):
         """TODO"""
         dest = os.path.join(
@@ -128,7 +144,6 @@ class LinShareTestCase(unittest.TestCase):
 
     def run_default_sub1(self, command):
         """TODO"""
-        file_path = '/tmp/toto'
         file_path = self.get_temp_file()
         stdout = codecs.open(file_path, "w", "utf-8")
         sys.stdout2 = sys.stdout
@@ -152,7 +167,6 @@ class LinShareTestCase(unittest.TestCase):
 
     def run_default_sub2(self, command):
         """TODO"""
-        file_path = '/tmp/toto'
         file_path = self.get_temp_file()
         stdout = codecs.open(file_path, "w", "utf-8")
         sys.stdout2 = sys.stdout
