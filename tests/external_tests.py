@@ -276,12 +276,12 @@ class LaunchTestProgram(BasicProgram):
 
         # command: test one test method for a command
         pat = subparsers.add_parser(
-            'list-method',
+            'methods',
             help="only list available tests")
         pat.set_defaults(__func__=ListMethodTestsCommand(self.config))
         # command: test one test method for a command
         pat = subparsers.add_parser(
-            'list-command',
+            'commands',
             help="only list available commands and config")
         pat.add_argument(
             "command", nargs="?",
