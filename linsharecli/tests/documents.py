@@ -296,7 +296,7 @@ class TestDocumentsDelete(LinShareTestCase):
            new_callable=MockDeleteDocumentResult(
                load_data('documents.delete.json'), 'name', 1))
     def test_documents_delete1(self, *args):
-        """retrieve documents list and try to download them (all failed)"""
+        """delete one document"""
         command = "documents delete bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810"
         output = self.run_default0(command)
         self.assertEqual(len(output), 2)
@@ -307,9 +307,10 @@ class TestDocumentsDelete(LinShareTestCase):
             "".join(output),
             ".*was deleted.*")
 
-    @patch('linshareapi.user.documents.Documents.delete', return_value=None)
+    @patch('linshareapi.user.documents.Documents.delete',
+           return_value=None)
     def test_documents_delete2(self, *args):
-        """retrieve documents list and try to download them (all failed)"""
+        """Trying to delete missing document"""
         command = "documents delete bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810"
         output = self.run_default0(command)
         self.assertEqual(len(output), 3)
@@ -324,7 +325,7 @@ class TestDocumentsDelete(LinShareTestCase):
            new_callable=MockDeleteDocumentResult(
                load_data('documents.delete.json'), 'name', 1))
     def test_documents_delete3(self, *args):
-        """retrieve documents list and try to download them (all failed)"""
+        """delete two documents"""
         uuids = [
             'bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810',
             'aa1c3d54-5f84-4b6d-8c84-62f5b230135e'
