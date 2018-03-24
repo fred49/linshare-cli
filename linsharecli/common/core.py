@@ -131,13 +131,14 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                               key=itemgetter(self.DEFAULT_SORT_SIZE))
         if getattr(args, 'sort_name', False):
             table.sortby = self.DEFAULT_SORT_NAME
+        cli_mode = getattr(args, 'cli_mode', False)
         self.log.debug("final table.sortby : %s", table.sortby)
         for key in self.ACTIONS.keys():
             if getattr(args, key, False):
                 table.load(json_obj, filters, formatters, ignore_exceptions)
                 rows = table.get_raw()
                 if key == 'count_only':
-                    if getattr(args, 'cli_mode', False):
+                    if cli_mode:
                         print len(rows)
                     else:
                         meta = {'count': len(rows)}
@@ -145,12 +146,22 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                     return True
                 else:
                     if len(rows) == 0:
-                        if not getattr(args, 'cli_mode', False):
+                        if not cli_mode:
                             self.pprint(self.MSG_RS_NOT_FOUND)
                         return True
                     uuids = [row.get(self.RESOURCE_IDENTIFIER) for row in rows]
                     method = getattr(self, self.ACTIONS.get(key))
                     return method(args, cli, uuids)
+        if cli_mode:
+            keys = [self.RESOURCE_IDENTIFIER, ]
+            if args.fields:
+                keys = args.fields
+            for json_row in json_obj:
+                output = []
+                for key in keys:
+                    output.append(json_row.get(key))
+                print " ".join(output)
+            return True
         table.show_table(json_obj, filters, formatters, ignore_exceptions)
         meta = {'count': len(table.get_raw())}
         self.pprint(self.DEFAULT_TOTAL, meta)
@@ -548,7 +559,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             self.print_list(json_obj, d_format, "Documents",
                             no_legend=no_legend)
 
-    def get_table(self, args, cli, first_column, keys=[]):
+    def get_table(self, args, cli, first_column, in_keys=None):
+        keys = []
         args.vertical = getattr(args, "vertical", False)
         if not args.vertical:
             if getattr(args, "json", False):
@@ -561,8 +573,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                         args.vertical = True
         args.reverse = getattr(args, "reverse", False)
         args.extended = getattr(args, "extended", False)
-        if keys:
-            if not self.IDENTIFIER in  keys:
+        if in_keys:
+            keys += in_keys
+            if self.IDENTIFIER not in in_keys:
                 keys.insert(0, self.IDENTIFIER)
         else:
             keys = cli.get_rbu().get_keys(args.extended)
@@ -641,11 +654,14 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
     format_group.add_argument(
         '--raw', action="store_true",
         help="Disable all data formatters (time, size, ...)")
+    format_group.add_argument('--cli-mode', action="store_true",
+                              help="""Cli mode will format output to be used in
+                              a script, by returning only identifiers or numbers
+                              without any information messages.""")
 
     # actions
     actions_group = parser.add_argument_group('Actions')
     download_group = parser.add_argument_group('Downloading options')
-    actions_group.add_argument('--cli-mode', action="store_true", help="")
     actions_group.add_argument(
         '-c', '--count', action="store_true", dest="count_only",
         help="Just display number of results instead of results.")
