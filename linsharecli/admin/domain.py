@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -26,6 +27,7 @@
 
 from __future__ import unicode_literals
 
+from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import NoneFormatter
@@ -33,10 +35,9 @@ from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import CreateAction
-from argtoolbox import DefaultCompleter as Completer
 
 
-# -----------------------------------------------------------------------------
+# pylint: disable=too-many-instance-attributes
 class DomainsCommand(DefaultCommand):
     """For  api >= 1.9"""
     IDENTIFIER = "label"
@@ -46,27 +47,29 @@ class DomainsCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Domain found : %(count)s"
     MSG_RS_NOT_FOUND = "No domain could be found."
+    # pylint: disable=line-too-long
     MSG_RS_DELETED = "%(position)s/%(count)s: The domain '%(label)s' (%(identifier)s) was deleted. (%(time)s s)"
     MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(label)s'  '%(identifier)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain (s) can not be deleted."
     MSG_RS_UPDATED = "The domain '%(label)s' (%(identifier)s) was successfully updated."
     MSG_RS_CREATED = "The domain '%(label)s' (%(identifier)s) was successfully created. (%(_time)s s)"
 
+    # pylint: disable=no-self-use
     def init_old_language_key(self):
         """For  api >= 1.6 and api <= 1.8"""
-        self.IDENTIFIER = "identifier"
-        self.DEFAULT_SORT = "identifier"
-        self.RESOURCE_IDENTIFIER = "identifier"
-        self.DEFAULT_SORT_NAME = "identifier"
+        DomainsCommand.IDENTIFIER = "identifier"
+        DomainsCommand.DEFAULT_SORT = "identifier"
+        DomainsCommand.RESOURCE_IDENTIFIER = "identifier"
+        DomainsCommand.DEFAULT_SORT_NAME = "identifier"
 
-        self.DEFAULT_TOTAL = "Domain found : %(count)s"
-        self.MSG_RS_NOT_FOUND = "No domain could be found."
-        self.MSG_RS_DELETED = "The domain '%(identifier)s' was deleted. (%(time)s s)"
-        self.MSG_RS_DELETED = "%(position)s/%(count)s: The domain '%(identifier)s' was deleted. (%(time)s s)"
-        self.MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(identifier)s' can not be deleted."
-        self.MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain (s) can not be deleted."
-        self.MSG_RS_UPDATED = "The domain '%(identifier)s' was successfully updated."
-        self.MSG_RS_CREATED = "The domain '%(identifier)s' was successfully created."
+        DomainsCommand.DEFAULT_TOTAL = "Domain found : %(count)s"
+        DomainsCommand.MSG_RS_NOT_FOUND = "No domain could be found."
+        DomainsCommand.MSG_RS_DELETED = "The domain '%(identifier)s' was deleted. (%(time)s s)"
+        DomainsCommand.MSG_RS_DELETED = "%(position)s/%(count)s: The domain '%(identifier)s' was deleted. (%(time)s s)"
+        DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(identifier)s' can not be deleted."
+        DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain (s) can not be deleted."
+        DomainsCommand.MSG_RS_UPDATED = "The domain '%(identifier)s' was successfully updated."
+        DomainsCommand.MSG_RS_CREATED = "The domain '%(identifier)s' was successfully created."
 
     def complete(self, args, prefix):
         super(DomainsCommand, self).__call__(args)
@@ -77,14 +80,13 @@ class DomainsCommand(DefaultCommand):
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
 
-
 # -----------------------------------------------------------------------------
 class DomainsListCommand(DomainsCommand):
     """ List all domains."""
 
     ACTIONS = {
-        'delete' : '_delete_all',
-        'count_only' : '_count_only',
+        'delete': '_delete_all',
+        'count_only': '_count_only',
     }
 
     @Time('linsharecli.domains', label='Global time : %(time)s')
@@ -107,15 +109,15 @@ class DomainsListCommand(DomainsCommand):
                           formatters=formatters,
                           ignore_exceptions=ignore_exceptions)
 
+    # pylint: disable=unused-argument
     def complete_fields(self, args, prefix):
+        """TODO"""
         super(DomainsListCommand, self).__call__(args)
         cli = self.ls.domains
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
-# Ignore unused variable prefix
-# pylint: disable-msg=W0613
+# pylint: disable=unused-argument
 class DomainsCreateCommand(DomainsCommand):
     """ List all domains."""
 
@@ -251,12 +253,14 @@ successfully created",
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_ldap(self, args, prefix):
+        """TODO"""
         super(DomainProvidersCreateCommand, self).__call__(args)
         json_obj = self.ls.ldap_connections.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_dpattern(self, args, prefix):
+        """TODO"""
         super(DomainProvidersCreateCommand, self).__call__(args)
         json_obj = self.ls.domain_patterns.list()
         return (v.get('identifier')
@@ -338,18 +342,22 @@ updated",
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_ldap(self, args, prefix):
+        """TODO"""
         super(DomainProvidersUpdateCommand, self).__call__(args)
         json_obj = self.ls.ldap_connections.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_dpattern(self, args, prefix):
+        """TODO"""
         super(DomainProvidersUpdateCommand, self).__call__(args)
         json_obj = self.ls.domain_patterns.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
+
 # -----------------------------------------------------------------------------
+# pylint: disable=too-many-statements
 def add_parser(subparsers, name, desc, config):
     """Add all domain sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
@@ -364,7 +372,7 @@ def add_parser(subparsers, name, desc, config):
         'identifiers', nargs="*",
         help="Filter domains by their identifiers")
     parser.add_argument('-n', '--label', action="store_true",
-                             help="sort by domain label")
+                        help="sort by domain label")
     if api_version == 0:
         add_list_parser_options(parser, delete=True, cdate=False)
     else:
