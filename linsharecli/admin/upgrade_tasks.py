@@ -45,17 +45,17 @@ class UpgradeTasksCommand(DefaultCommand):
     DEFAULT_SORT_NAME = "taskOrder"
     RESOURCE_IDENTIFIER = "identifier"
 
-    # DEFAULT_TOTAL = "Ldap connection found : %(count)s"
-    # MSG_RS_NOT_FOUND = "No Ldap connection could be found."
-    # MSG_RS_DELETED = "%(position)s/%(count)s: The Ldap connection '%(label)s' (%(uuid)s) was deleted. (%(time)s s)"
-    # MSG_RS_CAN_NOT_BE_DELETED = "The Ldap connection '%(label)s'  '%(uuid)s' can not be deleted."
-    # MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s Ldap connection(s) can not be deleted."
-    # MSG_RS_UPDATED = "The Ldap connection '%(label)s' (%(uuid)s) was successfully updated."
-    # MSG_RS_CREATED = "The Ldap connection '%(label)s' (%(uuid)s) was successfully created. (%(_time)s s)"
+    # DEFAULT_TOTAL = "Upgrade task found : %(count)s"
+    # MSG_RS_NOT_FOUND = "No upgrade task could be found."
+    # MSG_RS_DELETED = "%(position)s/%(count)s: The upgrade task '%(identifier)s' (%(uuid)s) was deleted. (%(time)s s)"
+    # MSG_RS_CAN_NOT_BE_DELETED = "The upgrade task '%(identifier)s'  '%(uuid)s' can not be deleted."
+    # MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s upgrade task(s) can not be deleted."
+    # MSG_RS_UPDATED = "The upgrade task '%(identifier)s' was successfully updated."
+    # MSG_RS_CREATED = "The upgrade task '%(identifier)s' was successfully created. (%(_time)s s)"
 
     def complete(self, args, prefix):
         super(UpgradeTasksCommand, self).__call__(args)
-        json_obj = self.ls.ldap_connections.list()
+        json_obj = self.ls.upgrade_tasks.list()
         return (v.get(self.RESOURCE_IDENTIFIER)
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
@@ -79,29 +79,10 @@ class UpgradeTasksListCommand(UpgradeTasksCommand):
         return self._list(args, cli, table, json_obj, formatters, filters)
 
     def complete_fields(self, args, prefix):
+        """TODO"""
         super(UpgradeTasksListCommand, self).__call__(args)
-        cli = self.ls.ldap_connections
+        cli = self.ls.upgrade_tasks
         return cli.get_rbu().get_keys(True)
-
-
-# # -----------------------------------------------------------------------------
-# class LdapConnectionsUpdateCommand(UpgradeTasksCommand):
-#     """Update ldap connection."""
-#
-#     def __call__(self, args):
-#         super(LdapConnectionsUpdateCommand, self).__call__(args)
-#         if self.api_version == 0:
-#             self.init_old_language_key()
-#         cli = self.ls.ldap_connections
-#         resource = cli.get(args.identifier)
-#         rbu = cli.get_rbu()
-#         rbu.copy(resource)
-#         rbu.load_from_args(args)
-#         return self._run(
-#             cli.update,
-#             self.MSG_RS_UPDATED,
-#             args.identifier,
-#             rbu.to_resource())
 
 
 def add_parser(subparsers, name, desc, config):
@@ -112,7 +93,7 @@ def add_parser(subparsers, name, desc, config):
 
     # command : list
     parser = subparsers2.add_parser(
-        'list', help="list ldap connections.")
+        'list', help="list all upgrade tasks.")
     parser.add_argument('identifiers', nargs="*", help="")
     add_list_parser_options(parser, cdate=True)
     parser.set_defaults(__func__=UpgradeTasksListCommand(config))
