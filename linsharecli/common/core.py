@@ -136,14 +136,18 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             if getattr(args, key, False):
                 table.load(json_obj, filters, formatters, ignore_exceptions)
                 rows = table.get_raw()
-                if len(rows) == 0:
-                    self.pprint(self.MSG_RS_NOT_FOUND)
-                    return True
                 if key == 'count_only':
-                    meta = {'count': len(rows)}
-                    self.pprint(self.DEFAULT_TOTAL, meta)
+                    if getattr(args, 'cli_mode', False):
+                        print len(rows)
+                    else:
+                        meta = {'count': len(rows)}
+                        self.pprint(self.DEFAULT_TOTAL, meta)
                     return True
                 else:
+                    if len(rows) == 0:
+                        if not getattr(args, 'cli_mode', False):
+                            self.pprint(self.MSG_RS_NOT_FOUND)
+                        return True
                     uuids = [row.get(self.RESOURCE_IDENTIFIER) for row in rows]
                     method = getattr(self, self.ACTIONS.get(key))
                     return method(args, cli, uuids)
@@ -196,15 +200,23 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         meta['time'] = " -"
         meta['position'] = position
         meta['count'] = count
+        progress_bar = not getattr(args, 'no_progress', False)
+        cli_mode = getattr(args, 'cli_mode', False)
+        if cli_mode:
+            progress_bar = False
         try:
             if getattr(args, "dry_run", False):
                 json_obj = cli.get(uuid)
                 meta['name'] = json_obj.get('name')
             else:
-                file_name, req_time = cli.download(uuid, directory)
+                file_name, req_time = cli.download(uuid, directory,
+                                                   progress_bar=progress_bar)
                 meta['name'] = file_name
                 meta['time'] = req_time
-            self.pprint(self.MSG_RS_DOWNLOADED, meta)
+            if getattr(args, 'cli_mode', False):
+                print uuid
+            else:
+                self.pprint(self.MSG_RS_DOWNLOADED, meta)
             return True
         except urllib2.HTTPError as ex:
             meta['code'] = ex.code
@@ -283,8 +295,11 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 meta = {'uuid': uuid}
                 self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
                 return False
-            meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
-            self.pprint(self.MSG_RS_DELETED, meta)
+            if getattr(args, 'cli_mode', False):
+                print json_obj.get(self.RESOURCE_IDENTIFIER)
+            else:
+                meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
+                self.pprint(self.MSG_RS_DELETED, meta)
             return True
         except urllib2.HTTPError as ex:
             self.log.error("Delete error : %s", ex)
@@ -630,6 +645,7 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
     # actions
     actions_group = parser.add_argument_group('Actions')
     download_group = parser.add_argument_group('Downloading options')
+    actions_group.add_argument('--cli-mode', action="store_true", help="")
     actions_group.add_argument(
         '-c', '--count', action="store_true", dest="count_only",
         help="Just display number of results instead of results.")
@@ -638,6 +654,9 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
             download_group.add_argument(
                 '-o', '--output-dir', action="store",
                 dest="directory")
+            download_group.add_argument('--no-progress', action="store_true",
+                                        help="disable progress bar.",
+                                        default=False)
         if download and delete:
             group = actions_group.add_mutually_exclusive_group()
             if download:
@@ -646,8 +665,8 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
                 group.add_argument('-D', '--delete', action="store_true")
         else:
             if download:
-                actions_group.add_argument('-o', '--output-dir', action="store",
-                                    dest="directory")
+                actions_group.add_argument('-o', '--output-dir',
+                                           action="store", dest="directory")
                 actions_group.add_argument(
                     '-d', '--download', action="store_true")
             if delete:
