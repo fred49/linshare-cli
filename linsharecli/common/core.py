@@ -294,6 +294,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 count = 1
             meta = {}
             meta['uuid'] = uuid
+            meta[self.RESOURCE_IDENTIFIER] = uuid
             meta['time'] = " -"
             meta['position'] = position
             meta['count'] = count
