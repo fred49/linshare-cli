@@ -142,8 +142,18 @@ class WelcomeMessagesCreateCommand(WelcomeMessagesCommand):
 
     def __call__(self, args):
         super(WelcomeMessagesCreateCommand, self).__call__(args)
+        if args.domain:
+            args.domain = {'identifier': args.domain}
         act = CreateAction(self, args, self.ls.welcome_messages)
         return act.execute()
+
+    def complete_domain(self, args, prefix):
+        """TODO"""
+        super(WelcomeMessagesCreateCommand, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
 
 # -----------------------------------------------------------------------------
 class WelcomeMessagesUpdateCommand(WelcomeMessagesCommand):
@@ -206,6 +216,7 @@ def add_parser(subparsers, name, desc, config):
         'create', help="create welcome message.")
     parser_tmp2.add_argument('uuid').completer = Completer()
     parser_tmp2.add_argument('name')
+    parser_tmp2.add_argument('--domain').completer = Completer("complete_domain")
     parser_tmp2.add_argument('--cli-mode', action="store_true", help="")
     parser_tmp2.set_defaults(__func__=WelcomeMessagesCreateCommand(config))
 
