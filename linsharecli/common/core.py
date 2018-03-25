@@ -603,6 +603,26 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         table.args = args
         return table
 
+    def get_raw_table(self, args, cli, keys=[]):
+        args.vertical = True
+        args.reverse = getattr(args, "reverse", False)
+        args.extended = getattr(args, "extended", False)
+        table = VTable(keys, debug=self.debug)
+        table.sortby = None
+        table.reversesort = args.reverse
+        table.keys = keys
+        table.json = getattr(args, "json", False)
+        table.raw_json = getattr(args, "raw_json", False)
+        table.csv = getattr(args, "csv", False)
+        table.raw = getattr(args, "raw", False)
+        table._pref_start = getattr(args, "start", 0)
+        table._pref_end = getattr(args, "end", 0)
+        table._pref_limit = getattr(args, "limit", 0)
+        table._pref_no_csv_headers = getattr(args, "no_headers", True)
+        # just backup args into table
+        table.args = args
+        return table
+
 # -----------------------------------------------------------------------------
 def add_list_parser_options(parser, download=False, delete=False, cdate=False, ssize=False):
     # filters
