@@ -82,6 +82,13 @@ class DomainsCommand(DefaultCommand):
         return (v.get(self.RESOURCE_IDENTIFIER)
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
+    def complete_welcome(self, args, prefix):
+        """TODO"""
+        super(DomainsCommand, self).__call__(args)
+        json_obj = self.ls.welcome_messages.list(args.identifier)
+        return (v.get('uuid')
+                for v in json_obj if v.get('uuid').startswith(prefix))
+
 
 # -----------------------------------------------------------------------------
 class DomainsListCommand(DomainsCommand):
@@ -176,11 +183,16 @@ class DomainsUpdateCommand(DomainsCommand):
         rbu = self.ls.domains.get_rbu()
         rbu.copy(resource)
         rbu.load_from_args(args)
+        resource = rbu.to_resource()
+        if hasattr(args, 'current_welcome_message'):
+            resource['currentWelcomeMessage'] = {
+                'uuid': args.current_welcome_message
+            }
         return self._run(
             self.ls.domains.update,
             "The following domain '%(identifier)s' was successfully updated",
             args.identifier,
-            rbu.to_resource())
+            resource)
 
     def complete(self, args, prefix):
         super(DomainsUpdateCommand, self).__call__(args)
@@ -431,6 +443,10 @@ def add_parser(subparsers, name, desc, config):
         parser_tmp2.add_argument(
             '--mail-language', dest="external_mail_locale", action="store",
             help="").completer = Completer("complete_mail_language")
+    parser_tmp2.add_argument(
+        '--welcome', dest="current_welcome_message", action="store",
+        help="welcome message identifier").completer = Completer(
+            "complete_welcome")
     parser_tmp2.set_defaults(__func__=DomainsUpdateCommand(config))
 
     # command : delete
