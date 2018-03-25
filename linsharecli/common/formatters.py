@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -28,18 +29,19 @@
 from __future__ import unicode_literals
 
 import datetime
+# pylint: disable=import-error
 from hurry.filesize import size as filesize
 
-# pylint: disable=R0921
-# pylint: disable=C0111
-# -----------------------------------------------------------------------------
+# pylint: disable=too-few-public-methods
 class Formatter(object):
+    """TODO"""
     def __init__(self, prop, formatt=None):
         """ prop name and value(s)"""
         self.prop = prop
         self.formatt = formatt
 
     def get_val(self, row):
+        """TODO"""
         val = row.get(self.prop)
         if val is None:
             raise ValueError("missing key : " + self.prop)
@@ -52,6 +54,7 @@ class Formatter(object):
 
 # -----------------------------------------------------------------------------
 class DateFormatter(Formatter):
+    """TODO"""
 
     def __init__(self, prop, formatt="%Y-%m-%d %H:%M:%S"):
         super(DateFormatter, self).__init__(prop, formatt)
@@ -66,6 +69,7 @@ class DateFormatter(Formatter):
 
 # -----------------------------------------------------------------------------
 class SizeFormatter(Formatter):
+    """TODO"""
 
     def __init__(self, prop):
         super(SizeFormatter, self).__init__(prop)
@@ -86,7 +90,7 @@ class NoneFormatter(Formatter):
     def __call__(self, row, context=None):
         # do not create/format a property that does not already exist.
         # Because Htable does not support it
-        if not self.prop in row.keys():
+        if self.prop not in row.keys():
             return
         parameter = row.get(self.prop)
         if parameter is None:
@@ -117,3 +121,30 @@ class DomainFormatter(Formatter):
         parameter = row.get(self.prop)
         if parameter:
             row[self.prop] = '{label} ({identifier})'.format(**parameter)
+
+
+class WelcomeMessageFormatter(Formatter):
+    """TODO"""
+
+    def __init__(self, prop):
+        super(WelcomeMessageFormatter, self).__init__(prop)
+
+    def __call__(self, row, context=None):
+        parameter = row.get(self.prop)
+        if parameter:
+            row[self.prop] = '{name} ({uuid})'.format(**parameter)
+
+
+class UserProvidersFormatter(Formatter):
+    """TODO"""
+
+    def __init__(self, prop):
+        super(UserProvidersFormatter, self).__init__(prop)
+
+    def __call__(self, row, context=None):
+        parameter = row.get(self.prop)
+        if parameter:
+            output = []
+            for param in parameter:
+                output.append('{baseDn} ({uuid})'.format(**param))
+            row[self.prop] = ",".join(output)

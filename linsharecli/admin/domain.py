@@ -28,9 +28,12 @@
 from __future__ import unicode_literals
 
 from argtoolbox import DefaultCompleter as Completer
+# pylint: disable=import-error
 from linshareapi.cache import Time
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import NoneFormatter
+from linsharecli.common.formatters import WelcomeMessageFormatter
+from linsharecli.common.formatters import UserProvidersFormatter
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
@@ -99,7 +102,9 @@ class DomainsListCommand(DomainsCommand):
         json_obj = cli.list()
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
-        formatters = [NoneFormatter("parent")]
+        formatters = [NoneFormatter("parent"),
+                      WelcomeMessageFormatter("currentWelcomeMessage"),
+                      UserProvidersFormatter("providers")]
         ignore_exceptions = {
             "parent": True,
             "authShowOrder": True,
