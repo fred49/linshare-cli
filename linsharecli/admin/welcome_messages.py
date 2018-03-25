@@ -62,6 +62,13 @@ class WelcomeMessagesCommand(DefaultCommand):
         return (v.get(self.RESOURCE_IDENTIFIER)
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
+    def complete_domain(self, args, prefix):
+        """TODO"""
+        super(WelcomeMessagesCommand, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
 
 # -----------------------------------------------------------------------------
 # pylint: disable=too-few-public-methods
@@ -118,7 +125,7 @@ class WelcomeMessagesListCommand(WelcomeMessagesCommand):
     def list_table(self, args, cli):
         """TODO"""
         table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
+        json_obj = cli.list(args.domain)
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
         formatters = [DomainFormatter("myDomain"),
@@ -146,13 +153,6 @@ class WelcomeMessagesCreateCommand(WelcomeMessagesCommand):
             args.domain = {'identifier': args.domain}
         act = CreateAction(self, args, self.ls.welcome_messages)
         return act.execute()
-
-    def complete_domain(self, args, prefix):
-        """TODO"""
-        super(WelcomeMessagesCreateCommand, self).__call__(args)
-        json_obj = self.ls.domains.list()
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix))
 
 
 # -----------------------------------------------------------------------------
@@ -203,6 +203,7 @@ def add_parser(subparsers, name, desc, config):
     add_list_parser_options(parser, delete=True, cdate=False)
     parser.add_argument('--detail', action="store_true",
                         help="Display the whole content of a welcome message")
+    parser.add_argument('--domain').completer = Completer("complete_domain")
     parser.set_defaults(__func__=WelcomeMessagesListCommand(config))
 
     # command : delete
