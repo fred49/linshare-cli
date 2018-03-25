@@ -114,13 +114,19 @@ class OwnerFormatter(Formatter):
 class DomainFormatter(Formatter):
     """Convert resource domain value to a readable name"""
 
-    def __init__(self, prop):
+    def __init__(self, prop, full=False):
         super(DomainFormatter, self).__init__(prop)
+        self.full = full
 
     def __call__(self, row, context=None):
         parameter = row.get(self.prop)
         if parameter:
-            row[self.prop] = '{label} ({identifier})'.format(**parameter)
+            l_format = '{label}'
+            if context.args.vertical:
+                l_format = '{label} ({identifier})'
+            if self.full:
+                l_format = '{label} ({identifier})'
+            row[self.prop] = l_format.format(**parameter)
 
 
 class WelcomeMessageFormatter(Formatter):

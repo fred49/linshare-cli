@@ -58,7 +58,7 @@ class WelcomeMessagesCommand(DefaultCommand):
 
     def complete(self, args, prefix):
         super(WelcomeMessagesCommand, self).__call__(args)
-        json_obj = self.ls.welcome_messages.list()
+        json_obj = self.ls.welcome_messages.list(args.current_domain)
         return (v.get(self.RESOURCE_IDENTIFIER)
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
@@ -113,7 +113,7 @@ class WelcomeMessagesListCommand(WelcomeMessagesCommand):
         table.sortby = self.IDENTIFIER
         json_obj = []
         filteror = PartialOr(self.IDENTIFIER, args.identifiers, True)
-        for json_row in cli.list():
+        for json_row in cli.list(args.current_domain):
             if filteror(json_row):
                 data = json_row.get('welcomeMessagesEntries')
                 data[self.IDENTIFIER] = json_row.get(self.IDENTIFIER)
@@ -125,7 +125,7 @@ class WelcomeMessagesListCommand(WelcomeMessagesCommand):
     def list_table(self, args, cli):
         """TODO"""
         table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list(args.domain)
+        json_obj = cli.list(args.current_domain)
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
         formatters = [DomainFormatter("myDomain"),
@@ -203,13 +203,14 @@ def add_parser(subparsers, name, desc, config):
     add_list_parser_options(parser, delete=True, cdate=False)
     parser.add_argument('--detail', action="store_true",
                         help="Display the whole content of a welcome message")
-    parser.add_argument('--domain').completer = Completer("complete_domain")
+    parser.add_argument('--current-domain').completer = Completer("complete_domain")
     parser.set_defaults(__func__=WelcomeMessagesListCommand(config))
 
     # command : delete
     parser_tmp2 = subparsers2.add_parser(
         'delete', help="delete welcome message.")
     add_delete_parser_options(parser_tmp2)
+    parser_tmp2.add_argument('--current-domain').completer = Completer("complete_domain")
     parser_tmp2.set_defaults(__func__=WelcomeMessagesDeleteCommand(config))
 
     # command : create
@@ -226,6 +227,7 @@ def add_parser(subparsers, name, desc, config):
         'update', help="update welcome message.")
     parser_tmp2.add_argument('identifier').completer = Completer()
     parser_tmp2.add_argument('name', action="store", help="")
+    parser_tmp2.add_argument('--current-domain').completer = Completer("complete_domain")
     parser_tmp2.set_defaults(__func__=WelcomeMessagesUpdateCommand(config))
 
     # command : update-entry
