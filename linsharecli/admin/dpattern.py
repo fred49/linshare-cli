@@ -171,7 +171,7 @@ class DomainPatternsCreateCommand2(DomainPatternsCommand):
         rbu.load_from_args(args)
         class MyCreateAction(CreateAction):
             def _execute(self):
-                return self.cli.create(self.rbu.to_resource())
+                return self.cli.create(rbu.to_resource())
         act = MyCreateAction(self, args, self.ls.domain_patterns, rbu)
         return act.execute()
 
