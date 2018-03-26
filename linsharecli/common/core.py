@@ -313,7 +313,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
                 self.pprint(self.MSG_RS_DELETED, meta)
             return True
-        except urllib2.HTTPError as ex:
+        except (urllib2.HTTPError, LinShareException) as ex:
             self.log.error("Delete error : %s", ex)
             return False
 
@@ -342,7 +342,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
             self.pprint(self.MSG_RS_DELETED, meta)
             return True
-        except urllib2.HTTPError as ex:
+        except (urllib2.HTTPError, LinShareException) as ex:
             self.log.error("Delete error : %s", ex)
             return False
 
@@ -369,7 +369,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
             self.pprint(self.MSG_RS_UPDATED, meta)
             return True
-        except urllib2.HTTPError as ex:
+        except (urllib2.HTTPError, LinShareException) as ex:
             self.log.error("Update error : %s", ex)
             return False
 
