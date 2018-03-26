@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -27,14 +28,15 @@
 from __future__ import unicode_literals
 
 from linshareapi.cache import Time
+from argtoolbox import DefaultCompleter as Completer
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import CreateAction
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_delete_parser_options
-from argtoolbox import DefaultCompleter as Completer
 
 
+# pylint: disable=too-many-instance-attributes
 class LdapConnectionsCommand(DefaultCommand):
 
     """For  api >= 1.9"""
@@ -45,12 +47,20 @@ class LdapConnectionsCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Ldap connection found : %(count)s"
     MSG_RS_NOT_FOUND = "No Ldap connection could be found."
-    MSG_RS_DELETED = "%(position)s/%(count)s: The Ldap connection '%(label)s' (%(uuid)s) was deleted. (%(time)s s)"
+    MSG_RS_DELETED = (
+        "%(position)s/%(count)s: "
+        "The Ldap connection '%(label)s' (%(uuid)s) was deleted. "
+        "(%(time)s s)"
+    )
     MSG_RS_CAN_NOT_BE_DELETED = "The Ldap connection '%(label)s'  '%(uuid)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s Ldap connection(s) can not be deleted."
     MSG_RS_UPDATED = "The Ldap connection '%(label)s' (%(uuid)s) was successfully updated."
-    MSG_RS_CREATED = "The Ldap connection '%(label)s' (%(uuid)s) was successfully created. (%(_time)s s)"
+    MSG_RS_CREATED = (
+        "The Ldap connection '%(label)s' (%(uuid)s) was "
+        "successfully created. (%(_time)s s)"
+    )
 
+    # pylint: disable=invalid-name
     def init_old_language_key(self):
         """For  api >= 1.6 and api <= 1.8"""
         self.IDENTIFIER = "identifier"
@@ -61,7 +71,10 @@ class LdapConnectionsCommand(DefaultCommand):
         self.DEFAULT_TOTAL = "Ldap connection found : %(count)s"
         self.MSG_RS_NOT_FOUND = "No Ldap connection could be found."
         self.MSG_RS_DELETED = "The Ldap connection '%(identifier)s' was deleted. (%(time)s s)"
-        self.MSG_RS_DELETED = "%(position)s/%(count)s: The Ldap connection '%(identifier)s' was deleted. (%(time)s s)"
+        self.MSG_RS_DELETED = (
+            "%(position)s/%(count)s: "
+            "The Ldap connection '%(identifier)s' was deleted. (%(time)s s)"
+        )
         self.MSG_RS_CAN_NOT_BE_DELETED = "The Ldap connection '%(identifier)s' can not be deleted."
         self.MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s Ldap connection(s) can not be deleted."
         self.MSG_RS_UPDATED = "The Ldap connection '%(identifier)s' was successfully updated."
@@ -92,11 +105,12 @@ class LdapConnectionsListCommand(LdapConnectionsCommand):
         filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
         return self._list(args, cli, table, json_obj, filters=filters)
 
+    # pylint: disable=unused-argument
     def complete_fields(self, args, prefix):
+        """TODO"""
         super(LdapConnectionsListCommand, self).__call__(args)
         cli = self.ls.ldap_connections
         return cli.get_rbu().get_keys(True)
-
 
 # -----------------------------------------------------------------------------
 class LdapConnectionsCreateCommand(LdapConnectionsCommand):
