@@ -281,11 +281,14 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             res += abs(status - 1)
         if res > 0:
             meta = {'count': res}
-            self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED_M, meta)
+            cli_mode = getattr(args, 'cli_mode', False)
+            if not cli_mode:
+                self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED_M, meta)
             return False
         return True
 
     def _delete(self, args, cli, uuid, position=None, count=None):
+        cli_mode = getattr(args, 'cli_mode', False)
         try:
             if not position:
                 position = 1
@@ -305,7 +308,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 meta = {'uuid': uuid}
                 self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
                 return False
-            if getattr(args, 'cli_mode', False):
+            if cli_mode:
                 print json_obj.get(self.RESOURCE_IDENTIFIER)
             else:
                 meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
