@@ -137,6 +137,8 @@ class DomainsCreateCommand(DomainsCommand):
         super(DomainsCreateCommand, self).__call__(args)
         if self.api_version == 0:
             self.init_old_language_key()
+        if not args.description:
+            args.description = args.identifier
         act = CreateAction(self, args, self.ls.domains)
         return act.execute()
 
