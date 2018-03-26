@@ -138,7 +138,7 @@ class WelcomeMessageFormatter(Formatter):
     def __call__(self, row, context=None):
         parameter = row.get(self.prop)
         if parameter:
-            row[self.prop] = '{name} ({uuid})'.format(**parameter)
+            row[self.prop] = '{name} ({uuid:.8})'.format(**parameter)
 
 
 class UserProvidersFormatter(Formatter):
@@ -152,5 +152,8 @@ class UserProvidersFormatter(Formatter):
         if parameter:
             output = []
             for param in parameter:
-                output.append('{baseDn} ({uuid})'.format(**param))
+                display = ("{baseDn} (ldap:{ldapConnectionUuid:.8},"
+                           "pattern:{userLdapPatternUuid:.8})"
+                          )
+                output.append(display.format(**param))
             row[self.prop] = ",".join(output)
