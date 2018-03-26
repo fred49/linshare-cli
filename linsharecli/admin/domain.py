@@ -185,9 +185,10 @@ class DomainsUpdateCommand(DomainsCommand):
         rbu.load_from_args(args)
         resource = rbu.to_resource()
         if hasattr(args, 'current_welcome_message'):
-            resource['currentWelcomeMessage'] = {
-                'uuid': args.current_welcome_message
-            }
+            if args.current_welcome_message:
+                resource['currentWelcomeMessage'] = {
+                    'uuid': args.current_welcome_message
+                }
         return self._run(
             self.ls.domains.update,
             "The following domain '%(identifier)s' was successfully updated",
