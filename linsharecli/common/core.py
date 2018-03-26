@@ -34,19 +34,17 @@ import json
 import time
 import getpass
 import datetime
-import argtoolbox
 import locale
 import urllib2
 import types
 from operator import itemgetter
+import argtoolbox
+from argtoolbox import DefaultCompleter as Completer
 from veryprettytable import VeryPrettyTable
 from ordereddict import OrderedDict
 from hurry.filesize import size as filesize
-from argtoolbox import DefaultCompleter as Completer
 from linshareapi.core import LinShareException
 
-# -----------------------------------------------------------------------------
-#pylint: disable=R0921
 class DefaultCommand(argtoolbox.DefaultCommand):
     """ If you want to add a new command to the command line interface, your
     class should extend this class.
@@ -536,7 +534,6 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 res[j] = max([len(str(i.get((j)))), res.get(j, 0)])
         print res
 
-
     def print_table_test_1(self, json_obj, sortby, reverse = False, keys = [], output_format = None, no_title = False, no_legend = False):
         # computing data for presentation
         maxlength = self.getmaxlength(json_obj)
@@ -561,6 +558,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                             no_legend=no_legend)
 
     def get_table(self, args, cli, first_column, in_keys=None):
+        """TODO"""
         keys = []
         args.vertical = getattr(args, "vertical", False)
         if not args.vertical:
@@ -604,6 +602,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         return table
 
     def get_raw_table(self, args, cli, keys=[]):
+        """TODO"""
         args.vertical = True
         args.reverse = getattr(args, "reverse", False)
         args.extended = getattr(args, "extended", False)
@@ -623,8 +622,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         table.args = args
         return table
 
-# -----------------------------------------------------------------------------
+
 def add_list_parser_options(parser, download=False, delete=False, cdate=False, ssize=False):
+    """TODO"""
     # filters
     filter_group = parser.add_argument_group('Filters')
     filter_group.add_argument(
@@ -714,19 +714,23 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
 
 # -----------------------------------------------------------------------------
 def add_delete_parser_options(parser):
+    """TODO"""
     parser.add_argument('uuids', nargs='+').completer = Completer()
     parser.add_argument('--dry-run', action="store_true")
 
 # -----------------------------------------------------------------------------
 def add_download_parser_options(parser):
+    """TODO"""
     parser.add_argument('uuids', nargs='+').completer = Completer()
     parser.add_argument('--dry-run', action="store_true")
     parser.add_argument('-o', '--output-dir', action="store", dest="directory")
 
 # -----------------------------------------------------------------------------
 class BaseTable(object):
+    """TODO"""
 
     def filters(self, row, filters):
+        """TODO"""
         if filters is not None:
             if isinstance(filters, list):
                 cpt = 0
@@ -747,6 +751,7 @@ class BaseTable(object):
             return True
 
     def formatters(self, row, formatters):
+        """TODO"""
         if formatters is not None:
             if isinstance(formatters, list):
                 for func in formatters:
@@ -755,21 +760,25 @@ class BaseTable(object):
                 formatters(row, context=self)
 
     def get_raw(self):
+        """TODO"""
         raise NotImplementedError()
 
     def get_json(self):
+        """TODO"""
         raise NotImplementedError()
 
     def get_csv(self):
+        """TODO"""
         raise NotImplementedError()
 
     def load(self, json_obj, filters=None, formatters=None,
              ignore_exceptions={}):
+        """TODO"""
         raise NotImplementedError()
 
 
-# -----------------------------------------------------------------------------
 class VTable(BaseTable):
+    """TODO"""
 
     vertical = True
 
@@ -904,8 +913,8 @@ class VTable(BaseTable):
         return "\n".join(out)
 
 
-# -----------------------------------------------------------------------------
 class HTable(VeryPrettyTable, BaseTable):
+    """TODO"""
 
     vertical = False
 
@@ -947,7 +956,6 @@ class HTable(VeryPrettyTable, BaseTable):
         return self._get_rows(options)
 
 
-# -----------------------------------------------------------------------------
 class CreateAction(object):
     """TODO"""
 
