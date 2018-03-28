@@ -101,14 +101,14 @@ class WelcomeMessagesListCommand(WelcomeMessagesCommand):
 
     def list_detail(self, args, cli):
         """TODO"""
-        args.vertical = True
         keys = []
         keys.append(self.IDENTIFIER)
         keys.append(self.RESOURCE_IDENTIFIER)
         keys.append('VIETNAMESE')
         keys.append('ENGLISH')
         keys.append('FRENCH')
-        table = self.get_raw_table(args, cli, keys)
+        args.vertical = True
+        table = self.get_raw_table(args, cli, self.IDENTIFIER, keys)
         # useless and required ! Design flaw ?
         table.sortby = self.IDENTIFIER
         json_obj = []

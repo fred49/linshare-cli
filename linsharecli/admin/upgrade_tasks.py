@@ -27,6 +27,7 @@
 from __future__ import unicode_literals
 
 from linshareapi.cache import Time
+from linshareapi.core import LinShareException
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import CreateAction
 from linsharecli.common.filters import PartialOr
@@ -45,12 +46,9 @@ class UpgradeTasksCommand(DefaultCommand):
     DEFAULT_SORT_NAME = "taskOrder"
     RESOURCE_IDENTIFIER = "identifier"
 
-    # DEFAULT_TOTAL = "Upgrade task found : %(count)s"
-    # MSG_RS_NOT_FOUND = "No upgrade task could be found."
-    # MSG_RS_DELETED = "%(position)s/%(count)s: The upgrade task '%(identifier)s' (%(uuid)s) was deleted. (%(time)s s)"
-    # MSG_RS_CAN_NOT_BE_DELETED = "The upgrade task '%(identifier)s'  '%(uuid)s' can not be deleted."
-    # MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s upgrade task(s) can not be deleted."
-    # MSG_RS_UPDATED = "The upgrade task '%(identifier)s' was successfully updated."
+    DEFAULT_TOTAL = "Upgrade task found : %(count)s"
+    MSG_RS_NOT_FOUND = "No upgrade task could be found."
+    MSG_RS_UPDATED = "The upgrade task '%(identifier)s' was successfully triggered."
     # MSG_RS_CREATED = "The upgrade task '%(identifier)s' was successfully created. (%(_time)s s)"
 
     def complete(self, args, prefix):
@@ -68,21 +66,72 @@ class UpgradeTasksListCommand(UpgradeTasksCommand):
     def __call__(self, args):
         super(UpgradeTasksListCommand, self).__call__(args)
         cli = self.ls.upgrade_tasks
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True),
-                   PartialDate("creationDate", args.cdate)]
         # Formatters
         formatters = [DateFormatter('creationDate'),
                       DateFormatter('modificationDate')]
+        filters = []
+        table = None
+        json_obj = None
+        if args.identifier:
+            filters = [PartialDate("creationDate", args.cdate)]
+            if args.console:
+                cli = self.ls.upgrade_tasks.async_tasks.console
+                keys = cli.get_rbu().get_keys(args.extended)
+                table = self.get_raw_table(args, cli, "uuid", keys)
+                table.align['criticity'] = "l"
+                table.align['message'] = "l"
+                table.sortby = "creationDate"
+                json_obj = cli.list(args.identifier, args.console)
+            else:
+                cli = self.ls.upgrade_tasks.async_tasks
+                keys = cli.get_rbu().get_keys(args.extended)
+                table = self.get_raw_table(args, cli, "uuid", keys)
+                table.sortby = "creationDate"
+                json_obj = cli.list(args.identifier)
+        else:
+            # async_tasks/6450f16f-ce4f-4323-9949-435fc99bc084
+            table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
+            # Filters
+            filters = [PartialOr(self.IDENTIFIER, [args.identifier], True),
+                       PartialDate("creationDate", args.cdate)]
+            json_obj = cli.list()
         return self._list(args, cli, table, json_obj, formatters, filters)
 
+    # pylint: disable=unused-argument
     def complete_fields(self, args, prefix):
         """TODO"""
         super(UpgradeTasksListCommand, self).__call__(args)
         cli = self.ls.upgrade_tasks
         return cli.get_rbu().get_keys(True)
+
+    def complete_async_tasks(self, args, prefix):
+        """TODO"""
+        super(UpgradeTasksListCommand, self).__call__(args)
+        cli = self.ls.upgrade_tasks.async_tasks
+        json_obj = cli.list(args.identifier)
+        return (v.get('uuid')
+                for v in json_obj if v.get('uuid').startswith(prefix))
+
+
+
+class UpgradeTasksTriggerCommand(UpgradeTasksCommand):
+    """Trigger welcome message."""
+
+    def __call__(self, args):
+        super(UpgradeTasksTriggerCommand, self).__call__(args)
+        cli = self.ls.upgrade_tasks
+        # resource = cli.get(args.identifier)
+        try:
+            json_obj = cli.trigger(args.identifier, args.force)
+            if self.debug:
+                self.pretty_json(json_obj)
+            self.log.info(self.MSG_RS_UPDATED, json_obj)
+            return True
+        except LinShareException as ex:
+            self.log.debug("can trigger upgrade task : %s", args.identifier, exc_info=1)
+            self.log.error(ex.args)
+        return False
+
 
 
 def add_parser(subparsers, name, desc, config):
@@ -94,6 +143,14 @@ def add_parser(subparsers, name, desc, config):
     # command : list
     parser = subparsers2.add_parser(
         'list', help="list all upgrade tasks.")
-    parser.add_argument('identifiers', nargs="*", help="")
+    parser.add_argument('identifier', nargs="?", help="").completer = Completer()
+    parser.add_argument('console', nargs="?").completer = Completer('complete_async_tasks')
     add_list_parser_options(parser, cdate=True)
     parser.set_defaults(__func__=UpgradeTasksListCommand(config))
+
+    # command : update
+    parser = subparsers2.add_parser(
+        'update', help="update welcome message.")
+    parser.add_argument('identifier').completer = Completer()
+    parser.add_argument('--force', action="store_true")
+    parser.set_defaults(__func__=UpgradeTasksTriggerCommand(config))

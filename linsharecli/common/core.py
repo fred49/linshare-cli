@@ -604,12 +604,18 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         table.args = args
         return table
 
-    def get_raw_table(self, args, cli, keys=[]):
+    def get_raw_table(self, args, cli, first_column, keys):
         """TODO"""
-        args.vertical = True
         args.reverse = getattr(args, "reverse", False)
         args.extended = getattr(args, "extended", False)
-        table = VTable(keys, debug=self.debug)
+        table = None
+        if args.vertical:
+            table = VTable(keys, debug=self.debug)
+        else:
+            table = HTable(keys)
+            # styles
+            table.align[first_column] = "l"
+            table.padding_width = 1
         table.sortby = None
         table.reversesort = args.reverse
         table.keys = keys
