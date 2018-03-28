@@ -44,6 +44,7 @@ from veryprettytable import VeryPrettyTable
 from ordereddict import OrderedDict
 from hurry.filesize import size as filesize
 from linshareapi.core import LinShareException
+from linshareapi.cache import Time
 
 class DefaultCommand(argtoolbox.DefaultCommand):
     """ If you want to add a new command to the command line interface, your
@@ -118,6 +119,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         raise NotImplementedError(
             "You must implement the __get_cli_object method.")
 
+    @Time('linsharecli.core._list', label='_list.time : %(time)s')
     def _list(self, args, cli, table, json_obj, formatters=None, filters=None,
               ignore_exceptions={}):
         self.log.debug("table.sortby : %s", table.sortby)
@@ -807,6 +809,7 @@ class VTable(BaseTable):
             self.sortby = k
             break
 
+    @Time('linsharecli.core.show_table', label='time : %(time)s')
     def show_table(self, json_obj, filters=None, formatters=None,
                    ignore_exceptions={}):
         self.load(json_obj, filters, formatters, ignore_exceptions)
@@ -819,6 +822,7 @@ class VTable(BaseTable):
         out = self.get_string()
         print unicode(out)
 
+    @Time('linsharecli.core.load', label='time : %(time)s')
     def load(self, data, filters=None, formatters=None,
              ignore_exceptions={}):
         for row in data:
@@ -927,6 +931,7 @@ class HTable(VeryPrettyTable, BaseTable):
 
     vertical = False
 
+    @Time('linsharecli.core.load', label='time : %(time)s')
     def load(self, json_obj, filters=None, formatters=None,
              ignore_exceptions={}):
         for json_row in json_obj:
@@ -954,6 +959,7 @@ class HTable(VeryPrettyTable, BaseTable):
             if limit > 0:
                 self.end = self.start + limit
 
+    @Time('linsharecli.core.show_table', label='time : %(time)s')
     def show_table(self, json_obj, filters=None, formatters=None,
                    ignore_exceptions={}):
         self.load(json_obj, filters, formatters, ignore_exceptions)
