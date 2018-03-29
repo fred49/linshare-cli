@@ -119,7 +119,6 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         raise NotImplementedError(
             "You must implement the __get_cli_object method.")
 
-    @Time('linsharecli.core._list', label='_list.time : %(time)s')
     def _list(self, args, cli, table, json_obj, formatters=None, filters=None,
               ignore_exceptions={}):
         self.log.debug("table.sortby : %s", table.sortby)
@@ -562,7 +561,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             self.print_list(json_obj, d_format, "Documents",
                             no_legend=no_legend)
 
-    def get_table(self, args, cli, first_column, in_keys=None):
+    def get_table(self, args, cli, first_column, in_keys=None, other_table=None):
         """TODO"""
         keys = []
         args.vertical = getattr(args, "vertical", False)
@@ -587,10 +586,13 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         if args.vertical:
             table = VTable(keys, debug=self.debug)
         else:
-            table = HTable(keys)
-            # styles
-            table.align[first_column] = "l"
-            table.padding_width = 1
+            if other_table:
+                table = ConsoleTable(keys, debug=self.debug)
+            else:
+                table = HTable(keys)
+                # styles
+                table.align[first_column] = "l"
+                table.padding_width = 1
         table.sortby = None
         table.reversesort = args.reverse
         table.keys = keys
@@ -606,7 +608,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         table.args = args
         return table
 
-    def get_raw_table(self, args, cli, first_column, keys):
+    def get_raw_table(self, args, cli, first_column, keys, other_table=None):
         """TODO"""
         args.reverse = getattr(args, "reverse", False)
         args.extended = getattr(args, "extended", False)
@@ -614,10 +616,13 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         if args.vertical:
             table = VTable(keys, debug=self.debug)
         else:
-            table = HTable(keys)
-            # styles
-            table.align[first_column] = "l"
-            table.padding_width = 1
+            if other_table:
+                table = ConsoleTable(keys, debug=self.debug)
+            else:
+                table = HTable(keys)
+                # styles
+                table.align[first_column] = "l"
+                table.padding_width = 1
         table.sortby = None
         table.reversesort = args.reverse
         table.keys = keys
@@ -632,7 +637,6 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         # just backup args into table
         table.args = args
         return table
-
 
 def add_list_parser_options(parser, download=False, delete=False, cdate=False, ssize=False):
     """TODO"""
@@ -737,7 +741,7 @@ def add_download_parser_options(parser):
     parser.add_argument('-o', '--output-dir', action="store", dest="directory")
 
 # -----------------------------------------------------------------------------
-class BaseTable(object):
+class AbstractTable(object):
     """TODO"""
 
     def filters(self, row, filters):
@@ -788,7 +792,7 @@ class BaseTable(object):
         raise NotImplementedError()
 
 
-class VTable(BaseTable):
+class BaseTable(AbstractTable):
     """TODO"""
 
     vertical = True
@@ -808,19 +812,6 @@ class VTable(BaseTable):
         for k in keys:
             self.sortby = k
             break
-
-    @Time('linsharecli.core.show_table', label='time : %(time)s')
-    def show_table(self, json_obj, filters=None, formatters=None,
-                   ignore_exceptions={}):
-        self.load(json_obj, filters, formatters, ignore_exceptions)
-        if self.json:
-            print self.get_json()
-            return
-        if self.csv:
-            print self.get_csv()
-            return
-        out = self.get_string()
-        print unicode(out)
 
     @Time('linsharecli.core.load', label='time : %(time)s')
     def load(self, data, filters=None, formatters=None,
@@ -850,7 +841,6 @@ class VTable(BaseTable):
         if not isinstance(row, dict):
             raise ValueError("every row should be a dict")
         self._rows.append(row)
-        self.update_max_lengthkey(row)
 
     def get_raw(self):
         if self.sortby:
@@ -894,9 +884,25 @@ class VTable(BaseTable):
             records.append(";".join(record))
         return "\n".join(records)
 
-    def update_max_lengthkey(self, row):
-        for k, v in row.items():
-            self._maxlengthkey = max((len(repr(k)), self._maxlengthkey))
+
+
+class VTable(BaseTable):
+    """TODO"""
+
+    vertical = True
+
+    @Time('linsharecli.core.show_table', label='time : %(time)s')
+    def show_table(self, json_obj, filters=None, formatters=None,
+                   ignore_exceptions={}):
+        self.load(json_obj, filters, formatters, ignore_exceptions)
+        if self.json:
+            print self.get_json()
+            return
+        if self.csv:
+            print self.get_csv()
+            return
+        out = self.get_string()
+        print unicode(out)
 
     def get_string(self):
         max_length_line = 0
@@ -925,8 +931,44 @@ class VTable(BaseTable):
             out.append(record)
         return "\n".join(out)
 
+    def add_row(self, row):
+        super(VTable, self).add_row(row)
+        self.update_max_lengthkey(row)
 
-class HTable(VeryPrettyTable, BaseTable):
+    def update_max_lengthkey(self, row):
+        for k, v in row.items():
+            self._maxlengthkey = max((len(repr(k)), self._maxlengthkey))
+
+
+class ConsoleTable(BaseTable):
+    """TODO"""
+
+    vertical = False
+
+    @Time('linsharecli.core.show_table', label='time : %(time)s')
+    def show_table(self, json_obj, filters=None, formatters=None,
+                   ignore_exceptions={}):
+        self.load(json_obj, filters, formatters, ignore_exceptions)
+        if self.json:
+            print self.get_json()
+            return
+        if self.csv:
+            print self.get_csv()
+            return
+        for row in self.get_raw():
+            record = []
+            for k in self.keys:
+                t_format = u"{value:s}"
+                column_data = row.get(k)
+                if isinstance(column_data, types.UnicodeType):
+                    t_record = t_format.format(value=column_data)
+                else:
+                    t_record = t_format.format(value=str(column_data))
+                record.append(t_record)
+            print unicode(" ".join(record))
+
+
+class HTable(VeryPrettyTable, AbstractTable):
     """TODO"""
 
     vertical = False

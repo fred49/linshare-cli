@@ -30,8 +30,10 @@ from linshareapi.cache import Time
 from linshareapi.core import LinShareException
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import CreateAction
+from linsharecli.common.core import ConsoleTable
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
+from linsharecli.common.formatters import Formatter
 from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.formatters import SizeFormatter
 from linsharecli.admin.core import DefaultCommand
@@ -58,7 +60,18 @@ class UpgradeTasksCommand(DefaultCommand):
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
+class CriticityFormatter(Formatter):
+    """TODO"""
+
+    def __init__(self, prop):
+        super(CriticityFormatter, self).__init__(prop)
+
+    def __call__(self, row, context=None):
+        parameter = row.get(self.prop)
+        if parameter:
+            row[self.prop] = '{v:5s}'.format(v=parameter)
+
+
 class UpgradeTasksListCommand(UpgradeTasksCommand):
     """ List all upgrade_tasks."""
 
@@ -74,22 +87,24 @@ class UpgradeTasksListCommand(UpgradeTasksCommand):
         json_obj = None
         if args.identifier:
             filters = [PartialDate("creationDate", args.cdate)]
-            if args.console:
+            if args.run:
+                self.DEFAULT_TOTAL = "Console records found : %(count)s"
+                self.IDENTIFIER = "creationDate"
+                self.RESOURCE_IDENTIFIER = "asyncTask"
+                self.DEFAULT_SORT = "creationDate"
                 cli = self.ls.upgrade_tasks.async_tasks.console
-                keys = cli.get_rbu().get_keys(args.extended)
-                table = self.get_raw_table(args, cli, "uuid", keys)
-                table.align['criticity'] = "l"
-                table.align['message'] = "l"
-                table.sortby = "creationDate"
-                json_obj = cli.list(args.identifier, args.console)
+                table = self.get_table(args, cli, None, args.fields, ConsoleTable)
+                json_obj = cli.list(args.identifier, args.run)
+                formatters.append(CriticityFormatter('criticity'))
             else:
+                self.DEFAULT_TOTAL = "Upgrade task runs found : %(count)s"
+                self.IDENTIFIER = "uuid"
+                self.RESOURCE_IDENTIFIER = "uuid"
+                self.DEFAULT_SORT = "creationDate"
                 cli = self.ls.upgrade_tasks.async_tasks
-                keys = cli.get_rbu().get_keys(args.extended)
-                table = self.get_raw_table(args, cli, "uuid", keys)
-                table.sortby = "creationDate"
+                table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
                 json_obj = cli.list(args.identifier)
         else:
-            # async_tasks/6450f16f-ce4f-4323-9949-435fc99bc084
             table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
             # Filters
             filters = [PartialOr(self.IDENTIFIER, [args.identifier], True),
@@ -144,7 +159,7 @@ def add_parser(subparsers, name, desc, config):
     parser = subparsers2.add_parser(
         'list', help="list all upgrade tasks.")
     parser.add_argument('identifier', nargs="?", help="").completer = Completer()
-    parser.add_argument('console', nargs="?").completer = Completer('complete_async_tasks')
+    parser.add_argument('run', nargs="?").completer = Completer('complete_async_tasks')
     add_list_parser_options(parser, cdate=True)
     parser.set_defaults(__func__=UpgradeTasksListCommand(config))
 
