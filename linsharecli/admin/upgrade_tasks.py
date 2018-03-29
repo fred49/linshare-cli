@@ -33,6 +33,7 @@ from linsharecli.common.core import CreateAction
 from linsharecli.common.core import ConsoleTable
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
+from linsharecli.common.filters import Equals
 from linsharecli.common.formatters import Formatter
 from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.formatters import SizeFormatter
@@ -88,6 +89,7 @@ class UpgradeTasksListCommand(UpgradeTasksCommand):
         if args.identifier:
             filters = [PartialDate("creationDate", args.cdate)]
             if args.run:
+                filters.append(Equals("criticity", args.criticity))
                 self.DEFAULT_TOTAL = "Console records found : %(count)s"
                 self.IDENTIFIER = "creationDate"
                 self.RESOURCE_IDENTIFIER = "asyncTask"
@@ -158,8 +160,17 @@ def add_parser(subparsers, name, desc, config):
     # command : list
     parser = subparsers2.add_parser(
         'list', help="list all upgrade tasks.")
-    parser.add_argument('identifier', nargs="?", help="").completer = Completer()
-    parser.add_argument('run', nargs="?").completer = Completer('complete_async_tasks')
+    parser.add_argument('identifier', nargs="?",
+                        help="""<Upgrade task identifier>. It will display all
+                        previous runs for this upgrade task.""").completer = Completer()
+    parser.add_argument(
+        'run',
+        nargs="?",
+        help="<Run uuid>. It will display the content of one run (console)"
+    ).completer = Completer('complete_async_tasks')
+    parser.add_argument('--criticity', action="append",
+                        choices=['DEBUG', 'INFO', 'WARN', 'ERROR'],
+                        help="Applied only when displaying run data.")
     add_list_parser_options(parser, cdate=True)
     parser.set_defaults(__func__=UpgradeTasksListCommand(config))
 
