@@ -189,7 +189,7 @@ class ThreadMembersCreateCommand(ThreadMembersCommand):
         rbu = self.ls.thread_members.get_rbu()
         rbu.load_from_args(args)
         data = rbu.to_resource()
-        user_mail = args.mail
+        user_mail = args.user_mail
         user = self.ls.users.get(user_mail)
         if not user:
             self.log.error("Can not find an user using this email: %s",
@@ -261,7 +261,7 @@ def add_parser(subparsers, name, desc, config):
         'create', help="create thread member.")
     parser.add_argument(
         '--mail',
-        dest="mail",
+        dest="user_mail",
         required=True,
         help="").completer = Completer('complete_mail')
     group = parser.add_mutually_exclusive_group()
