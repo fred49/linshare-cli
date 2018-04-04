@@ -31,6 +31,7 @@ from __future__ import unicode_literals
 import datetime
 # pylint: disable=import-error
 from hurry.filesize import size as filesize
+from hurry.filesize import si
 
 # pylint: disable=too-few-public-methods
 class Formatter(object):
@@ -77,7 +78,7 @@ class SizeFormatter(Formatter):
     def __call__(self, row, context=None):
         lsize = row.get(self.prop)
         if lsize is not None:
-            row[self.prop] = filesize(lsize)
+            row[self.prop] = filesize(lsize, system=si)
 
 
 # -----------------------------------------------------------------------------
