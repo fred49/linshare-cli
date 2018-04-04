@@ -158,7 +158,11 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             for json_row in json_obj:
                 output = []
                 for key in keys:
-                    output.append(json_row.get(key))
+                    data = json_row.get(key)
+                    if isinstance(data, types.UnicodeType):
+                        output.append(data)
+                    else:
+                        output.append(str(data))
                 print " ".join(output)
             return True
         table.show_table(json_obj, filters, formatters, ignore_exceptions)
