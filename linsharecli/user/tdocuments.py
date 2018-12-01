@@ -41,7 +41,6 @@ from linshareapi.core import ResourceBuilder
 # from argtoolbox import DefaultCompleter as Completer
 
 
-# -----------------------------------------------------------------------------
 class WorkgroupCompleter(object):
 
     def __init__(self, config):
@@ -57,8 +56,31 @@ class WorkgroupCompleter(object):
                 debug("\t - " + str(j))
             debug("\n------------ ThreadCompleter -----------------\n")
             args = kwargs.get('parsed_args')
-            thread_cmd = WgNodeContentListCommand(self.config)
-            return thread_cmd.complete_threads(args, prefix)
+            # FIXME
+            wg_cmd = WgNodeContentListCommand(self.config)
+            return wg_cmd.complete_workgroups(args, prefix)
+        # pylint: disable-msg=W0703
+        except Exception as ex:
+            debug("\nERROR:An exception was caught :" + str(ex) + "\n")
+
+
+class FolderCompleter(object):
+
+    def __init__(self, config):
+        self.config = config
+
+    def __call__(self, prefix, **kwargs):
+        from argcomplete import debug
+        try:
+            debug("\n------------ FolderCompleter -----------------")
+            debug("Kwargs content :")
+            for i, j in kwargs.items():
+                debug("key : " + str(i))
+                debug("\t - " + str(j))
+            debug("\n------------ FolderCompleter -----------------\n")
+            args = kwargs.get('parsed_args')
+            wg_cmd = WgNodeContentListCommand(self.config)
+            return wg_cmd.complete_workgroups_folders(args, prefix)
         # pylint: disable-msg=W0703
         except Exception as ex:
             debug("\nERROR:An exception was caught :" + str(ex) + "\n")
@@ -96,15 +118,24 @@ class WgNodesCommand(DefaultCommand):
         super(WgNodesCommand, self).__call__(args)
         # from argcomplete import debug
         # debug("\n------------ test -----------------")
+        # FIXME ?
         json_obj = self.ls.thread_members.list(args.wg_uuid)
         return (
             v.get('userUuid') for v in json_obj if v.get(
                 'userUuid').startswith(prefix))
 
-    def complete_threads(self, args, prefix):
+    def complete_workgroups(self, args, prefix):
         """TODO"""
         super(WgNodesCommand, self).__call__(args)
         json_obj = self.ls.threads.list()
+        return (v.get('uuid')
+                for v in json_obj if v.get('uuid').startswith(prefix))
+
+    def complete_workgroups_folders(self, args, prefix):
+        """TODO"""
+        super(WgNodesCommand, self).__call__(args)
+        cli = self.ls.workgroup_nodes
+        json_obj = cli.list(args.wg_uuid, args.folders)
         return (v.get('uuid')
                 for v in json_obj if v.get('uuid').startswith(prefix))
 
@@ -156,7 +187,7 @@ class WgNodeContentListCommand(WgNodesCommand):
         super(WgNodeContentListCommand, self).__call__(args)
         cli = self.ls.workgroup_nodes
         table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list(args.wg_uuid)
+        json_obj = cli.list(args.wg_uuid, args.folders)
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.names, True),
                    PartialDate("creationDate", args.cdate)]
@@ -170,7 +201,7 @@ class WgNodeContentListCommand(WgNodesCommand):
 
     def complete_fields(self, args, prefix):
         super(WgNodeContentListCommand, self).__call__(args)
-        cli = self.ls.thread_entries
+        cli = self.ls.workgroup_nodes
         return cli.get_rbu().get_keys(True)
 
 
@@ -226,8 +257,12 @@ def add_parser(subparsers, name, desc, config):
         'list',
         help="list workgroup nodes from linshare")
     parser.add_argument(
-        'names', nargs="*",
+        '-f', '--filter', action="append", dest="names",
         help="Filter documents by their names")
+    parser.add_argument(
+        'folders', nargs="*",
+        help="Browse folders'content."
+        ).completer = FolderCompleter(config)
     add_list_parser_options(
         parser, download=True, delete=True, cdate=True)
     parser.set_defaults(__func__=WgNodeContentListCommand(config))
