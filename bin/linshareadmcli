@@ -111,13 +111,15 @@ overriden by this parameter."""))
             'debug',
             e_type=int,
             e_type_exclude=True,
-            default=0,
+            default=int(os.getenv('LS_DEBUG', 0)),
             desc="""(default: 0)
 0 : debug off
 1 : debug on
 2 : debug on and request result is printed (pretty json)
 3 : debug on and urllib debug on and http headers and request
-are printed"""
+are printed
+The default value can be overriden by the env variable LS_DEBUG, which can be
+overriden by this parameter."""
         ))
 
     def add_pre_commands(self):
