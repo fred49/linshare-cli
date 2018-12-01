@@ -215,12 +215,12 @@ class WorkgroupDocumentsDownloadCommand(WgNodesCommand):
 
 
 # -----------------------------------------------------------------------------
-class ThreadDocumentsDeleteCommand(WgNodeContentListCommand):
+class WorkgroupDocumentsDeleteCommand(WgNodesCommand):
 
     @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
-        super(ThreadDocumentsDeleteCommand, self).__call__(args)
-        cli = self.ls.thread_entries
+        super(WorkgroupDocumentsDeleteCommand, self).__call__(args)
+        cli = self.ls.workgroup_nodes
         return self._delete_all(args, cli, args.uuids)
 
 
@@ -271,7 +271,7 @@ def add_parser(subparsers, name, desc, config):
         'delete',
         help="delete workgroup nodes (folders, documents, ...)")
     add_delete_parser_options(parser)
-    parser.set_defaults(__func__=WgNodeContentListCommand(config))
+    parser.set_defaults(__func__=WorkgroupDocumentsDeleteCommand(config))
 
     # command : download
     parser = subparsers2.add_parser(
