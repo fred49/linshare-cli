@@ -270,7 +270,7 @@ def add_parser(subparsers, name, desc, config):
     # command : delete
     parser = subparsers2.add_parser(
         'delete',
-        help="delete thread members")
+        help="delete workgroup nodes (folders, documents, ...)")
     add_delete_parser_options(parser)
     parser.set_defaults(__func__=WgNodeContentListCommand(config))
 
@@ -292,7 +292,7 @@ def add_parser(subparsers, name, desc, config):
 
     # command : create
     parser = subparsers2.add_parser(
-        'create', help="create thread.")
+        'create', help="create workgroup.")
     parser.add_argument('name', action="store", help="")
     parser.set_defaults(__func__=FolderCreateCommand(config))
 
