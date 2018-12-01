@@ -115,14 +115,14 @@ class WgNodesCommand(DefaultCommand):
     }
 
     def complete(self, args, prefix):
+        """Autocomplete on every node in the current folder, file or folder"""
         super(WgNodesCommand, self).__call__(args)
-        # from argcomplete import debug
-        # debug("\n------------ test -----------------")
-        # FIXME ?
-        json_obj = self.ls.thread_members.list(args.wg_uuid)
-        return (
-            v.get('userUuid') for v in json_obj if v.get(
-                'userUuid').startswith(prefix))
+        cli = self.ls.workgroup_nodes
+        json_obj = cli.list(args.wg_uuid)
+        # only root folder is supported for now.
+        # json_obj = cli.list(args.wg_uuid, args.folders)
+        return (v.get('uuid')
+                for v in json_obj if v.get('uuid').startswith(prefix))
 
     def complete_workgroups(self, args, prefix):
         """TODO"""
@@ -205,13 +205,12 @@ class WgNodeContentListCommand(WgNodesCommand):
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
-class ThreadDocumentsDownloadCommand(WgNodeContentListCommand):
+class WorkgroupDocumentsDownloadCommand(WgNodesCommand):
 
     @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
-        super(ThreadDocumentsDownloadCommand, self).__call__(args)
-        cli = self.ls.thread_entries
+        super(WorkgroupDocumentsDownloadCommand, self).__call__(args)
+        cli = self.ls.workgroup_nodes
         return self._download_all(args, cli, args.uuids)
 
 
@@ -279,7 +278,7 @@ def add_parser(subparsers, name, desc, config):
         'download',
         help="download documents from linshare")
     add_download_parser_options(parser)
-    parser.set_defaults(__func__=ThreadDocumentsDownloadCommand(config))
+    parser.set_defaults(__func__=WorkgroupDocumentsDownloadCommand(config))
 
     # command : upload
     parser = subparsers2.add_parser(
