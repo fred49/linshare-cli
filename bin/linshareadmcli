@@ -50,8 +50,9 @@ from linsharecli.admin.dpattern import add_parser as add_domain_patterns_parser
 from linsharecli.admin.func import add_parser as add_functionalities_parser
 from linsharecli.admin.core import add_parser as add_core_parser
 from linsharecli.admin.domainpolicies import add_parser as add_domain_policies
-from linsharecli.admin.upgrade_tasks import add_parser as add_upgrade_tasks_parser
-from linsharecli.admin.welcome_messages import add_parser as add_upgrade_welcome_messages
+from linsharecli.admin.upgrade_tasks import add_parser as add_upgrade_tasks
+from linsharecli.admin.welcome_messages import add_parser as add_welcome_messages
+from linsharecli.admin.public_keys import add_parser as add_public_keys
 import linsharecli
 
 # if you want to debug argcomplete completion,
@@ -210,8 +211,9 @@ section 'server-4'""")
         add_domain_patterns_parser(subparsers, "dpatterns", "domain patterns", self.config)
         add_functionalities_parser(subparsers, "funcs", "Functionalities", self.config)
         add_domain_policies(subparsers, "domainpolicy", "Domain Policies", self.config)
-        add_upgrade_tasks_parser(subparsers, "upgrade", "upgrade tasks", self.config)
-        add_upgrade_welcome_messages(subparsers, "welcome", "welcome messages", self.config)
+        add_upgrade_tasks(subparsers, "upgrade", "upgrade tasks", self.config)
+        add_welcome_messages(subparsers, "welcome", "welcome messages", self.config)
+        add_public_keys(subparsers, "pubkeys", "welcome messages", self.config)
         add_core_parser(subparsers, self.config)
 
 # if you need debug during class construction, config file loading,
