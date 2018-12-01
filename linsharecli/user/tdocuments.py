@@ -153,18 +153,18 @@ class WgNodesCommand(DefaultCommand):
 
 
 # -----------------------------------------------------------------------------
-class ThreadDocumentsUploadCommand(WgNodesCommand):
+class WorkgroupDocumentsUploadCommand(WgNodesCommand):
     """ Upload a file to LinShare using its rest api. return the uploaded
 document uuid  """
 
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
-        super(ThreadDocumentsUploadCommand, self).__call__(args)
+        super(WorkgroupDocumentsUploadCommand, self).__call__(args)
         count = len(args.files)
         position = 0
         for file_path in args.files:
             position += 1
-            json_obj = self.ls.thread_entries.upload(
+            json_obj = self.ls.workgroup_nodes.upload(
                 args.wg_uuid, file_path, args.description)
             if json_obj:
                 json_obj['time'] = self.ls.last_req_time
@@ -287,7 +287,7 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('--desc', action="store", dest="description",
                         required=False, help="Optional description.")
     parser.add_argument('files', nargs='+')
-    parser.set_defaults(__func__=ThreadDocumentsUploadCommand(config))
+    parser.set_defaults(__func__=WorkgroupDocumentsUploadCommand(config))
 
     # command : create
     parser = subparsers2.add_parser(
