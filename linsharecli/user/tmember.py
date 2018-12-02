@@ -28,17 +28,15 @@ from __future__ import unicode_literals
 
 import urllib2
 from linshareapi.cache import Time
+from linshareapi.core import LinShareException
+from argtoolbox import DefaultCompleter as Completer
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.filters import PartialOr
-# from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import CreateAction
-from linshareapi.core import LinShareException
-from argtoolbox import DefaultCompleter as Completer
 
 
-# -----------------------------------------------------------------------------
 class ThreadCompleter(object):
 
     def __init__(self, config):
@@ -61,7 +59,6 @@ class ThreadCompleter(object):
             debug("\nERROR:An exception was caught :" + str(ex) + "\n")
 
 
-# -----------------------------------------------------------------------------
 class ThreadMembersCommand(DefaultCommand):
 
     IDENTIFIER = "userMail"
@@ -155,7 +152,6 @@ class ThreadMembersCommand(DefaultCommand):
         return False
 
 
-# -----------------------------------------------------------------------------
 class ThreadMembersListCommand(ThreadMembersCommand):
     """ List all thread members."""
 
@@ -178,33 +174,32 @@ class ThreadMembersListCommand(ThreadMembersCommand):
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
 class ThreadMembersCreateCommand(ThreadMembersCommand):
+    """Add a new member to a thread/workgroup"""
 
     @Time('linsharecli.tmembers', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadMembersCreateCommand, self).__call__(args)
         if self.api_version < 2:
             self.init_old_language_key()
-        rbu = self.ls.thread_members.get_rbu()
-        rbu.load_from_args(args)
-        data = rbu.to_resource()
-        user_mail = args.user_mail
+        act = CreateAction(self, self.ls.thread_members)
+        act.add_hook("userMail", self.hook_user_mail)
+        return act.load(args).execute()
+
+    def hook_user_mail(self, user_mail, context):
+        """Looking for user's domain with input email"""
         user = self.ls.users.get(user_mail)
         if not user:
             self.log.error("Can not find an user using this email: %s",
                            user_mail)
-            return False
+            raise ValueError("User does not exists : " + str(user_mail))
         if self.debug:
             self.pretty_json(user)
-        data['userDomainId'] = user.get('domain')
-        act = CreateAction(self, args, self.ls.thread_members, data)
-        # workaround : can not get resource identifier using command.IDENTIFIER
-        act.err_suffix = user_mail
-        return act.execute()
+        context.set_value('userDomainId', user.get('domain'))
+        return user_mail
 
 
-# -----------------------------------------------------------------------------
+
 class ThreadMembersUpdateCommand(ThreadMembersCommand):
 
     def __call__(self, args):
@@ -218,7 +213,6 @@ class ThreadMembersUpdateCommand(ThreadMembersCommand):
             rbu.to_resource())
 
 
-# -----------------------------------------------------------------------------
 class ThreadMembersDeleteCommand(ThreadMembersCommand):
 
     @Time('linsharecli.thread', label='Global time : %(time)s')
@@ -228,7 +222,6 @@ class ThreadMembersDeleteCommand(ThreadMembersCommand):
         return self._delete_all(args, cli, args.uuids)
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     parser_tmp = subparsers.add_parser(name, help=desc)
     parser_tmp.add_argument(

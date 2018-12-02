@@ -30,6 +30,7 @@ from __future__ import unicode_literals
 from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linsharecli.common.core import add_list_parser_options
+from linsharecli.common.core import hook_file_content
 from linsharecli.common.core import CreateAction
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
@@ -96,10 +97,9 @@ class PublicKeysCreateCommand(PublicKeysCommand):
 
     def __call__(self, args):
         super(PublicKeysCreateCommand, self).__call__(args)
-        fde = open(args.key, 'r')
-        args.key = fde.read()
-        act = CreateAction(self, args, self.ls.public_keys)
-        return act.execute()
+        act = CreateAction(self, self.ls.public_keys)
+        act.add_hook("publicKey", hook_file_content)
+        return act.load(args).execute()
 
 
 class PublicKeyDeleteCommand(PublicKeysCommand):

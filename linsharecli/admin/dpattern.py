@@ -147,8 +147,8 @@ class DomainPatternsCreateCommand(DomainPatternsCommand):
                     rbu.set_value('description', "")
                     break
         rbu.load_from_args(args)
-        act = CreateAction(self, args, self.ls.domain_patterns, rbu)
-        return act.execute()
+        act = CreateAction(self, self.ls.domain_patterns)
+        return act.load(args).execute(rbu.to_resource())
 
 
 # -----------------------------------------------------------------------------
@@ -169,11 +169,8 @@ class DomainPatternsCreateCommand2(DomainPatternsCommand):
                     rbu.set_value('description', "")
                     break
         rbu.load_from_args(args)
-        class MyCreateAction(CreateAction):
-            def _execute(self):
-                return self.cli.create(rbu.to_resource())
-        act = MyCreateAction(self, args, self.ls.domain_patterns, rbu)
-        return act.execute()
+        act = CreateAction(self, self.ls.domain_patterns)
+        return act.load(args).execute(rbu.to_resource())
 
     def complete(self, args, prefix):
         super(DomainPatternsCreateCommand2, self).__call__(args)

@@ -86,8 +86,8 @@ class DomainPoliciesCreateCommand(DomainPoliciesCommand):
     @Time('linshareadmcli.domain_policies', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainPoliciesCreateCommand, self).__call__(args)
-        act = CreateAction(self, args, self.ls.domain_policies)
-        return act.execute()
+        act = CreateAction(self, self.ls.domain_policies)
+        return act.load(args).execute()
 
 
 # -----------------------------------------------------------------------------
