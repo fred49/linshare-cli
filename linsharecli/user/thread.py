@@ -104,8 +104,8 @@ class ThreadsCreateCommand(ThreadsCommand):
         super(ThreadsCreateCommand, self).__call__(args)
         if self.api_version < 2:
             self.init_old_language_key()
-        act = CreateAction(self, args, self.ls.threads)
-        return act.execute()
+        act = CreateAction(self, self.ls.threads)
+        return act.load(args).execute()
 
 
 # -----------------------------------------------------------------------------

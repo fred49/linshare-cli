@@ -121,8 +121,8 @@ class LdapConnectionsCreateCommand(LdapConnectionsCommand):
         self.log.debug("api_version : " + str(self.api_version))
         if self.api_version == 0:
             self.init_old_language_key()
-        act = CreateAction(self, args, self.ls.ldap_connections)
-        return act.execute()
+        act = CreateAction(self, self.ls.ldap_connections)
+        return act.load(args).execute()
 
 # -----------------------------------------------------------------------------
 class LdapConnectionsUpdateCommand(LdapConnectionsCommand):

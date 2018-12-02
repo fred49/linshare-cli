@@ -46,6 +46,13 @@ from hurry.filesize import size as filesize
 from linshareapi.core import LinShareException
 from linshareapi.cache import Time
 
+
+def hook_file_content(path, context):
+    """Return the content of the file pointed by path"""
+    with open(path, 'r') as fde:
+        return fde.read()
+
+
 class DefaultCommand(argtoolbox.DefaultCommand):
     """ If you want to add a new command to the command line interface, your
     class should extend this class.
@@ -889,7 +896,6 @@ class BaseTable(AbstractTable):
         return "\n".join(records)
 
 
-
 class VTable(BaseTable):
     """TODO"""
 
@@ -1020,21 +1026,30 @@ class HTable(VeryPrettyTable, AbstractTable):
 class CreateAction(object):
     """TODO"""
 
-    def __init__(self, command, args, cli, rbu=None):
+    def __init__(self, command, cli):
         self.cli = cli
-        self.confirm_msg = command.MSG_RS_CREATED
-        self.identifier = command.RESOURCE_IDENTIFIER
-        self.err_suffix = getattr(args, command.IDENTIFIER, None)
+        self.command = command
         self.debug = command.debug
-        self.cli_mode = args.cli_mode
         self.log = command.log
-        self.data = None
-        if rbu is None:
-            rbu = self.cli.get_rbu()
-            rbu.load_from_args(args)
-            self.data = rbu.to_resource()
-        else:
-            self.data = rbu
+        self.cli_mode = False
+        self.err_suffix = "unknown error"
+        self.rbu = None
+
+    def add_hook(self, key, hook):
+        """Add a hook to transform input data beforce sending it to the server"""
+        if self.rbu is None:
+            self.rbu = self.cli.get_rbu()
+        self.rbu.add_hook(key, hook)
+        return self
+
+    def load(self, args):
+        """Load RessourceBuilder from args"""
+        self.err_suffix = getattr(args, self.command.IDENTIFIER, None)
+        self.cli_mode = args.cli_mode
+        if self.rbu is None:
+            self.rbu = self.cli.get_rbu()
+        self.rbu.load_from_args(args)
+        return self
 
     def pprint(self, msg, meta={}):
         msg = msg % meta
@@ -1049,10 +1064,10 @@ class CreateAction(object):
             title = ""
         self.log.debug(title + json.dumps(obj, sort_keys=True, indent=2))
 
-    def execute(self):
+    def execute(self, data=None):
         try:
             start = time.time()
-            json_obj = self._execute()
+            json_obj = self._execute(data)
             end = time.time()
             json_obj['_time'] = end - start
             if json_obj is None:
@@ -1061,16 +1076,18 @@ class CreateAction(object):
             if self.debug:
                 self.pretty_json(json_obj, "Json object returned by the server")
             if self.cli_mode:
-                print json_obj.get(self.identifier)
+                print json_obj.get(self.command.RESOURCE_IDENTIFIER)
                 return True
-            self.pprint(self.confirm_msg, json_obj)
+            self.pprint(self.command.MSG_RS_CREATED, json_obj)
             return True
         except LinShareException as ex:
             self.log.debug("LinShareException : " + str(ex.args))
             self.log.error(ex.args[1] + " : " + str(self.err_suffix))
         return False
 
-    def _execute(self):
+    def _execute(self, data):
+        if data is None:
+            data = self.rbu.to_resource()
         if self.debug:
-            self.pretty_json(self.data, "Json object sent to the server")
-        return self.cli.create(self.data)
+            self.pretty_json(data, "Json object sent to the server")
+        return self.cli.create(data)

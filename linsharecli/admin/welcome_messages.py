@@ -151,8 +151,8 @@ class WelcomeMessagesCreateCommand(WelcomeMessagesCommand):
         super(WelcomeMessagesCreateCommand, self).__call__(args)
         if args.domain:
             args.domain = {'identifier': args.domain}
-        act = CreateAction(self, args, self.ls.welcome_messages)
-        return act.execute()
+        act = CreateAction(self, self.ls.welcome_messages)
+        return act.load(args).execute()
 
 
 # -----------------------------------------------------------------------------
