@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -26,8 +27,9 @@
 
 from __future__ import unicode_literals
 
+from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
-from linsharecli.user.core import DefaultCommand
+from linshareapi.core import LinShareException
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
 from linsharecli.common.formatters import DateFormatter
@@ -36,9 +38,7 @@ from linsharecli.common.formatters import LastAuthorFormatter
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
-from linshareapi.core import LinShareException
-from linshareapi.core import ResourceBuilder
-from argtoolbox import DefaultCompleter as Completer
+from linsharecli.user.core import DefaultCommand
 
 
 INVALID_CHARS = [
@@ -91,6 +91,8 @@ def get_uuid_from(record):
 
 
 class WorkgroupCompleter(object):
+    """TODO"""
+    # pylint: disable=too-few-public-methods
 
     def __init__(self, config):
         self.config = config
@@ -118,6 +120,7 @@ class WorkgroupCompleter(object):
 
 
 class WgNodesCommand(DefaultCommand):
+    """TODO"""
 
     DEFAULT_TOTAL = "Documents found : %(count)s"
     MSG_RS_NOT_FOUND = "No documents could be found."
@@ -269,15 +272,19 @@ class WgNodeContentListCommand(WgNodesCommand):
                       LastAuthorFormatter('lastAuthor'),
                       DateFormatter('modificationDate')]
         ignore_exceptions = {'size': True, 'uploadDate':True}
-        return self._list(args, cli, table, json_obj, formatters, filters, ignore_exceptions=ignore_exceptions)
+        return self._list(args, cli, table, json_obj, formatters, filters,
+                          ignore_exceptions=ignore_exceptions)
 
     def complete_fields(self, args, prefix):
+        """TODO"""
+        # pylint: disable=unused-argument
         super(WgNodeContentListCommand, self).__call__(args)
         cli = self.ls.workgroup_nodes
         return cli.get_rbu().get_keys(True)
 
 
 class WorkgroupDocumentsDownloadCommand(WgNodesCommand):
+    """TODO"""
 
     @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
@@ -287,6 +294,7 @@ class WorkgroupDocumentsDownloadCommand(WgNodesCommand):
 
 
 class WorkgroupDocumentsDeleteCommand(WgNodesCommand):
+    """TODO"""
 
     @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
@@ -296,6 +304,7 @@ class WorkgroupDocumentsDeleteCommand(WgNodesCommand):
 
 
 class FolderCreateCommand(WgNodesCommand):
+    """TODO"""
 
     @Time('linsharecli.threads', label='Global time : %(time)s')
     def __call__(self, args):
@@ -315,6 +324,7 @@ class FolderCreateCommand(WgNodesCommand):
 
 
 def add_parser(subparsers, name, desc, config):
+    """TODO"""
     parser_tmp = subparsers.add_parser(name, help=desc)
     parser_tmp.add_argument(
         'wg_uuid',
