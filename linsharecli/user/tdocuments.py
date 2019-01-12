@@ -135,7 +135,6 @@ class FolderCompleter(object):
             debug("\nERROR:An exception was caught :" + str(ex) + "\n")
 
 
-# -----------------------------------------------------------------------------
 class WgNodesCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Documents found : %(count)s"
@@ -237,10 +236,8 @@ class WgNodesCommand(DefaultCommand):
         return False
 
 
-# -----------------------------------------------------------------------------
 class WorkgroupDocumentsUploadCommand(WgNodesCommand):
-    """ Upload a file to LinShare using its rest api. return the uploaded
-document uuid  """
+    """ Upload a file to LinShare using its rest api. return the uploaded document uuid  """
 
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
@@ -267,7 +264,6 @@ document uuid  """
         return True
 
 
-# -----------------------------------------------------------------------------
 class WgNodeContentListCommand(WgNodesCommand):
     """ List all thread members."""
 
@@ -307,7 +303,6 @@ class WorkgroupDocumentsDownloadCommand(WgNodesCommand):
         return self._download_all(args, cli, args.uuids)
 
 
-# -----------------------------------------------------------------------------
 class WorkgroupDocumentsDeleteCommand(WgNodesCommand):
 
     @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
@@ -317,7 +312,6 @@ class WorkgroupDocumentsDeleteCommand(WgNodesCommand):
         return self._delete_all(args, cli, args.uuids)
 
 
-# -----------------------------------------------------------------------------
 class FolderCreateCommand(WgNodesCommand):
 
     @Time('linsharecli.threads', label='Global time : %(time)s')
@@ -337,7 +331,6 @@ class FolderCreateCommand(WgNodesCommand):
             rbu.to_resource())
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     parser_tmp = subparsers.add_parser(name, help=desc)
     parser_tmp.add_argument(
@@ -385,7 +378,8 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('files', nargs='+')
     parser.add_argument(
         '-f', '--folders', action="append",
-        help="The new folder will be created in the last folder list. Otherwise it will be create at the root of the workgroup"
+        help="""The new files will be uploaded in the last folder in the list.
+        Otherwise it will be create at the root of the workgroup"""
         ).completer = FolderCompleter(config)
     parser.set_defaults(__func__=WorkgroupDocumentsUploadCommand(config))
 
@@ -395,7 +389,7 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('name', action="store", help="")
     parser.add_argument(
         'folders', nargs="*",
-        help="The new folder will be created in the last folder list. Otherwise it will be create at the root of the workgroup"
+        help="""The new folder will be created in the last folder list.
+        Otherwise it will be create at the root of the workgroup"""
         ).completer = FolderCompleter(config)
     parser.set_defaults(__func__=FolderCreateCommand(config))
-
