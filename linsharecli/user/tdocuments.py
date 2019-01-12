@@ -268,7 +268,8 @@ class WgNodeContentListCommand(WgNodesCommand):
                       SizeFormatter('size', "-"),
                       LastAuthorFormatter('lastAuthor'),
                       DateFormatter('modificationDate')]
-        return self._list(args, cli, table, json_obj, formatters, filters)
+        ignore_exceptions = {'size': True, 'uploadDate':True}
+        return self._list(args, cli, table, json_obj, formatters, filters, ignore_exceptions=ignore_exceptions)
 
     def complete_fields(self, args, prefix):
         super(WgNodeContentListCommand, self).__call__(args)
