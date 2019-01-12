@@ -247,10 +247,14 @@ document uuid  """
         super(WorkgroupDocumentsUploadCommand, self).__call__(args)
         count = len(args.files)
         position = 0
+        parent = None
+        if args.folders:
+            parent = get_uuid_from(args.folders[-1])
+            self.ls.workgroup_nodes.get(args.wg_uuid, parent)
         for file_path in args.files:
             position += 1
             json_obj = self.ls.workgroup_nodes.upload(
-                args.wg_uuid, file_path, args.description)
+                args.wg_uuid, file_path, args.description, parent)
             if json_obj:
                 json_obj['time'] = self.ls.last_req_time
                 json_obj['position'] = position
@@ -322,6 +326,9 @@ class FolderCreateCommand(WgNodesCommand):
         cli = self.ls.workgroup_folders
         rbu = cli.get_rbu()
         rbu.load_from_args(args)
+        if args.folders:
+            parent = get_uuid_from(args.folders[-1])
+            rbu.set_value('parent', parent)
         return self._run(
             cli.create,
             ("The following folder '%(name)s' "
@@ -376,11 +383,19 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('--desc', action="store", dest="description",
                         required=False, help="Optional description.")
     parser.add_argument('files', nargs='+')
+    parser.add_argument(
+        '-f', '--folders', action="append",
+        help="The new folder will be created in the last folder list. Otherwise it will be create at the root of the workgroup"
+        ).completer = FolderCompleter(config)
     parser.set_defaults(__func__=WorkgroupDocumentsUploadCommand(config))
 
     # command : create
     parser = subparsers2.add_parser(
         'create', help="create workgroup.")
     parser.add_argument('name', action="store", help="")
+    parser.add_argument(
+        'folders', nargs="*",
+        help="The new folder will be created in the last folder list. Otherwise it will be create at the root of the workgroup"
+        ).completer = FolderCompleter(config)
     parser.set_defaults(__func__=FolderCreateCommand(config))
 
