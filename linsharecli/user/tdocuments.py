@@ -41,6 +41,55 @@ from linshareapi.core import ResourceBuilder
 # from argtoolbox import DefaultCompleter as Completer
 
 
+INVALID_CHARS = [
+    (" ", "."),
+    (" ", "."),
+    ("é", "e"),
+    ("è", "e"),
+    ("ê", "e"),
+    ("à", "a"),
+    ("[", "."),
+    ("]", "."),
+    ("(", "."),
+    (")", "."),
+    ("{", "."),
+    ("}", "."),
+    ("'", "."),
+    ("!", "."),
+    ("?", "."),
+    ("¿", "."),
+    ("¦", "."),
+    ("'", "."),
+    ("&", ".and."),
+    ("¡", "."),
+    ("–", "-"),
+    ("—", "-"),
+    ("…", "."),
+    ("⁄", "."),
+    ("#", ""),
+    ("@", ""),
+    ("’", ""),
+    (",", "."),
+    (":", "."),
+    (";", "."),
+    ("...", "."),
+    ("..", "."),
+]
+
+def format_record_for_autocomplete(row):
+    """Build one result from uuid and sanitysed name"""
+    uuid = row.get('uuid')
+    sep = "@@@"
+    name = row.get('name')
+    for char, replace in INVALID_CHARS:
+        name = name.replace(char, replace)
+    return uuid + sep + name.strip(".")
+
+def get_uuid_from(record):
+    """TODO"""
+    return record.split('@@@')[0]
+
+
 class WorkgroupCompleter(object):
 
     def __init__(self, config):
@@ -133,11 +182,47 @@ class WgNodesCommand(DefaultCommand):
 
     def complete_workgroups_folders(self, args, prefix):
         """TODO"""
+        from argcomplete import debug
         super(WgNodesCommand, self).__call__(args)
         cli = self.ls.workgroup_nodes
-        json_obj = cli.list(args.wg_uuid, args.folders)
-        return (v.get('uuid')
-                for v in json_obj if v.get('uuid').startswith(prefix))
+        debug("folders : ", args.folders)
+        if args.folders:
+            debug("len folders : ", len(args.folders))
+        debug("prefix : ", prefix)
+        debug("len prefix : ", len(prefix))
+
+        def to_list(json_obj, parent, prefix):
+            """Convert json_obj to a list ready to use for completion"""
+            debug("\n>----------- to_list - 1  -----------------")
+            debug("parent: ", parent)
+            debug("prefix: ", prefix)
+            debug("RAW", json_obj)
+            json_obj = list(
+                format_record_for_autocomplete(row)
+                for row in json_obj if row.get('type') == "FOLDER"
+            )
+            debug("UUIDS", json_obj)
+            debug("------------ to_list - 1 ----------------<\n")
+            return json_obj
+
+        if args.folders:
+            parent = get_uuid_from(args.folders[-1])
+            if len(parent) >= 36:
+                json_obj = cli.list(args.wg_uuid, parent)
+                res = to_list(json_obj, parent, prefix)
+                return res
+            else:
+                if len(args.folders) >= 2:
+                    parent = get_uuid_from(args.folders[-2])
+                else:
+                    parent = None
+                json_obj = cli.list(args.wg_uuid, parent)
+                return to_list(json_obj, parent, prefix)
+        else:
+            parent = None
+            json_obj = cli.list(args.wg_uuid)
+            res = to_list(json_obj, parent, prefix)
+            return res
 
     def _run(self, method, message_ok, err_suffix, *args):
         try:
@@ -187,7 +272,11 @@ class WgNodeContentListCommand(WgNodesCommand):
         super(WgNodeContentListCommand, self).__call__(args)
         cli = self.ls.workgroup_nodes
         table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list(args.wg_uuid, args.folders)
+        parent = None
+        if args.folders:
+            parent = get_uuid_from(args.folders[-1])
+            self.ls.workgroup_nodes.get(args.wg_uuid, parent)
+        json_obj = cli.list(args.wg_uuid, parent)
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.names, True),
                    PartialDate("creationDate", args.cdate)]
@@ -260,7 +349,7 @@ def add_parser(subparsers, name, desc, config):
         help="Filter documents by their names")
     parser.add_argument(
         'folders', nargs="*",
-        help="Browse folders'content."
+        help="Browse folders'content: folder_uuid, folder_uuid, ..."
         ).completer = FolderCompleter(config)
     add_list_parser_options(
         parser, download=True, delete=True, cdate=True)
