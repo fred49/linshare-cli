@@ -37,6 +37,7 @@ import datetime
 import locale
 import urllib2
 import types
+import copy
 from operator import itemgetter
 import argtoolbox
 from argtoolbox import DefaultCompleter as Completer
@@ -202,6 +203,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 status = self._download(args, cli, uuid, position, count)
             elif self.CFG_DOWNLOAD_MODE == 1:
                 status = self._download_with_parent(args, cli, uuid, position, count)
+            elif self.CFG_DOWNLOAD_MODE == 2:
+                status = self._download_folder_with_parent(args, cli, uuid, position, count)
             else:
                 raise NotImplementedError()
             res += abs(status - 1)
@@ -270,6 +273,59 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 meta['time'] = req_time
             self.pprint(self.MSG_RS_DOWNLOADED, meta)
             return True
+        except urllib2.HTTPError as ex:
+            self.log.debug("http error : %s", ex.code)
+            meta['code'] = ex.code
+            meta['ex'] = str(ex)
+            if ex.code == 404:
+                self.pprint_error("Can not find and download the document : %(uuid)s", meta)
+            elif ex.code == 400:
+                json_obj = cli.core.get_json_result(ex)
+                meta.update(json_obj)
+                self.pprint_error("%(message)s : %(uuid)s (error: %(errCode)s)", meta)
+            return False
+
+    def _download_folder_with_parent(self, args, cli, uuid, position=None, count=None):
+        meta = {}
+        meta['uuid'] = uuid
+        meta['time'] = " -"
+        meta['position'] = position
+        meta['count'] = count
+        dry_run = getattr(args, "dry_run", False)
+        try:
+            parent_uuid = getattr(args, self.CFG_DOWNLOAD_ARG_ATTR, None)
+            if not parent_uuid:
+                raise ValueError("missing required arg : " + self.CFG_DOWNLOAD_ARG_ATTR)
+            json_obj = cli.get(parent_uuid, uuid)
+            meta['name'] = json_obj.get('name')
+            if json_obj.get('type') == "FOLDER":
+                # recursive
+                args_copy = copy.copy(args)
+                directory = getattr(args_copy, "directory", None)
+                if directory:
+                    directory += "/" + json_obj.get('name')
+                else:
+                    directory = json_obj.get('name')
+                if not os.path.isdir(directory) and not dry_run:
+                    os.makedirs(directory)
+                args_copy.directory = directory
+                res = 0
+                for nested in cli.list(parent_uuid, uuid):
+                    if nested.get('type') == "FOLDER":
+                        self.pprint("Folder skipped : %(name)s (%(uuid)s)", nested)
+                        continue
+                    status = self._download_with_parent(args_copy, cli,
+                                                        nested.get('uuid'), position, count)
+                    res += abs(status - 1)
+                if res > 0:
+                    meta = {'count': res}
+                    self.pprint(self.MSG_RS_CAN_NOT_BE_DOWNLOADED_M, meta)
+                    return False
+                return True
+            elif json_obj.get('type') == "DOCUMENT":
+                return self._download_with_parent(args, cli, uuid, position, count)
+            else:
+                return False
         except urllib2.HTTPError as ex:
             self.log.debug("http error : %s", ex.code)
             meta['code'] = ex.code

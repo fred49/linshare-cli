@@ -133,7 +133,7 @@ class WgNodesCommand(DefaultCommand):
     MSG_RS_CAN_NOT_BE_DOWNLOADED_M = ("%(count)s "
                                       "documents can not be downloaded.")
 
-    CFG_DOWNLOAD_MODE = 1
+    CFG_DOWNLOAD_MODE = 2
     CFG_DOWNLOAD_ARG_ATTR = "wg_uuid"
     CFG_DELETE_MODE = 1
     CFG_DELETE_ARG_ATTR = "wg_uuid"
