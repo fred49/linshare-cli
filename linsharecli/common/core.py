@@ -1,5 +1,15 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+""""TODO"""
+# FIXME fix all these warning
+# pylint: disable=dangerous-default-value
+# pylint: disable=protected-access
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
+# pylint: disable=too-many-branches
+# pylint: disable=no-member
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=attribute-defined-outside-init
 
 
 # This file is part of Linshare cli.
@@ -50,6 +60,7 @@ from linshareapi.cache import Time
 
 def hook_file_content(path, context):
     """Return the content of the file pointed by path"""
+    # pylint: disable=unused-argument
     with open(path, 'r') as fde:
         return fde.read()
 
@@ -58,6 +69,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
     """ If you want to add a new command to the command line interface, your
     class should extend this class.
     """
+    # pylint: disable=line-too-long
     IDENTIFIER = "name"
     DEFAULT_SORT = "creationDate"
     DEFAULT_SORT_SIZE = "size"
@@ -140,7 +152,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             table.sortby = self.DEFAULT_SORT_NAME
         cli_mode = getattr(args, 'cli_mode', False)
         self.log.debug("final table.sortby : %s", table.sortby)
-        for key in self.ACTIONS.keys():
+        for key in self.ACTIONS:
             if getattr(args, key, False):
                 table.load(json_obj, filters, formatters, ignore_exceptions)
                 rows = table.get_raw()
@@ -210,7 +222,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             res += abs(status - 1)
         if res > 0:
             meta = {'count': res}
-            self.pprint(self.MSG_RS_CAN_NOT_BE_DOWNLOADED_M , meta)
+            self.pprint(self.MSG_RS_CAN_NOT_BE_DOWNLOADED_M, meta)
             return False
         return True
 
@@ -459,16 +471,19 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         return False
 
     def pprint(self, msg, meta={}):
+        """TODO"""
         msg = msg % meta
         self.log.debug(msg)
         print msg
 
     def pprint_warn(self, msg, meta={}):
+        """TODO"""
         msg = "WARN: " + msg % meta
         self.log.warn(msg)
         print msg
 
     def pprint_error(self, msg, meta={}):
+        """TODO"""
         msg = "ERROR: " + msg % meta
         self.log.error(msg)
         print msg
@@ -515,17 +530,19 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             row[attr] = filesize(row[attr])
 
     def getmaxlength(self, data):
+        """TODO"""
         maxlength = {}
         for row in data:
-            for k, v in row.items():
-                if not  maxlength.get(k, False):
-                    maxlength[k] = len(repr(v))
+            for key, val in row.items():
+                if not  maxlength.get(key, False):
+                    maxlength[key] = len(repr(val))
                 else:
-                    maxlength[k] = max((len(repr(v)), maxlength[k]))
+                    maxlength[key] = max((len(repr(val)), maxlength[key]))
         self.log.debug(str(maxlength))
         return maxlength
 
     def getdatatype(self, data):
+        """TODO"""
         res = {}
         fields = self.get_legend(data)
         if fields:
@@ -536,6 +553,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 
     def build_on_field(self, name, maxlength, datatype, factor=1.3,
                        suffix=u"s}  "):
+        """TODO"""
         if datatype[name] == int:
             return u"{" + name + u"!s:" + str(int(maxlength[name] *
                                                   factor)) + suffix
@@ -545,11 +563,11 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         elif datatype[name] == bool:
             return u"{" + name + u"!s:" + str(int(maxlength[name] *
                                                   factor)) + suffix
-        else:
-            return u"{" + name + u":" + str(int(maxlength[name] *
-                                                factor)) + suffix
+        return u"{" + name + u":" + str(int(maxlength[name] *
+                                            factor)) + suffix
 
     def print_fields(self, data):
+        """TODO"""
         fields = self.get_legend(data)
         if fields:
             _title = "Available returned fields :"
@@ -571,6 +589,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         """Return a string with the '-' character, used to underline a title.
         the first argument is the title to underline."""
         sub = ""
+        # pylint: disable=unused-variable
         for i in xrange(0, len(title)):
             sub += "-"
         return sub
@@ -609,7 +628,10 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 res[j] = max([len(str(i.get((j)))), res.get(j, 0)])
         print res
 
-    def print_table_test_1(self, json_obj, sortby, reverse = False, keys = [], output_format = None, no_title = False, no_legend = False):
+    def print_table_test_1(self, json_obj, sortby, reverse=False, keys=[],
+                           output_format=None, no_title=False,
+                           no_legend=False):
+        """TODO"""
         # computing data for presentation
         maxlength = self.getmaxlength(json_obj)
         datatype = self.getdatatype(json_obj)
@@ -642,7 +664,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             elif getattr(args, "csv", False):
                 args.vertical = True
             else:
-                for key in self.ACTIONS.keys():
+                for key in self.ACTIONS:
                     if getattr(args, key, False):
                         args.vertical = True
         args.reverse = getattr(args, "reverse", False)
@@ -681,6 +703,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 
     def get_raw_table(self, args, cli, first_column, keys, other_table=None):
         """TODO"""
+        # pylint: disable=unused-argument
         args.reverse = getattr(args, "reverse", False)
         args.extended = getattr(args, "extended", False)
         table = None
@@ -726,7 +749,8 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
         filter_group.add_argument(
             '--date', action="store", dest="cdate",
             help="Filter on creation date")
-    filter_group.add_argument('-k', '--field', action='append', dest="fields"
+    filter_group.add_argument(
+        '-k', '--field', action='append', dest="fields"
         ).completer = Completer("complete_fields")
 
     # sort
@@ -821,8 +845,10 @@ def add_download_parser_options(parser, method=None):
 class AbstractTable(object):
     """TODO"""
 
+    # pylint: disable=inconsistent-return-statements
     def filters(self, row, filters):
         """TODO"""
+        # pylint: disable=no-self-use
         if filters is not None:
             if isinstance(filters, list):
                 cpt = 0
@@ -874,7 +900,7 @@ class BaseTable(AbstractTable):
 
     vertical = True
 
-    def __init__(self, keys = [], reverse = False, debug=0):
+    def __init__(self, keys=[], reverse=False, debug=0):
         self.debug = debug
         classname = str(self.__class__.__name__.lower())
         self.log = logging.getLogger('linsharecli.' + classname)
@@ -893,6 +919,7 @@ class BaseTable(AbstractTable):
     @Time('linsharecli.core.load', label='time : %(time)s')
     def load(self, data, filters=None, formatters=None,
              ignore_exceptions={}):
+        """TODO"""
         for row in data:
             if self.filters(row, filters):
                 if not self.raw:
@@ -913,6 +940,7 @@ class BaseTable(AbstractTable):
             self.end = 1 + self._pref_limit
 
     def add_row(self, row):
+        """TODO"""
         if self.debug >= 2:
             self.log.debug(row)
         if not isinstance(row, dict):
@@ -920,10 +948,11 @@ class BaseTable(AbstractTable):
         self._rows.append(row)
 
     def get_raw(self):
+        """TODO"""
         if self.sortby:
             try:
                 self._rows = sorted(self._rows, reverse=self.reversesort,
-                            key=itemgetter(self.sortby))
+                                    key=itemgetter(self.sortby))
             except KeyError as ex:
                 self.log.warn("missing sortby key : " + str(ex))
         source = self._rows
@@ -936,6 +965,7 @@ class BaseTable(AbstractTable):
         return source
 
     def get_json(self):
+        """TODO"""
         records = []
         if self.raw_json:
             return json.dumps(self.get_raw(), sort_keys=True, indent=2)
@@ -947,6 +977,7 @@ class BaseTable(AbstractTable):
         return json.dumps(records, sort_keys=True, indent=2)
 
     def get_csv(self):
+        """TODO"""
         records = []
         if not self._pref_no_csv_headers:
             records.append(";".join(self.keys))
@@ -970,6 +1001,7 @@ class VTable(BaseTable):
     @Time('linsharecli.core.show_table', label='time : %(time)s')
     def show_table(self, json_obj, filters=None, formatters=None,
                    ignore_exceptions={}):
+        """TODO"""
         self.load(json_obj, filters, formatters, ignore_exceptions)
         if self.json:
             print self.get_json()
@@ -981,6 +1013,7 @@ class VTable(BaseTable):
         print unicode(out)
 
     def get_string(self):
+        """TODO"""
         max_length_line = 0
         records = []
         for row in self.get_raw():
@@ -1002,17 +1035,20 @@ class VTable(BaseTable):
         for record in records:
             cptline += 1
             header = "-[ RECORD " + str(cptline) + " ]-"
-            header += "".join([ "-" for i in xrange(max_length_line - len(header)) ])
+            # pylint: disable=unused-variable
+            header += "".join(["-" for i in xrange(max_length_line - len(header))])
             out.append(header)
             out.append(record)
         return "\n".join(out)
 
     def add_row(self, row):
+        """TODO"""
         super(VTable, self).add_row(row)
         self.update_max_lengthkey(row)
 
     def update_max_lengthkey(self, row):
-        for k, v in row.items():
+        """TODO"""
+        for k in row:
             self._maxlengthkey = max((len(repr(k)), self._maxlengthkey))
 
 
@@ -1024,6 +1060,7 @@ class ConsoleTable(BaseTable):
     @Time('linsharecli.core.show_table', label='time : %(time)s')
     def show_table(self, json_obj, filters=None, formatters=None,
                    ignore_exceptions={}):
+        """TODO"""
         self.load(json_obj, filters, formatters, ignore_exceptions)
         if self.json:
             print self.get_json()
@@ -1052,6 +1089,7 @@ class HTable(VeryPrettyTable, AbstractTable):
     @Time('linsharecli.core.load', label='time : %(time)s')
     def load(self, json_obj, filters=None, formatters=None,
              ignore_exceptions={}):
+        """TODO"""
         for json_row in json_obj:
             data = OrderedDict()
             for key in self.keys:
@@ -1080,13 +1118,24 @@ class HTable(VeryPrettyTable, AbstractTable):
     @Time('linsharecli.core.show_table', label='time : %(time)s')
     def show_table(self, json_obj, filters=None, formatters=None,
                    ignore_exceptions={}):
+        """TODO"""
         self.load(json_obj, filters, formatters, ignore_exceptions)
         out = self.get_string(fields=self.keys)
         print unicode(out)
 
     def get_raw(self):
+        """TODO"""
         options = self._get_options({'fields': self.keys})
         return self._get_rows(options)
+
+    def get_json(self):
+        """TODO"""
+        raise NotImplementedError()
+
+    def get_csv(self):
+        """TODO"""
+        raise NotImplementedError()
+
 
 
 class CreateAction(object):
@@ -1118,6 +1167,7 @@ class CreateAction(object):
         return self
 
     def pprint(self, msg, meta={}):
+        """TODO"""
         msg = msg % meta
         self.log.debug(msg)
         print msg
@@ -1131,6 +1181,7 @@ class CreateAction(object):
         self.log.debug(title + json.dumps(obj, sort_keys=True, indent=2))
 
     def execute(self, data=None):
+        """TODO"""
         try:
             start = time.time()
             json_obj = self._execute(data)
