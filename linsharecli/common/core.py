@@ -271,11 +271,15 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             self.pprint(self.MSG_RS_DOWNLOADED, meta)
             return True
         except urllib2.HTTPError as ex:
+            self.log.debug("http error : %s", ex.code)
             meta['code'] = ex.code
             meta['ex'] = str(ex)
             if ex.code == 404:
-                self.pprint_error("http error : %(ex)s", meta)
-                self.pprint_error("Can not download the missing document : %(uuid)s", meta)
+                self.pprint_error("Can not find and download the document : %(uuid)s", meta)
+            elif ex.code == 400:
+                json_obj = cli.core.get_json_result(ex)
+                meta.update(json_obj)
+                self.pprint_error("%(message)s : %(uuid)s (error: %(errCode)s)", meta)
             return False
 
     def _delete_all(self, args, cli, uuids):
