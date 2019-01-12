@@ -38,7 +38,7 @@ from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
 from linshareapi.core import LinShareException
 from linshareapi.core import ResourceBuilder
-# from argtoolbox import DefaultCompleter as Completer
+from argtoolbox import DefaultCompleter as Completer
 
 
 INVALID_CHARS = [
@@ -111,28 +111,10 @@ class WorkgroupCompleter(object):
         # pylint: disable-msg=W0703
         except Exception as ex:
             debug("\nERROR:An exception was caught :" + str(ex) + "\n")
-
-
-class FolderCompleter(object):
-
-    def __init__(self, config):
-        self.config = config
-
-    def __call__(self, prefix, **kwargs):
-        from argcomplete import debug
-        try:
-            debug("\n------------ FolderCompleter -----------------")
-            debug("Kwargs content :")
-            for i, j in kwargs.items():
-                debug("key : " + str(i))
-                debug("\t - " + str(j))
-            debug("\n------------ FolderCompleter -----------------\n")
-            args = kwargs.get('parsed_args')
-            wg_cmd = WgNodeContentListCommand(self.config)
-            return wg_cmd.complete_workgroups_folders(args, prefix)
-        # pylint: disable-msg=W0703
-        except Exception as ex:
-            debug("\nERROR:An exception was caught :" + str(ex) + "\n")
+            import traceback
+            traceback.print_exc()
+            debug("\n------\n")
+            return ["comlete-error"]
 
 
 class WgNodesCommand(DefaultCommand):
@@ -162,7 +144,7 @@ class WgNodesCommand(DefaultCommand):
         'count_only': '_count_only',
     }
 
-    def complete(self, args, prefix):
+    def complete_root_only(self, args, prefix):
         """Autocomplete on every node in the current folder, file or folder"""
         super(WgNodesCommand, self).__call__(args)
         cli = self.ls.workgroup_nodes
@@ -179,7 +161,7 @@ class WgNodesCommand(DefaultCommand):
         return (v.get('uuid')
                 for v in json_obj if v.get('uuid').startswith(prefix))
 
-    def complete_workgroups_folders(self, args, prefix):
+    def complete(self, args, prefix):
         """TODO"""
         from argcomplete import debug
         super(WgNodesCommand, self).__call__(args)
@@ -353,7 +335,7 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument(
         'folders', nargs="*",
         help="Browse folders'content: folder_uuid, folder_uuid, ..."
-        ).completer = FolderCompleter(config)
+        ).completer = Completer()
     add_list_parser_options(
         parser, download=True, delete=True, cdate=True)
     parser.set_defaults(__func__=WgNodeContentListCommand(config))
@@ -362,14 +344,14 @@ def add_parser(subparsers, name, desc, config):
     parser = subparsers2.add_parser(
         'delete',
         help="delete workgroup nodes (folders, documents, ...)")
-    add_delete_parser_options(parser)
+    add_delete_parser_options(parser, 'complete_root_only')
     parser.set_defaults(__func__=WorkgroupDocumentsDeleteCommand(config))
 
     # command : download
     parser = subparsers2.add_parser(
         'download',
         help="download documents from linshare")
-    add_download_parser_options(parser)
+    add_download_parser_options(parser, 'complete_root_only')
     parser.set_defaults(__func__=WorkgroupDocumentsDownloadCommand(config))
 
     # command : upload
@@ -383,7 +365,7 @@ def add_parser(subparsers, name, desc, config):
         '-f', '--folders', action="append",
         help="""The new files will be uploaded in the last folder in the list.
         Otherwise it will be create at the root of the workgroup"""
-        ).completer = FolderCompleter(config)
+        ).completer = Completer()
     parser.set_defaults(__func__=WorkgroupDocumentsUploadCommand(config))
 
     # command : create
@@ -394,5 +376,5 @@ def add_parser(subparsers, name, desc, config):
         'folders', nargs="*",
         help="""The new folder will be created in the last folder list.
         Otherwise it will be create at the root of the workgroup"""
-        ).completer = FolderCompleter(config)
+        ).completer = Completer()
     parser.set_defaults(__func__=FolderCreateCommand(config))

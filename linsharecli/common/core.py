@@ -739,15 +739,21 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
     return filter_group, sort_group, format_group, actions_group
 
 # -----------------------------------------------------------------------------
-def add_delete_parser_options(parser):
+def add_delete_parser_options(parser, method=None):
     """TODO"""
-    parser.add_argument('uuids', nargs='+').completer = Completer()
+    if method:
+        parser.add_argument('uuids', nargs='+').completer = Completer(method)
+    else:
+        parser.add_argument('uuids', nargs='+').completer = Completer()
     parser.add_argument('--dry-run', action="store_true")
 
 # -----------------------------------------------------------------------------
-def add_download_parser_options(parser):
+def add_download_parser_options(parser, method=None):
     """TODO"""
-    parser.add_argument('uuids', nargs='+').completer = Completer()
+    if method:
+        parser.add_argument('uuids', nargs='+').completer = Completer(method)
+    else:
+        parser.add_argument('uuids', nargs='+').completer = Completer()
     parser.add_argument('--dry-run', action="store_true")
     parser.add_argument('-o', '--output-dir', action="store", dest="directory")
 
