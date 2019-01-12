@@ -276,7 +276,7 @@ class WgNodeContentListCommand(WgNodesCommand):
         if args.folders:
             parent = get_uuid_from(args.folders[-1])
             self.ls.workgroup_nodes.get(args.wg_uuid, parent)
-        json_obj = cli.list(args.wg_uuid, parent)
+        json_obj = cli.list(args.wg_uuid, parent, flat=args.flat_mode)
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.names, True),
                    PartialDate("creationDate", args.cdate)]
@@ -347,6 +347,9 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument(
         '-f', '--filter', action="append", dest="names",
         help="Filter documents by their names")
+    parser.add_argument(
+        '--flat', action="store_true", dest="flat_mode",
+        help="Flat document mode : list all documents in every folders in a workgroup")
     parser.add_argument(
         'folders', nargs="*",
         help="Browse folders'content: folder_uuid, folder_uuid, ..."
