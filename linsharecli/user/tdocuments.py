@@ -39,6 +39,7 @@ from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
 from linsharecli.user.core import DefaultCommand
+from linsharecli.common.formatters import Formatter
 
 
 INVALID_CHARS = [
@@ -221,6 +222,23 @@ class WgNodesCommand(DefaultCommand):
         return False
 
 
+# pylint: disable=too-few-public-methods
+class TreePathFormatter(Formatter):
+    """TODO"""
+
+    def __init__(self, prop):
+        super(TreePathFormatter, self).__init__(prop)
+
+    def __call__(self, row, context=None):
+        parameter = row.get(self.prop)
+        if parameter:
+            breadcrumb = []
+            for path in row.get('treePath'):
+                breadcrumb.append(path.get('name'))
+            breadcrumb.append(row.get('name'))
+            row[self.prop] = " > ".join(breadcrumb)
+
+
 class WorkgroupDocumentsUploadCommand(WgNodesCommand):
     """ Upload a file to LinShare using its rest api. return the uploaded document uuid  """
 
@@ -250,7 +268,7 @@ class WorkgroupDocumentsUploadCommand(WgNodesCommand):
 
 
 class WgNodeContentListCommand(WgNodesCommand):
-    """ List all thread members."""
+    """ List all workgroup content."""
 
     def get_last_valid_node(self, cli, args):
         """TODO"""
@@ -267,7 +285,7 @@ class WgNodeContentListCommand(WgNodesCommand):
         if not getattr(args, 'no_breadcrumb', False):
             node_uuid = self.get_last_valid_node(cli, args)
             if node_uuid:
-                node = cli.get(args.wg_uuid, node_uuid)
+                node = cli.get(args.wg_uuid, node_uuid, tree=True)
                 breadcrumb = []
                 for path in node.get('treePath'):
                     breadcrumb.append(path.get('name'))
@@ -305,6 +323,37 @@ class WgNodeContentListCommand(WgNodesCommand):
         super(WgNodeContentListCommand, self).__call__(args)
         cli = self.ls.workgroup_nodes
         return cli.get_rbu().get_keys(True)
+
+
+class WgNodeContentDisplayCommand(WgNodesCommand):
+    """ List all thread members."""
+
+    @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
+    def __call__(self, args):
+        super(WgNodeContentDisplayCommand, self).__call__(args)
+        cli = self.ls.workgroup_nodes
+        json_obj = []
+        for node_uuid in args.nodes:
+            node_uuid = get_uuid_from(node_uuid)
+            node = cli.get(args.wg_uuid, node_uuid, tree=True)
+            # self.pretty_json(node)
+            json_obj.append(node)
+        args.vertical = True
+        table = self.get_table(args, cli, self.IDENTIFIER)
+        keys = cli.get_rbu().get_keys(args.extended)
+        keys.append('treePath')
+        table = self.get_raw_table(args, cli, self.IDENTIFIER, keys)
+        # useless and required ! Design flaw ?
+        table.sortby = self.IDENTIFIER
+        formatters = [DateFormatter('creationDate'),
+                      DateFormatter('uploadDate'),
+                      SizeFormatter('size', "-"),
+                      LastAuthorFormatter('lastAuthor'),
+                      TreePathFormatter('treePath'),
+                      DateFormatter('modificationDate')]
+        ignore_exceptions = {'size': True, 'uploadDate':True}
+        return self._list(args, cli, table, json_obj, formatters,
+                          ignore_exceptions=ignore_exceptions)
 
 
 class WorkgroupDocumentsDownloadCommand(WgNodesCommand):
@@ -377,6 +426,26 @@ def add_parser(subparsers, name, desc, config):
     add_list_parser_options(
         parser, download=True, delete=True, cdate=True)
     parser.set_defaults(__func__=WgNodeContentListCommand(config))
+
+    # command : show
+    parser = subparsers2.add_parser(
+        'show',
+        help="show workgroup nodes (folders, documents, ...)")
+    parser.add_argument(
+        'nodes', nargs="*",
+        help="Display folders'content: folder_uuid, folder_uuid, ..."
+        )
+    parser.add_argument(
+        '--extended', action="store_true",
+        help="Display results using extended format.")
+    parser.add_argument('--json', action="store_true", help="Json output")
+    parser.add_argument(
+        '--raw-json', action="store_true",
+        help="Display every attributes for json output.")
+    parser.add_argument(
+        '--raw', action="store_true",
+        help="Disable all data formatters (time, size, ...)")
+    parser.set_defaults(__func__=WgNodeContentDisplayCommand(config))
 
     # command : delete
     parser = subparsers2.add_parser(
