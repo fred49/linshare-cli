@@ -32,7 +32,7 @@ from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
-from linsharecli.common.core import CreateAction
+from linsharecli.common.actions import CreateAction
 from argtoolbox import DefaultCompleter as Completer
 
 

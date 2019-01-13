@@ -29,7 +29,7 @@ from __future__ import unicode_literals
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
 from linsharecli.common.core import add_list_parser_options
-from linsharecli.common.core import CreateAction
+from linsharecli.common.actions import CreateAction
 from linsharecli.common.core import ConsoleTable
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate

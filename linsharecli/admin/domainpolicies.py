@@ -31,7 +31,7 @@ from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
 from linsharecli.common.core import add_list_parser_options
-from linsharecli.common.core import CreateAction
+from linsharecli.common.actions import CreateAction
 
 
 # -----------------------------------------------------------------------------
