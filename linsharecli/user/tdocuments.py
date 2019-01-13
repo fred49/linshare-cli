@@ -252,6 +252,30 @@ class WorkgroupDocumentsUploadCommand(WgNodesCommand):
 class WgNodeContentListCommand(WgNodesCommand):
     """ List all thread members."""
 
+    def get_last_valid_node(self, cli, args):
+        """TODO"""
+        if args.folders:
+            nodes = reversed(args.folders)
+            for node in nodes:
+                parent = get_uuid_from(node)
+                if cli.head(args.wg_uuid, parent):
+                    return parent
+        return args.wg_uuid
+
+    def show_breadcrumb(self, cli, args):
+        """TODO"""
+        if not getattr(args, 'no_breadcrumb', False):
+            node_uuid = self.get_last_valid_node(cli, args)
+            if node_uuid:
+                node = cli.get(args.wg_uuid, node_uuid)
+                breadcrumb = []
+                for path in node.get('treePath'):
+                    breadcrumb.append(path.get('name'))
+                breadcrumb.append(node.get('name'))
+                print
+                print "###", " > ".join(breadcrumb)
+                print
+
     @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
         super(WgNodeContentListCommand, self).__call__(args)
@@ -260,7 +284,7 @@ class WgNodeContentListCommand(WgNodesCommand):
         parent = None
         if args.folders:
             parent = get_uuid_from(args.folders[-1])
-            self.ls.workgroup_nodes.get(args.wg_uuid, parent)
+        self.show_breadcrumb(cli, args)
         json_obj = cli.list(args.wg_uuid, parent, flat=args.flat_mode)
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.names, True),
@@ -343,6 +367,9 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument(
         '--flat', action="store_true", dest="flat_mode",
         help="Flat document mode : list all documents in every folders in a workgroup")
+    parser.add_argument(
+        '--no-breadcrumb', action="store_true",
+        help="Do not display breadcrumb.")
     parser.add_argument(
         'folders', nargs="*",
         help="Browse folders'content: folder_uuid, folder_uuid, ..."
