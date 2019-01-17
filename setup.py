@@ -79,13 +79,13 @@ setup(
 
     # List run-time dependencies here.  These will be installed by pip when your
     # project is installed.
-    install_requires = ['argtoolbox>=0.1.0',
-                        'linshareapi>=0.3.4',
-                        'poster',
-                        'progressbar',
-                        'veryprettytable',
-                        'hurry.filesize',
-                        'mock',
+    install_requires = ['argtoolbox>=0.1.0,<0.2',
+                        'linshareapi>=0.3.6,<0.4',
+                        'poster>=0.8.1,<0.9'
+                        'progressbar==2.3',
+                        'veryprettytable==0.8.1',
+                        'hurry.filesize==0.9',
+                        'mock==2.0.0',
                         ],
     scripts = glob.glob('bin/*'),
 )
