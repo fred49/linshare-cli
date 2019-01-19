@@ -29,7 +29,7 @@ class TestThreadsList(LinShareTestCase):
     # * content : 3 threads
     # * footer : 3 lines
     DATA_DOCUMENTS_HEIGHT = 9
-    DATA_DOCUMENTS_WIDTH = 109
+    DATA_DOCUMENTS_WIDTH = 95
 
     def setUp(self):
         super(TestThreadsList, self).setUp()
@@ -41,5 +41,6 @@ class TestThreadsList(LinShareTestCase):
         """retrieve default threads list"""
         command = "threads list"
         output = self.run_default0(command)
+        LOG.error(output)
         self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
         self.assertEqual(len(output[0]), self.DATA_DOCUMENTS_WIDTH)
