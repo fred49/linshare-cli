@@ -37,6 +37,8 @@ from linshareapi.core import LinShareException
 class AbstractAction(object):
     """TODO"""
 
+    MESSAGE_CONFIRM_KEY = None
+
     def __init__(self, command, cli):
         self.cli = cli
         self.command = command
@@ -78,14 +80,6 @@ class AbstractAction(object):
 
     def execute(self, data=None):
         """TODO"""
-        pass
-
-
-class CreateAction(AbstractAction):
-    """TODO"""
-
-    def execute(self, data=None):
-        """TODO"""
         try:
             start = time.time()
             json_obj = self._execute(data)
@@ -99,7 +93,8 @@ class CreateAction(AbstractAction):
             if self.cli_mode:
                 print json_obj.get(self.command.RESOURCE_IDENTIFIER)
                 return True
-            self.pprint(self.command.MSG_RS_CREATED, json_obj)
+            msg = getattr(self.command, self.MESSAGE_CONFIRM_KEY)
+            self.pprint(msg, json_obj)
             return True
         except LinShareException as ex:
             self.log.debug("LinShareException : " + str(ex.args))
@@ -107,8 +102,30 @@ class CreateAction(AbstractAction):
         return False
 
     def _execute(self, data):
+        raise NotImplementedError()
+
+
+class CreateAction(AbstractAction):
+    """TODO"""
+
+    MESSAGE_CONFIRM_KEY = 'MSG_RS_CREATED'
+
+    def _execute(self, data):
         if data is None:
             data = self.rbu.to_resource()
         if self.debug:
             self.pretty_json(data, "Json object sent to the server")
         return self.cli.create(data)
+
+
+class UpdateAction(AbstractAction):
+    """TODO"""
+
+    MESSAGE_CONFIRM_KEY = 'MSG_RS_UPDATED'
+
+    def _execute(self, data):
+        if data is None:
+            data = self.rbu.to_resource()
+        if self.debug:
+            self.pretty_json(data, "Json object sent to the server")
+        return self.cli.update(data)

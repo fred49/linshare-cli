@@ -27,6 +27,8 @@
 
 from __future__ import unicode_literals
 
+import argparse
+from argparse import ArgumentError
 from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
@@ -40,6 +42,8 @@ from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.formatters import Formatter
+from linsharecli.common.actions import CreateAction
+from linsharecli.common.actions import UpdateAction
 
 
 INVALID_CHARS = [
@@ -90,6 +94,30 @@ def get_uuid_from(record):
     """TODO"""
     return record.split('@@@')[0]
 
+def convert_to_list(json_obj, parent, prefix):
+    """Convert json_obj to a list ready to use for completion"""
+    from argcomplete import debug
+    debug("\n>----------- convert_to_list - 1  -----------------")
+    debug("parent: ", parent)
+    debug("prefix: ", prefix)
+    debug("RAW", json_obj)
+    json_obj = list(
+        format_record_for_autocomplete(row)
+        for row in json_obj if row.get('type') == "FOLDER"
+    )
+    debug("UUIDS", json_obj)
+    debug("------------ convert_to_list - 1 ----------------<\n")
+    return json_obj
+
+def convert_to_list_nodes(json_obj):
+    """TODO"""
+    return list(
+        format_record_for_autocomplete(row)
+        for row in json_obj if row.get('type') in [
+            "FOLDER", "DOCUMENT"
+        ]
+    )
+
 
 class WorkgroupCompleter(object):
     """TODO"""
@@ -136,6 +164,12 @@ class WgNodesCommand(DefaultCommand):
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One document can not be downloaded."
     MSG_RS_CAN_NOT_BE_DOWNLOADED_M = ("%(count)s "
                                       "documents can not be downloaded.")
+    MSG_RS_CREATED = ("The following folder '%(name)s' "
+                      "(%(uuid)s) was successfully created")
+
+    MSG_RS_UPDATED = ("The following folder '%(name)s' "
+                      "(%(uuid)s) was successfully updated")
+
 
     CFG_DOWNLOAD_MODE = 2
     CFG_DOWNLOAD_ARG_ATTR = "wg_uuid"
@@ -176,25 +210,11 @@ class WgNodesCommand(DefaultCommand):
         debug("prefix : ", prefix)
         debug("len prefix : ", len(prefix))
 
-        def to_list(json_obj, parent, prefix):
-            """Convert json_obj to a list ready to use for completion"""
-            debug("\n>----------- to_list - 1  -----------------")
-            debug("parent: ", parent)
-            debug("prefix: ", prefix)
-            debug("RAW", json_obj)
-            json_obj = list(
-                format_record_for_autocomplete(row)
-                for row in json_obj if row.get('type') == "FOLDER"
-            )
-            debug("UUIDS", json_obj)
-            debug("------------ to_list - 1 ----------------<\n")
-            return json_obj
-
         if args.folders:
             parent = get_uuid_from(args.folders[-1])
             if len(parent) >= 36:
                 json_obj = cli.list(args.wg_uuid, parent)
-                res = to_list(json_obj, parent, prefix)
+                res = convert_to_list(json_obj, parent, prefix)
                 return res
             else:
                 if len(args.folders) >= 2:
@@ -202,24 +222,51 @@ class WgNodesCommand(DefaultCommand):
                 else:
                     parent = None
                 json_obj = cli.list(args.wg_uuid, parent)
-                return to_list(json_obj, parent, prefix)
+                return convert_to_list(json_obj, parent, prefix)
         else:
             parent = None
             json_obj = cli.list(args.wg_uuid)
-            res = to_list(json_obj, parent, prefix)
+            res = convert_to_list(json_obj, parent, prefix)
             return res
 
-    def _run(self, method, message_ok, err_suffix, *args):
-        try:
-            json_obj = method(*args)
-            self.log.info(message_ok, json_obj)
-            if self.debug:
-                self.pretty_json(json_obj)
-            return True
-        except LinShareException as ex:
-            self.log.debug("LinShareException : " + str(ex.args))
-            self.log.error(ex.args[1] + " : " + err_suffix)
-        return False
+    def complete_nodes(self, args, prefix):
+        """TODO"""
+        from argcomplete import debug
+        super(WgNodesCommand, self).__call__(args)
+        cli = self.ls.workgroup_nodes
+        debug("nodes : ", args.nodes)
+        if args.nodes:
+            debug("len nodes : ", len(args.nodes))
+        debug("prefix : ", prefix)
+        debug("len prefix : ", len(prefix))
+        if args.nodes:
+            parent = get_uuid_from(args.nodes[-1])
+            if len(parent) >= 36:
+                json_obj = cli.list(args.wg_uuid, parent)
+                return convert_to_list_nodes(json_obj)
+            else:
+                if len(args.nodes) >= 2:
+                    parent = get_uuid_from(args.nodes[-2])
+                else:
+                    parent = None
+                json_obj = cli.list(args.wg_uuid, parent)
+                return convert_to_list_nodes(json_obj)
+        else:
+            parent = None
+            json_obj = cli.list(args.wg_uuid)
+            return convert_to_list_nodes(json_obj)
+
+    def check_required_options(self, args, required_fields, options):
+        """Check if at least one option is set among the required_fields list"""
+        one_set = False
+        for i in required_fields:
+            if getattr(args, i, None) is not None:
+                one_set = True
+                break
+        if not one_set:
+            msg = "You need to choose at least one option among : "
+            msg += " or ".join(options)
+            raise ArgumentError(None, msg)
 
 
 # pylint: disable=too-few-public-methods
@@ -383,17 +430,35 @@ class FolderCreateCommand(WgNodesCommand):
     def __call__(self, args):
         super(FolderCreateCommand, self).__call__(args)
         cli = self.ls.workgroup_folders
+        act = CreateAction(self, cli)
         rbu = cli.get_rbu()
         rbu.load_from_args(args)
         if args.folders:
             parent = get_uuid_from(args.folders[-1])
             rbu.set_value('parent', parent)
-        return self._run(
-            cli.create,
-            ("The following folder '%(name)s' "
-             "(%(uuid)s) was successfully created"),
-            args.name,
-            rbu.to_resource())
+        return act.load(args).execute(rbu.to_resource())
+
+
+class NodeUpdateCommand(WgNodesCommand):
+    """TODO"""
+
+    @Time('linsharecli.threads', label='Global time : %(time)s')
+    def __call__(self, args):
+        super(NodeUpdateCommand, self).__call__(args)
+        self.check_required_options(
+            args,
+            ['description', 'meta_data', 'name'],
+            ["--name", "--description"])
+        cli = self.ls.workgroup_folders
+        uuid = get_uuid_from(args.nodes[-1])
+        node = cli.get(args.wg_uuid, uuid)
+        act = UpdateAction(self, cli)
+        rbu = cli.get_rbu()
+        rbu.copy(node)
+        rbu.load_from_args(args)
+        # workaround
+        rbu.set_value('parent', None)
+        return act.load(args).execute(rbu.to_resource())
 
 
 def add_parser(subparsers, name, desc, config):
@@ -479,9 +544,31 @@ def add_parser(subparsers, name, desc, config):
     parser = subparsers2.add_parser(
         'create', help="create a folder.")
     parser.add_argument('name', action="store", help="")
+    parser.add_argument('--cli-mode', action="store_true",
+                        help="""Cli mode will format output to be used in
+                        a script, by returning only identifiers or numbers
+                        without any information messages.""")
     parser.add_argument(
         'folders', nargs="*",
         help="""The new folder will be created in the last folder list.
         Otherwise it will be create at the root of the workgroup"""
         ).completer = Completer()
     parser.set_defaults(__func__=FolderCreateCommand(config))
+
+    # command : update
+    parser = subparsers2.add_parser(
+        'update', help="update a folder.")
+    parser.add_argument(
+        'nodes', nargs="*",
+        help="Browse files and folders'content: node_uuid, node_uuid, ..."
+        ).completer = Completer('complete_nodes')
+    # parser.add_argument( 'uuid', action="store", help="")
+    group = parser.add_argument_group('properties')
+    group.add_argument('--name', action="store", help="")
+    group.add_argument('--description', action="store", help="")
+    group.add_argument('--meta-data', action="store", help=argparse.SUPPRESS)
+    parser.add_argument('--cli-mode', action="store_true",
+                        help="""Cli mode will format output to be used in
+                        a script, by returning only identifiers or numbers
+                        without any information messages.""")
+    parser.set_defaults(__func__=NodeUpdateCommand(config))
