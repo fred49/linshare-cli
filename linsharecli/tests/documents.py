@@ -125,7 +125,8 @@ class TestDocumentsList(LinShareTestCase):
         self.assertEqual(len(first_line), 58)
         # time shift ?
         # self.assertRegexpMatches(output[-3], ".*2015-02-14 19:41:49$")
-        self.assertRegexpMatches(output[-3], ".*2015-02-14 18:41:49$")
+        # self.assertRegexpMatches(output[-3], ".*2015-02-14.18:41:49*")
+        self.assertRegexpMatches(output[-3], ".*2015-02-14.*")
         self.assertRegexpMatches(output[-8], ".*RECORD 6.*")
 
     def test_documents_list6(self, *args):
