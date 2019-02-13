@@ -200,7 +200,10 @@ def add_parser(subparsers, name, desc, config):
         'update', help="update inconsistent users.")
     parser.add_argument(
         'identifier', action="store", help="").completer = Completer()
-    parser.add_argument('--domain', action="store", help="").completer = Completer("complete_domain")
+    parser.add_argument(
+        '--domain',
+        required=True,
+        action="store", help="").completer = Completer("complete_domain")
     parser.set_defaults(__func__=InconsistentUsersUpdateCommand(config))
 
     # command : delete
