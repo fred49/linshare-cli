@@ -338,7 +338,7 @@ class WgNodeContentListCommand(WgNodesCommand):
                     breadcrumb.append(path.get('name'))
                 breadcrumb.append(node.get('name'))
                 print
-                print "###", " > ".join(breadcrumb)
+                print "###>", " > ".join(breadcrumb)
                 print
 
     @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
