@@ -350,7 +350,8 @@ class WgNodeContentListCommand(WgNodesCommand):
         if args.folders:
             parent = get_uuid_from(args.folders[-1])
         self.show_breadcrumb(cli, args)
-        json_obj = cli.list(args.wg_uuid, parent, flat=args.flat_mode)
+        json_obj = cli.list(args.wg_uuid, parent, flat=args.flat_mode,
+                            node_types=args.node_types)
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.names, True),
                    PartialDate("creationDate", args.cdate)]
@@ -481,6 +482,10 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument(
         '--flat', action="store_true", dest="flat_mode",
         help="Flat document mode : list all documents in every folders in a workgroup")
+    parser.add_argument(
+        '--type', action="append", dest="node_types", default=None,
+        choices=["DOCUMENT", "FOLDER", "ROOT_FOLDER", "DOCUMENT_REVISION"],
+        help="Filter the returned objects by type.")
     parser.add_argument(
         '--no-breadcrumb', action="store_true",
         help="Do not display breadcrumb.")
