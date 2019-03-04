@@ -324,7 +324,15 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 res = 0
                 for nested in cli.list(parent_uuid, uuid):
                     if nested.get('type') == "FOLDER":
-                        self.pprint("Folder skipped : %(name)s (%(uuid)s)", nested)
+                        # dirty way to manage folder in folder. :(
+                        # TODO Need full revamping of download methods.
+                        args_copy2 = copy.copy(args_copy)
+                        directory += "/" + json_obj.get('name')
+                        self.pprint("Downloading folder : %(name)s (%(uuid)s)",
+                                    nested)
+                        status = self._download_folder_with_parent(
+                            args_copy2, cli, nested.get('uuid'),
+                            position, count)
                         continue
                     status = self._download_with_parent(args_copy, cli,
                                                         nested.get('uuid'), position, count)
