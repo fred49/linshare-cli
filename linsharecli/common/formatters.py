@@ -52,8 +52,6 @@ class Formatter(object):
         raise NotImplementedError()
 
 
-
-# -----------------------------------------------------------------------------
 class DateFormatter(Formatter):
     """TODO"""
 
@@ -68,7 +66,6 @@ class DateFormatter(Formatter):
                 da=datetime.datetime.fromtimestamp(ldate / 1000))
 
 
-# -----------------------------------------------------------------------------
 class SizeFormatter(Formatter):
     """TODO"""
 
@@ -85,7 +82,6 @@ class SizeFormatter(Formatter):
                 row[self.prop] = self.empty
 
 
-# -----------------------------------------------------------------------------
 class NoneFormatter(Formatter):
     """Convert None value to an empty string only if key exists"""
 
@@ -102,7 +98,6 @@ class NoneFormatter(Formatter):
             row[self.prop] = ""
 
 
-# -----------------------------------------------------------------------------
 class OwnerFormatter(Formatter):
     """Convert resource owner (user) value to a readable name"""
 
@@ -116,7 +111,6 @@ class OwnerFormatter(Formatter):
                 **parameter)
 
 
-# -----------------------------------------------------------------------------
 class DomainFormatter(Formatter):
     """Convert resource domain value to a readable name"""
 
@@ -163,6 +157,7 @@ class UserProvidersFormatter(Formatter):
                           )
                 output.append(display.format(**param))
             row[self.prop] = ",".join(output)
+
 
 class LastAuthorFormatter(Formatter):
     """Convert resource owner (user) value to a readable name"""

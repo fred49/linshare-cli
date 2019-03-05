@@ -27,7 +27,6 @@
 
 from __future__ import unicode_literals
 
-from operator import itemgetter
 from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linsharecli.common.core import add_list_parser_options
@@ -119,7 +118,7 @@ class WelcomeMessagesListCommand(WelcomeMessagesCommand):
                 data[self.IDENTIFIER] = json_row.get(self.IDENTIFIER)
                 data[self.RESOURCE_IDENTIFIER] = json_row.get(self.RESOURCE_IDENTIFIER)
                 json_obj.append(data)
-        json_obj = sorted(json_obj, reverse=args.reverse, key=itemgetter(table.sortby))
+        json_obj = sorted(json_obj, reverse=args.reverse, key=lambda x: x.get(table.sortby))
         return self._list(args, cli, table, json_obj)
 
     def list_table(self, args, cli):

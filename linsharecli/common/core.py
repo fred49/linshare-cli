@@ -41,21 +41,19 @@ import sys
 import os
 import logging
 import json
-import time
 import getpass
 import datetime
 import locale
 import urllib2
 import types
 import copy
-from operator import itemgetter
-import argtoolbox
-from argtoolbox import DefaultCompleter as Completer
 from veryprettytable import VeryPrettyTable
 from ordereddict import OrderedDict
 from hurry.filesize import size as filesize
 from linshareapi.core import LinShareException
 from linshareapi.cache import Time
+import argtoolbox
+from argtoolbox import DefaultCompleter as Completer
 
 
 def hook_file_content(path, context):
@@ -146,8 +144,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             table.sortby = self.DEFAULT_SORT
         # sort by size
         if getattr(args, 'sort_size', False):
-            json_obj = sorted(json_obj, reverse=args.reverse,
-                              key=itemgetter(self.DEFAULT_SORT_SIZE))
+            json_obj = sorted(json_obj, reverse=args.reverse, key=lambda x: x.get(self.DEFAULT_SORT_SIZE))
         if getattr(args, 'sort_name', False):
             table.sortby = self.DEFAULT_SORT_NAME
         cli_mode = getattr(args, 'cli_mode', False)
@@ -654,7 +651,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 d_format += self.build_on_field(key, maxlength, datatype)
 
         if sortby:
-            json_obj = sorted(json_obj, reverse=reverse, key=itemgetter(sortby))
+            json_obj = sorted(json_obj, reverse=reverse, key=lambda x: x.get(sortby))
 
         if no_title:
             self.print_list(json_obj, d_format, no_legend=no_legend)
@@ -739,6 +736,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         # just backup args into table
         table.args = args
         return table
+
 
 def add_list_parser_options(parser, download=False, delete=False, cdate=False, ssize=False):
     """TODO"""
@@ -849,7 +847,7 @@ def add_download_parser_options(parser, method=None):
     parser.add_argument('--dry-run', action="store_true")
     parser.add_argument('-o', '--output-dir', action="store", dest="directory")
 
-# -----------------------------------------------------------------------------
+
 class AbstractTable(object):
     """TODO"""
 
@@ -960,7 +958,7 @@ class BaseTable(AbstractTable):
         if self.sortby:
             try:
                 self._rows = sorted(self._rows, reverse=self.reversesort,
-                                    key=itemgetter(self.sortby))
+                                    key=lambda x: x.get(self.sortby))
             except KeyError as ex:
                 self.log.warn("missing sortby key : " + str(ex))
         source = self._rows
