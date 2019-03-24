@@ -27,6 +27,7 @@
 
 
 
+import os
 import argparse
 from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
@@ -265,6 +266,34 @@ class WorkgroupDocumentsUploadCommand(WgNodesCommand):
         if args.folders:
             parent = get_uuid_from(args.folders[-1])
             self.ls.workgroup_nodes.get(args.wg_uuid, parent)
+        cli = self.ls.workgroup_folders
+        for file_path in args.files:
+            position += 1
+            if os.path.isdir(file_path):
+                rbu = cli.get_rbu()
+                rbu.set_value('name', file_path.split('/')[-1])
+                rbu.set_value('workGroup', args.wg_uuid)
+                # if args.folders:
+                    # parent = get_uuid_from(args.folders[-1])
+                    # rbu.set_value('parent', parent)
+                folder_uuid = self.ls.workgroup_folders.create(rbu.to_resource())
+            json_obj = self.ls.workgroup_nodes.upload(
+                args.wg_uuid, file_path, args.description, parent)
+            if json_obj:
+                json_obj['time'] = self.ls.last_req_time
+                json_obj['position'] = position
+                json_obj['count'] = count
+                self.log.info(
+                    ("%(position)s/%(count)s: "
+                     "The file '%(name)s' (%(uuid)s) was uploaded. "
+                     "(%(time)ss)"),
+                    json_obj)
+
+
+
+    def upload_files(self, args, parent):
+        count = len(args.files)
+        position = 0
         for file_path in args.files:
             position += 1
             json_obj = self.ls.workgroup_nodes.upload(
