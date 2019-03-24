@@ -280,7 +280,7 @@ class TreePathFormatter(Formatter):
         parameter = row.get(self.prop)
         if parameter:
             breadcrumb = []
-            for path in row.get('treePath'):
+            for path in parameter:
                 breadcrumb.append(path.get('name'))
             breadcrumb.append(row.get('name'))
             row[self.prop] = " > ".join(breadcrumb)
