@@ -129,6 +129,24 @@ class DomainFormatter(Formatter):
             row[self.prop] = l_format.format(**parameter)
 
 
+class GenericFormatter(Formatter):
+    """Convert resource domain value to a readable name"""
+
+    def __init__(self, prop, full=False):
+        super(GenericFormatter, self).__init__(prop)
+        self.full = full
+
+    def __call__(self, row, context=None):
+        parameter = row.get(self.prop)
+        if parameter:
+            l_format = '{name}'
+            if context.args.vertical:
+                l_format = '{name} ({uuid})'
+            if self.full:
+                l_format = '{name} ({uuid})'
+            row[self.prop] = l_format.format(**parameter)
+
+
 class WelcomeMessageFormatter(Formatter):
     """TODO"""
 
