@@ -28,7 +28,6 @@
 from __future__ import unicode_literals
 
 import argparse
-from argparse import ArgumentError
 from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
@@ -255,18 +254,6 @@ class WgNodesCommand(DefaultCommand):
             parent = None
             json_obj = cli.list(args.wg_uuid)
             return convert_to_list_nodes(json_obj)
-
-    def check_required_options(self, args, required_fields, options):
-        """Check if at least one option is set among the required_fields list"""
-        one_set = False
-        for i in required_fields:
-            if getattr(args, i, None) is not None:
-                one_set = True
-                break
-        if not one_set:
-            msg = "You need to choose at least one option among : "
-            msg += " or ".join(options)
-            raise ArgumentError(None, msg)
 
 
 # pylint: disable=too-few-public-methods

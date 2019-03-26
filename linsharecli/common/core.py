@@ -54,6 +54,7 @@ from linshareapi.core import LinShareException
 from linshareapi.cache import Time
 import argtoolbox
 from argtoolbox import DefaultCompleter as Completer
+from argparse import ArgumentError
 
 
 def hook_file_content(path, context):
@@ -736,6 +737,18 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         # just backup args into table
         table.args = args
         return table
+
+    def check_required_options(self, args, required_fields, options):
+        """Check if at least one option is set among the required_fields list"""
+        one_set = False
+        for i in required_fields:
+            if getattr(args, i, None) is not None:
+                one_set = True
+                break
+        if not one_set:
+            msg = "You need to choose at least one option among : "
+            msg += " or ".join(options)
+            raise ArgumentError(None, msg)
 
 
 def add_list_parser_options(parser, download=False, delete=False, cdate=False, ssize=False):
