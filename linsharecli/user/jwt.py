@@ -38,7 +38,10 @@ from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.actions import CreateAction
 from linsharecli.common.actions import UpdateAction
 from linsharecli.common.filters import PartialOr
+from linsharecli.common.formatters import Formatter
 from linsharecli.common.formatters import GenericFormatter
+from linsharecli.common.formatters import ActorFormatter
+from linsharecli.common.formatters import UuidFormatter
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.formatters import DateFormatter
 
@@ -100,6 +103,22 @@ class JwtCreateAction(CreateAction):
             self.log.error(ex.args[1] + " : " + str(self.err_suffix))
         return False
 
+
+class ResourceFormatter(Formatter):
+    """TODO"""
+
+    def __init__(self, prop, full=False):
+        super(ResourceFormatter, self).__init__(prop)
+        self.full = full
+
+    def __call__(self, row, context=None):
+        parameter = row.get(self.prop)
+        if parameter:
+            l_format = '{label} ({uuid:.8})'
+            if context.args.vertical:
+                l_format = '{label} ({uuid})'
+                # l_format = '{label} ({description})'
+            row[self.prop] = l_format.format(**parameter)
 
 
 class JwtCommand(DefaultCommand):
@@ -168,6 +187,36 @@ class JwtListCommand(JwtCommand):
                           filters=filters)
 
 
+class JwtListAuditCommand(JwtCommand):
+    """ List all Jwt token."""
+
+    IDENTIFIER = "creationDate"
+    DEFAULT_SORT = "creationDate"
+    DEFAULT_SORT_NAME = "creationDate"
+    RESOURCE_IDENTIFIER = "uuid"
+
+    @Time('linsharecli.jwt', label='Global time : %(time)s')
+    def __call__(self, args):
+        super(JwtListAuditCommand, self).__call__(args)
+        cli = self.ls.jwt.audit
+        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
+        json_obj = cli.list()
+        # Filters
+        filters = [
+            PartialOr(self.IDENTIFIER, args.identifiers, True),
+            PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True),
+        ]
+        formatters = [
+            DateFormatter('creationDate'),
+            ActorFormatter('actor'),
+            ActorFormatter('authUser'),
+            ResourceFormatter('resource'),
+            UuidFormatter('uuid'),
+        ]
+        return self._list(args, cli, table, json_obj, formatters=formatters,
+                          filters=filters)
+
+
 class JwtCreateCommand(JwtCommand):
     """Create Jwt token."""
 
@@ -220,6 +269,15 @@ def add_parser(subparsers, name, desc, config):
                         help="Filter by uuid fragments.")
     add_list_parser_options(parser, delete=True, cdate=False)
     parser.set_defaults(__func__=JwtListCommand(config))
+
+    # command : audit
+    parser = subparsers2.add_parser(
+        'audit', help="audit Jwt token.")
+    parser.add_argument('identifiers', nargs="*", help="")
+    parser.add_argument('-u', '--uuid', dest="uuids", action="append",
+                        help="Filter by uuid fragments.")
+    add_list_parser_options(parser)
+    parser.set_defaults(__func__=JwtListAuditCommand(config))
 
     # command : delete
     parser = subparsers2.add_parser(

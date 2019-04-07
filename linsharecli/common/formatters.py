@@ -188,3 +188,34 @@ class LastAuthorFormatter(Formatter):
         if parameter:
             row[self.prop] = '{name} <{mail}>'.format(
                 **parameter)
+
+
+class ActorFormatter(Formatter):
+    """Convert resource domain value to a readable name"""
+
+    def __init__(self, prop, full=False):
+        super(ActorFormatter, self).__init__(prop)
+        self.full = full
+
+    def __call__(self, row, context=None):
+        parameter = row.get(self.prop)
+        if parameter:
+            l_format = '{name}'
+            if context.args.vertical:
+                l_format = '{name} <{mail}> ({uuid})'
+            if self.full:
+                l_format = '{name} <{mail}> ({uuid})'
+            row[self.prop] = l_format.format(**parameter)
+
+
+class UuidFormatter(Formatter):
+    """TODO"""
+
+    def __init__(self, prop):
+        super(UuidFormatter, self).__init__(prop)
+
+    def __call__(self, row, context=None):
+        value = row.get(self.prop)
+        if value:
+            if not context.args.vertical:
+                row[self.prop] = value[:8]
