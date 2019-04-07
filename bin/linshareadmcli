@@ -53,6 +53,7 @@ from linsharecli.admin.domainpolicies import add_parser as add_domain_policies
 from linsharecli.admin.upgrade_tasks import add_parser as add_upgrade_tasks
 from linsharecli.admin.welcome_messages import add_parser as add_welcome_messages
 from linsharecli.admin.public_keys import add_parser as add_public_keys
+from linsharecli.admin.jwt import add_parser as add_jwt
 import linsharecli
 
 # if you want to debug argcomplete completion,
@@ -214,6 +215,7 @@ section 'server-4'""")
         add_upgrade_tasks(subparsers, "upgrade", "upgrade tasks", self.config)
         add_welcome_messages(subparsers, "welcome", "welcome messages", self.config)
         add_public_keys(subparsers, "pubkeys", "welcome messages", self.config)
+        add_jwt(subparsers, "jwts", "JWT Persistent Token", self.config)
         add_core_parser(subparsers, self.config)
 
 # if you need debug during class construction, config file loading,
