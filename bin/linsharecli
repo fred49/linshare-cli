@@ -51,6 +51,7 @@ from linsharecli.user.guest import add_parser as add_guest_parser
 from linsharecli.user.contactslists import add_parser as add_contactslists_parser
 from linsharecli.user.contactslistscontacts import add_parser as add_contactslistscontacts_parser
 from linsharecli.user.core import add_parser as add_core_parser
+from linsharecli.user.jwt import add_parser as add_jwt
 import linsharecli
 
 # if you want to debug argcomplete completion,
@@ -244,6 +245,7 @@ section 'server-4'""")
             subparsers, "lists-contacts",
             "Manage contacts within a list of contacts",
             self.config)
+        add_jwt(subparsers, "jwts", "JWT Persistent Token", self.config)
         add_core_parser(subparsers, self.config)
 
 
