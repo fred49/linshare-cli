@@ -355,7 +355,7 @@ def add_parser(subparsers, name, desc, config):
         help="Filter documents by their names")
     # command : list : share action
     action_parser = add_list_parser_options(
-        parser, download=True, delete=True, cdate=True)[3]
+        parser, download=True, delete=True, cdate=True, ssize=True)[3]
     action_parser.add_argument(
         '--share',
         action="store_true",
