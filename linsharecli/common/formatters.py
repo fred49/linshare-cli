@@ -28,6 +28,7 @@
 
 from __future__ import unicode_literals
 
+import logging
 import datetime
 # pylint: disable=import-error
 from hurry.filesize import size as filesize
@@ -40,6 +41,8 @@ class Formatter(object):
         """ prop name and value(s)"""
         self.prop = prop
         self.formatt = formatt
+        classname = str(self.__class__.__name__.lower())
+        self.log = logging.getLogger(classname)
 
     def get_val(self, row):
         """TODO"""
