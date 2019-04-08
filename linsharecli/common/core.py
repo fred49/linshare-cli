@@ -140,16 +140,23 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 
     def _list(self, args, cli, table, json_obj, formatters=None, filters=None,
               ignore_exceptions={}):
+        sort_name =  getattr(args, 'sort_name', False)
+        sort_size =  getattr(args, 'sort_size', False)
         self.log.debug("table.sortby : %s", table.sortby)
+        self.log.debug("sort_name : %s", sort_name)
+        self.log.debug("sort_size : %s", sort_size)
         if table.sortby is None:
             table.sortby = self.DEFAULT_SORT
-        # sort by size
-        if getattr(args, 'sort_size', False):
-            json_obj = sorted(json_obj, reverse=args.reverse, key=lambda x: x.get(self.DEFAULT_SORT_SIZE))
-        if getattr(args, 'sort_name', False):
+        if sort_size:
+            json_obj = sorted(json_obj, reverse=args.reverse,
+                              key=lambda x: x.get(self.DEFAULT_SORT_SIZE))
+            # do not let pretty table sort the data (it will consider 'size' as
+            # a string.
+            table.sortby = None
+        if sort_name:
             table.sortby = self.DEFAULT_SORT_NAME
-        cli_mode = getattr(args, 'cli_mode', False)
         self.log.debug("final table.sortby : %s", table.sortby)
+        cli_mode = getattr(args, 'cli_mode', False)
         for key in self.ACTIONS:
             if getattr(args, key, False):
                 table.load(json_obj, filters, formatters, ignore_exceptions)
