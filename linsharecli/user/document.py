@@ -83,12 +83,12 @@ class DocumentsListCommand(DocumentsCommand):
         json_obj = cli.list()
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.names, True),
-                 PartialDate("creationDate", args.cdate)]
+                   PartialDate("creationDate", args.cdate)]
         # Formatters
         formatters = [DateFormatter('creationDate'),
-                    DateFormatter('expirationDate'),
-                    SizeFormatter('size'),
-                    DateFormatter('modificationDate')]
+                      DateFormatter('expirationDate'),
+                      SizeFormatter('size'),
+                      DateFormatter('modificationDate')]
         return self._list(args, cli, table, json_obj, formatters, filters)
 
     def _share_all(self, args, cli, uuids):
@@ -100,6 +100,7 @@ class DocumentsListCommand(DocumentsCommand):
         return command(args, cli, uuids)
 
     def complete_fields(self, args, prefix):
+        """TODO"""
         super(DocumentsListCommand, self).__call__(args)
         cli = self.ls.documents
         return cli.get_rbu().get_keys(True)
