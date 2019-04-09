@@ -103,9 +103,8 @@ class WelcomeMessagesListCommand(WelcomeMessagesCommand):
         keys = []
         keys.append(self.IDENTIFIER)
         keys.append(self.RESOURCE_IDENTIFIER)
-        keys.append('VIETNAMESE')
-        keys.append('ENGLISH')
-        keys.append('FRENCH')
+        keys += cli.languages()
+        self.log.debug("keys: %s", keys)
         args.vertical = True
         table = self.get_raw_table(args, cli, self.IDENTIFIER, keys)
         # useless and required ! Design flaw ?
