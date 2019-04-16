@@ -47,6 +47,7 @@ import locale
 import urllib2
 import types
 import copy
+from argparse import ArgumentError
 from veryprettytable import VeryPrettyTable
 from ordereddict import OrderedDict
 from hurry.filesize import size as filesize
@@ -54,7 +55,8 @@ from linshareapi.core import LinShareException
 from linshareapi.cache import Time
 import argtoolbox
 from argtoolbox import DefaultCompleter as Completer
-from argparse import ArgumentError
+
+from linsharecli.common.cell import CellBuilder
 
 
 def hook_file_content(path, context):
@@ -144,26 +146,29 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 
     def _list(self, args, cli, table, json_obj, formatters=None, filters=None,
               ignore_exceptions={}):
-        sort_name =  getattr(args, 'sort_name', False)
-        sort_size =  getattr(args, 'sort_size', False)
+        sort_name = getattr(args, 'sort_name', False)
+        sort_size = getattr(args, 'sort_size', False)
         self.log.debug("table.sortby : %s", table.sortby)
         self.log.debug("sort_name : %s", sort_name)
         self.log.debug("sort_size : %s", sort_size)
         if table.sortby is None:
             table.sortby = self.DEFAULT_SORT
+        if args.sort_by is not None:
+            table.sortby = args.sort_by
         if sort_size:
-            json_obj = sorted(json_obj, reverse=args.reverse,
-                              key=lambda x: x.get(self.DEFAULT_SORT_SIZE))
+            # json_obj = sorted(json_obj, reverse=args.reverse,
+            #                   key=lambda x: x.get(self.DEFAULT_SORT_SIZE))
             # do not let pretty table sort the data (it will consider 'size' as
             # a string.
             table.sortby = None
+            table.sortby = "size"
         if sort_name:
             table.sortby = self.DEFAULT_SORT_NAME
         self.log.debug("final table.sortby : %s", table.sortby)
         cli_mode = getattr(args, 'cli_mode', False)
         for key in self.ACTIONS:
             if getattr(args, key, False):
-                table.load(json_obj, filters, formatters, ignore_exceptions)
+                table.load(json_obj, filters, formatters)
                 rows = table.get_raw()
                 if key == 'count_only':
                     if cli_mode:
@@ -791,6 +796,9 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False,
         '-r', '--reverse', action="store_true",
         help="Reverse order while sorting")
     sort_group.add_argument(
+        '--sort-by', action="store", default=None,
+        help="Sort by column.")
+    sort_group.add_argument(
         '--sort-name', action="store_true",
         help="Sort by name")
     if ssize:
@@ -925,10 +933,33 @@ class AbstractTable(object):
         """TODO"""
         raise NotImplementedError()
 
-    def load(self, json_obj, filters=None, formatters=None,
-             ignore_exceptions={}):
+    def load(self, json_obj, filters=None, formatters=None):
         """TODO"""
         raise NotImplementedError()
+
+    def _transform_to_cell(self, json_row, off=False):
+        """TODO"""
+        if off:
+            return json_row
+        if self.debug >= 2:
+            self.log.debug("begin row")
+            self.log.debug("keys: %s ", self.keys)
+        data = dict()
+        # for key in json_row.keys():
+        for key in self.keys:
+            if self.debug >= 2:
+                self.log.debug("key: %s ", key)
+            value = None
+            if key in json_row:
+                value = json_row[key]
+            else:
+                self.log.debug("key not found: %s", key)
+            data[key] = value
+            if not off:
+                data[key] = CellBuilder(key, self.raw, self.vertical)(value)
+        if self.debug >= 2:
+            self.log.debug("end row")
+        return data
 
 
 class BaseTable(AbstractTable):
@@ -948,6 +979,7 @@ class BaseTable(AbstractTable):
         self._rows = []
         self._maxlengthkey = 0
         self.reversesort = reverse
+        self.no_cell = False
         for k in keys:
             self.sortby = k
             break
@@ -957,6 +989,7 @@ class BaseTable(AbstractTable):
              ignore_exceptions={}):
         """TODO"""
         for row in data:
+            row = self._transform_to_cell(row, self.json)
             if self.filters(row, filters):
                 if not self.raw:
                     self.formatters(row, formatters)
@@ -1026,6 +1059,7 @@ class BaseTable(AbstractTable):
                 else:
                     record.append(str(data))
             records.append(";".join(record))
+            # records.append(";".join([x for x in record]))
         return "\n".join(records)
 
 
@@ -1038,7 +1072,7 @@ class VTable(BaseTable):
     def show_table(self, json_obj, filters=None, formatters=None,
                    ignore_exceptions={}):
         """TODO"""
-        self.load(json_obj, filters, formatters, ignore_exceptions)
+        self.load(json_obj, filters, formatters)
         if self.json:
             print self.get_json()
             return
@@ -1052,19 +1086,28 @@ class VTable(BaseTable):
         """TODO"""
         max_length_line = 0
         records = []
+        classname = str(self.__class__.__name__.lower())
+        self.log = logging.getLogger(classname)
         for row in self.get_raw():
             record = []
             for k in self.keys:
-                t_format = u"{key:" + unicode(str(self._maxlengthkey)) + u"s} | {value:s}"
-                dataa = None
-                column_data = row.get(k)
-                if isinstance(column_data, types.UnicodeType):
-                    dataa = {"key": k, "value": column_data}
-                else:
-                    dataa = {"key": k, "value": str(column_data)}
-                t_record = unicode(t_format).format(**dataa)
-                record.append(t_record)
-                max_length_line = max(max_length_line, len(t_record))
+                try:
+                    t_format = u"{key:" + unicode(str(self._maxlengthkey)) + u"s} | {value:s}"
+                    dataa = None
+                    column_data = row.get(k)
+                    if isinstance(column_data, types.UnicodeType):
+                        dataa = {"key": k, "value": column_data}
+                    else:
+                        dataa = {"key": k, "value": str(column_data)}
+                    t_record = unicode(t_format).format(**dataa)
+                    record.append(t_record)
+                    max_length_line = max(max_length_line, len(t_record))
+                except UnicodeEncodeError as ex:
+                    self.log.error("UnicodeEncodeError: %s", ex)
+                    dataa = {"key": k, "value": "UnicodeEncodeError"}
+                    # msg = ex.msg.decode('unicode-escape').strip('"')
+                    t_record = unicode(t_format).format(**dataa)
+                    record.append(t_record)
             records.append("\n".join(record))
         out = []
         cptline = 0
@@ -1097,7 +1140,7 @@ class ConsoleTable(BaseTable):
     def show_table(self, json_obj, filters=None, formatters=None,
                    ignore_exceptions={}):
         """TODO"""
-        self.load(json_obj, filters, formatters, ignore_exceptions)
+        self.load(json_obj, filters, formatters)
         if self.json:
             print self.get_json()
             return
@@ -1122,20 +1165,33 @@ class HTable(VeryPrettyTable, AbstractTable):
 
     vertical = False
 
-    @Time('linsharecli.core.load', label='time : %(time)s')
-    def load(self, json_obj, filters=None, formatters=None,
-             ignore_exceptions={}):
+    def _transform_to_cell(self, json_row, off=False):
         """TODO"""
+        self.log.debug("begin row")
+        self.log.debug("keys: %s ", self.keys)
+        data = OrderedDict()
+        for key in self.keys:
+            self.log.debug("key: %s ", key)
+            value = None
+            if key in json_row:
+                value = json_row[key]
+            else:
+                self.log.debug("key not found: %s", key)
+            data[key] = value
+            if not off:
+                data[key] = CellBuilder(key, self.raw, self.vertical)(value)
+        self.log.debug("end row")
+        return data
+
+    @Time('linsharecli.core.load', label='time : %(time)s')
+    def load(self, json_obj, filters=None, formatters=None):
+        """TODO"""
+        classname = str(self.__class__.__name__.lower())
+        self.log = logging.getLogger(classname)
+        self.log.debug("json_obj size: %s", len(json_obj))
+        self.log.debug("keys: %s", self.keys)
         for json_row in json_obj:
-            data = OrderedDict()
-            for key in self.keys:
-                try:
-                    data[key] = json_row[key]
-                except KeyError as ex:
-                    data[key] = None
-                    if not ignore_exceptions.get(key, None):
-                        ignore_exceptions[key] = True
-                        print "WARN: KeyError: " + str(ex)
+            data = self._transform_to_cell(json_row, False)
             if self.filters(data, filters):
                 if not self.raw:
                     self.formatters(data, formatters)
@@ -1155,7 +1211,7 @@ class HTable(VeryPrettyTable, AbstractTable):
     def show_table(self, json_obj, filters=None, formatters=None,
                    ignore_exceptions={}):
         """TODO"""
-        self.load(json_obj, filters, formatters, ignore_exceptions)
+        self.load(json_obj, filters, formatters)
         out = self.get_string(fields=self.keys)
         print unicode(out)
 

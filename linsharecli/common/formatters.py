@@ -65,8 +65,11 @@ class DateFormatter(Formatter):
     def __call__(self, row, context=None):
         ldate = row.get(self.prop)
         if ldate is not None:
-            row[self.prop] = self.formatt.format(
-                da=datetime.datetime.fromtimestamp(ldate / 1000))
+            try:
+                row[self.prop] = self.formatt.format(
+                    da=datetime.datetime.fromtimestamp(ldate / 1000))
+            except TypeError:
+                pass
 
 
 class SizeFormatter(Formatter):
@@ -79,7 +82,10 @@ class SizeFormatter(Formatter):
     def __call__(self, row, context=None):
         lsize = row.get(self.prop)
         if lsize is not None:
-            row[self.prop] = filesize(lsize, system=si)
+            try:
+                row[self.prop] = filesize(lsize, system=si)
+            except TypeError:
+                pass
         else:
             if self.empty:
                 row[self.prop] = self.empty
