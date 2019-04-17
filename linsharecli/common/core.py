@@ -107,6 +107,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         self.debug = False
         #pylint: disable=C0103
         self.ls = None
+        self.enable_auth = True
 
     def __call__(self, args):
         super(DefaultCommand, self).__call__(args)
@@ -129,8 +130,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         self.ls = self.__get_cli_object(args)
         if args.nocache:
             self.ls.nocache = True
-        if not self.ls.auth():
-            sys.exit(1)
+        if self.enable_auth:
+            if not self.ls.auth():
+                sys.exit(1)
 
     def __get_cli_object(self, args):
         """You must implement this method and return a object instance of
