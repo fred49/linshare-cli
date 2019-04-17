@@ -85,10 +85,12 @@ class DocumentsListCommand(DocumentsCommand):
         filters = [PartialOr(self.IDENTIFIER, args.names, True),
                    PartialDate("creationDate", args.cdate)]
         # Formatters
-        formatters = [DateFormatter('creationDate'),
-                      DateFormatter('expirationDate'),
-                      SizeFormatter('size'),
-                      DateFormatter('modificationDate')]
+        formatters = [
+            DateFormatter('creationDate'),
+            DateFormatter('expirationDate'),
+            SizeFormatter('size'),
+            DateFormatter('modificationDate')
+        ]
         return self._list(args, cli, table, json_obj, formatters, filters)
 
     def _share_all(self, args, cli, uuids):
