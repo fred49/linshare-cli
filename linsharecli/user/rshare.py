@@ -26,11 +26,11 @@
 
 from __future__ import unicode_literals
 
+from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
-from linshareapi.cache import Time
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
 from linsharecli.common.formatters import DateFormatter
@@ -61,9 +61,8 @@ class ReceivedSharesCommand(DefaultCommand):
             v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 class ReceivedSharesListCommand(ReceivedSharesCommand):
-
+    """TODO"""
 
     @Time('linsharecli.rshares', label='Global time : %(time)s')
     def __call__(self, args):
@@ -72,13 +71,17 @@ class ReceivedSharesListCommand(ReceivedSharesCommand):
         table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         json_obj = cli.list()
         # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.names, True),
-                 PartialDate("creationDate", args.cdate)]
+        filters = [
+            PartialOr(self.IDENTIFIER, args.names, True),
+            PartialDate("creationDate", args.cdate)
+        ]
         # Formatters
-        formatters = [DateFormatter('creationDate'),
-                    DateFormatter('expirationDate'),
-                    SizeFormatter('size'),
-                    DateFormatter('modificationDate')]
+        formatters = [
+            DateFormatter('creationDate'),
+            DateFormatter('expirationDate'),
+            SizeFormatter('size'),
+            DateFormatter('modificationDate')
+        ]
         return self._list(args, cli, table, json_obj, formatters, filters)
 
     def complete_fields(self, args, prefix):
@@ -87,7 +90,6 @@ class ReceivedSharesListCommand(ReceivedSharesCommand):
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
 class ReceivedSharesDownloadCommand(ReceivedSharesCommand):
 
     @Time('linsharecli.rshares', label='Global time : %(time)s')
@@ -97,7 +99,6 @@ class ReceivedSharesDownloadCommand(ReceivedSharesCommand):
         return self._download_all(args, cli, args.uuids)
 
 
-# -----------------------------------------------------------------------------
 class ReceivedSharesDeleteCommand(ReceivedSharesCommand):
 
     @Time('linsharecli.document', label='Global time : %(time)s')
@@ -107,7 +108,6 @@ class ReceivedSharesDeleteCommand(ReceivedSharesCommand):
         return self._delete_all(args, cli, args.uuids)
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     parser_tmp = subparsers.add_parser(name, help=desc)
 
