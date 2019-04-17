@@ -761,7 +761,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             raise ArgumentError(None, msg)
 
 
-def add_list_parser_options(parser, download=False, delete=False, cdate=False, ssize=False):
+def add_list_parser_options(parser, download=False, delete=False, cdate=False,
+                            ssize=False):
     """TODO"""
     # filters
     filter_group = parser.add_argument_group('Filters')
@@ -795,29 +796,7 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
             '--sort-size', action="store_true",
             help="Sort by size")
 
-    # format
-    format_group = parser.add_argument_group('Format')
-    format_group.add_argument(
-        '--extended', action="store_true",
-        help="Display results using extended format.")
-    format_group.add_argument(
-        '-t', '--vertical', action="store_true",
-        help="Display results using vertical output mode")
-    format_group.add_argument('--json', action="store_true", help="Json output")
-    format_group.add_argument(
-        '--raw-json', action="store_true",
-        help="Display every attributes for json output.")
-    format_group.add_argument('--csv', action="store_true", help="Csv output")
-    format_group.add_argument(
-        '--no-headers', action="store_true",
-        help="Do not display csv headers.")
-    format_group.add_argument(
-        '--raw', action="store_true",
-        help="Disable all data formatters (time, size, ...)")
-    format_group.add_argument('--cli-mode', action="store_true",
-                              help="""Cli mode will format output to be used in
-                              a script, by returning only identifiers or numbers
-                              without any information messages.""")
+    format_group = add_list_parser_options_format(parser)
 
     # actions
     actions_group = parser.add_argument_group('Actions')
@@ -850,6 +829,32 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False, s
                     '-D', '--delete', action="store_true")
         actions_group.add_argument('--dry-run', action="store_true")
     return filter_group, sort_group, format_group, actions_group
+
+def add_list_parser_options_format(parser):
+    # format
+    format_group = parser.add_argument_group('Format')
+    format_group.add_argument(
+        '--extended', action="store_true",
+        help="Display results using extended format.")
+    format_group.add_argument(
+        '-t', '--vertical', action="store_true",
+        help="Display results using vertical output mode")
+    format_group.add_argument('--json', action="store_true", help="Json output")
+    format_group.add_argument(
+        '--raw-json', action="store_true",
+        help="Display every attributes for json output.")
+    format_group.add_argument('--csv', action="store_true", help="Csv output")
+    format_group.add_argument(
+        '--no-headers', action="store_true",
+        help="Do not display csv headers.")
+    format_group.add_argument(
+        '--raw', action="store_true",
+        help="Disable all data formatters (time, size, ...)")
+    format_group.add_argument('--cli-mode', action="store_true",
+                              help="""Cli mode will format output to be used in
+                              a script, by returning only identifiers or numbers
+                              without any information messages.""")
+    return format_group
 
 # -----------------------------------------------------------------------------
 def add_delete_parser_options(parser, method=None):
