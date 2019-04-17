@@ -194,7 +194,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             return True
         table.show_table(json_obj, filters, formatters, ignore_exceptions)
         meta = {'count': len(table.get_raw())}
-        self.pprint(self.DEFAULT_TOTAL, meta)
+        if self.verbose:
+            self.pprint(self.DEFAULT_TOTAL, meta)
         return True
 
     def _apply_to_all(self, args, cli, uuids, msg_m, func):
