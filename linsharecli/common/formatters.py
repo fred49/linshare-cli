@@ -82,6 +82,11 @@ class SizeFormatter(Formatter):
     def __call__(self, row, context=None):
         lsize = row.get(self.prop)
         if lsize is not None:
+            if hasattr(lsize, "value"):
+                # it is a cell. we must not transform it right now
+                # bacause it will tranform it in string and break the sort
+                # feature.
+                return
             try:
                 row[self.prop] = filesize(lsize, system=si)
             except TypeError:
