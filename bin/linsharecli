@@ -210,6 +210,9 @@ section 'server-4'""")
         add_document_parser(subparsers, "documents", "Documents management",
                             self.config)
 
+        self.parser.add_argument('--debugger-names', action="append")
+        self.parser.add_argument('--no-cell', action="store_true")
+
         cmd_name = "threads"
         cmd_desc = "threads management"
         if self.config.server.api_version.value >= 2:

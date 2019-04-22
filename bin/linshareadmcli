@@ -207,6 +207,9 @@ section 'server-4'""")
             action="store",
             **self.config.server.base_url.get_arg_parse_arguments())
 
+        self.parser.add_argument('--debugger-names', action="append")
+        self.parser.add_argument('--no-cell', action="store_true")
+
         # Adding all others parsers.
         subparsers = self.parser.add_subparsers()
         add_threads_parser(subparsers, "threads", "threads management", self.config)
