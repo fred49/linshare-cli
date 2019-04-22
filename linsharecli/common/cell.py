@@ -45,7 +45,7 @@ class CellBuilder(object):
         self.debug = debug
         self.vertical = vertical
         classname = str(self.__class__.__name__.lower())
-        self.log = logging.getLogger(classname)
+        self.log = logging.getLogger("linsharecli.cell." + classname)
 
     def __call__(self, value):
         if self.clazz is None:
@@ -59,8 +59,6 @@ class CellBuilder(object):
                 self.clazz = ComplexCell
             else:
                 self.clazz = SCell
-                # return value
-            # ["domain", "actor"]:
         if self.debug >= 2:
             self.log.debug("building cell ...")
             self.log.debug("property: %s", self.name)
@@ -74,13 +72,16 @@ class CellBuilder(object):
         cell.vertical = self.vertical
         if self.debug >= 3:
             self.log.debug("cell type: %s", type(cell))
-            self.log.debug("cell rendering: %s", cell)
+            # str method from all cell must return encoded strings
+            self.log.debug("cell rendering: %s", str(cell).decode('utf-8'))
             self.log.debug("cell built.")
         return cell
 
 
 class SCell(object):
-    """TODO"""
+    """This class is used to emulate str type for veryprettytable.
+    VeryPrettyTable will call the __str__ method on non-unicode objects.
+    It excepts that the __str__ output is utf-8 encoded."""
     # pylint: disable=too-few-public-methods
 
     def __init__(self, value):
@@ -91,11 +92,18 @@ class SCell(object):
         self.none = "-"
 
     def __str__(self):
+        value = None
         if self.raw:
-            return str(self.value)
-        if self.value is None:
-            return self.none
-        return self.value
+            if self.value is None:
+                value = "None"
+            else:
+                value = self.value
+        else:
+            if self.value is None:
+                value = self.none
+            else:
+                value = self.value
+        return value.encode('utf-8')
 
     def __cmp__(self, value):
         if self.value == value:
@@ -208,7 +216,7 @@ class ComplexCell(object):
     def __str__(self):
         if self._format:
             return self._format.format(**self.value)
-        return str(self.value)
+        return str(self.value).encode('utf-8')
 
     def keys(self):
         """TODO"""

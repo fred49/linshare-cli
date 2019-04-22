@@ -709,6 +709,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 # styles
                 table.align[first_column] = "l"
                 table.padding_width = 1
+        table.debug = args.debug
+        table.no_cell = args.no_cell
+        table.vertical = args.vertical
         table.sortby = None
         table.reversesort = args.reverse
         table.keys = keys
@@ -943,7 +946,6 @@ class AbstractTable(object):
             return json_row
         if self.debug >= 2:
             self.log.debug("begin row")
-            self.log.debug("keys: %s ", self.keys)
         data = dict()
         # for key in json_row.keys():
         for key in self.keys:
@@ -956,7 +958,7 @@ class AbstractTable(object):
                 self.log.debug("key not found: %s", key)
             data[key] = value
             if not off:
-                data[key] = CellBuilder(key, self.raw, self.vertical)(value)
+                data[key] = CellBuilder(key, self.raw, self.vertical, self.debug)(value)
         if self.debug >= 2:
             self.log.debug("end row")
         return data
@@ -988,8 +990,9 @@ class BaseTable(AbstractTable):
     def load(self, data, filters=None, formatters=None,
              ignore_exceptions={}):
         """TODO"""
+        self.log.debug("keys: %s", self.keys)
         for row in data:
-            row = self._transform_to_cell(row, self.json)
+            row = self._transform_to_cell(row, self.no_cell)
             if self.filters(row, filters):
                 if not self.raw:
                     self.formatters(row, formatters)
@@ -1057,9 +1060,9 @@ class BaseTable(AbstractTable):
                 if isinstance(data, types.UnicodeType):
                     record.append(data)
                 else:
-                    record.append(str(data))
+                    data_str = str(data).decode('utf-8')
+                    record.append(data_str)
             records.append(";".join(record))
-            # records.append(";".join([x for x in record]))
         return "\n".join(records)
 
 
@@ -1092,14 +1095,15 @@ class VTable(BaseTable):
             record = []
             for k in self.keys:
                 try:
-                    t_format = u"{key:" + unicode(str(self._maxlengthkey)) + u"s} | {value:s}"
+                    t_format = u"{key:" + str(self._maxlengthkey) + u"s} | {value:s}"
                     dataa = None
                     column_data = row.get(k)
                     if isinstance(column_data, types.UnicodeType):
                         dataa = {"key": k, "value": column_data}
                     else:
-                        dataa = {"key": k, "value": str(column_data)}
-                    t_record = unicode(t_format).format(**dataa)
+                        column_data_str = str(column_data).decode('utf-8')
+                        dataa = {"key": k, "value": column_data_str}
+                    t_record = (t_format).format(**dataa)
                     record.append(t_record)
                     max_length_line = max(max_length_line, len(t_record))
                 except UnicodeEncodeError as ex:
@@ -1150,13 +1154,17 @@ class ConsoleTable(BaseTable):
         for row in self.get_raw():
             record = []
             for k in self.keys:
-                t_format = u"{value:s}"
-                column_data = row.get(k)
-                if isinstance(column_data, types.UnicodeType):
-                    t_record = t_format.format(value=column_data)
-                else:
-                    t_record = t_format.format(value=str(column_data))
-                record.append(t_record)
+                try:
+                    t_format = u"{value:s}"
+                    column_data = row.get(k)
+                    if isinstance(column_data, types.UnicodeType):
+                        t_record = t_format.format(value=column_data)
+                    else:
+                        t_record = t_format.format(value=column_data)
+                    record.append(t_record)
+                except UnicodeEncodeError as ex:
+                    self.log.error("UnicodeEncodeError: %s", ex)
+                    record.append("UnicodeEncodeError")
             print unicode(" ".join(record))
 
 
@@ -1164,14 +1172,15 @@ class HTable(VeryPrettyTable, AbstractTable):
     """TODO"""
 
     vertical = False
+    debug = 0
+    no_cell = False
 
     def _transform_to_cell(self, json_row, off=False):
         """TODO"""
         self.log.debug("begin row")
-        self.log.debug("keys: %s ", self.keys)
         data = OrderedDict()
         for key in self.keys:
-            self.log.debug("key: %s ", key)
+            self.log.debug("key: %s", key)
             value = None
             if key in json_row:
                 value = json_row[key]
@@ -1179,7 +1188,7 @@ class HTable(VeryPrettyTable, AbstractTable):
                 self.log.debug("key not found: %s", key)
             data[key] = value
             if not off:
-                data[key] = CellBuilder(key, self.raw, self.vertical)(value)
+                data[key] = CellBuilder(key, self.raw, self.vertical, self.debug)(value)
         self.log.debug("end row")
         return data
 
@@ -1191,7 +1200,7 @@ class HTable(VeryPrettyTable, AbstractTable):
         self.log.debug("json_obj size: %s", len(json_obj))
         self.log.debug("keys: %s", self.keys)
         for json_row in json_obj:
-            data = self._transform_to_cell(json_row, False)
+            data = self._transform_to_cell(json_row, self.no_cell)
             if self.filters(data, filters):
                 if not self.raw:
                     self.formatters(data, formatters)
