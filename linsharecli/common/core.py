@@ -205,6 +205,33 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             self.pprint(self.DEFAULT_TOTAL, meta)
         return True
 
+    def _list_v2(self, args, cli, table, json_obj, formatters=None, filters=None):
+        cli_mode = getattr(args, 'cli_mode', False)
+        for key in self.ACTIONS:
+            if getattr(args, key, False):
+                table.load(json_obj, filters, formatters)
+                rows = table.get_raw()
+                if key == 'count_only':
+                    if cli_mode:
+                        print len(rows)
+                    else:
+                        meta = {'count': len(rows)}
+                        self.pprint(self.DEFAULT_TOTAL, meta)
+                    return True
+                else:
+                    if not rows:
+                        if not cli_mode:
+                            self.pprint(self.MSG_RS_NOT_FOUND)
+                        return True
+                    uuids = [row.get(self.RESOURCE_IDENTIFIER) for row in rows]
+                    method = getattr(self, self.ACTIONS.get(key))
+                    return method(args, cli, uuids)
+        table.show_table(json_obj, filters, formatters)
+        meta = {'count': len(table.get_raw())}
+        if self.verbose:
+            self.pprint(self.DEFAULT_TOTAL, meta)
+        return True
+
     def _apply_to_all(self, args, cli, uuids, msg_m, func):
         count = len(uuids)
         position = 0
@@ -1236,3 +1263,87 @@ class HTable(VeryPrettyTable, AbstractTable):
     def get_csv(self):
         """TODO"""
         raise NotImplementedError()
+
+
+class TableBuilder(object):
+    """TODO"""
+
+    #def __init__(self, args, cli, first_column, in_keys=None, other_table=None):
+    # table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
+    def __init__(self, columns, first_column=None):
+        """TODO"""
+        self.columns = columns
+        self.first_column = first_column
+        self.vertical = False
+        self.json = False
+        self.raw = False
+        self.raw_json = False
+        self.csv = False
+        self.sort_by = None
+        self.reverse = False
+        self.extended = False
+        self.no_cell = False
+        self.start = 0
+        self.end = 0
+        self.limit = 0
+        self.no_headers = False
+        self._vertical_clazz = VTable
+        self._horizontal_clazz = HTable
+
+    def load(self, args):
+        """load builder attributes from args."""
+        attrs = [
+            "vertical", "json", "raw", "raw_json", "csv",
+            "sort_by", "reverse", "extended", "no_cell",
+            "no_headers", "debug", "start", "end", "limit", "fields"
+        ]
+        for attr in attrs:
+            if hasattr(args, attr):
+                setattr(self, attr, getattr(args, attr))
+        self.args = args
+        return self
+
+    def build(self):
+        """Build table object"""
+        if self.json or self.csv:
+            self.vertical = True
+        if self.json:
+            self.no_cell = True
+        # if not self.vertical:
+        #     for action in self.ACTIONS:
+        #         if getattr(args, action, False):
+        #             args.vertical = True
+        if self.fields:
+            self.columns = self.fields
+        # if self.first_column:
+        #     if self.first_column not in self.columns:
+        #         self.columns.insert(0, self.first_column)
+        table = None
+        if self.vertical:
+            table = self._vertical_clazz(self.columns)
+        else:
+            table = self._horizontal_clazz(self.columns)
+            # styles
+            if self.first_column and self.first_column in self.columns:
+                table.align[self.first_column] = "l"
+            table.padding_width = 1
+        attrs = [
+            "vertical", "json", "raw", "raw_json", "csv",
+            "reverse", "extended", "no_cell", "debug"
+        ]
+        for attr in attrs:
+            setattr(table, attr, getattr(self, attr))
+        if self.sort_by is None:
+            if self.first_column and self.first_column in self.columns:
+                table.sortby = self.first_column
+        else:
+            table.sortby = self.sort_by
+        table.reversesort = self.reverse
+        table._pref_start = self.start
+        table._pref_end = self.end
+        table._pref_limit = self.limit
+        table._pref_no_csv_headers = self.no_headers
+        # compat
+        table.args = self.args
+        table.keys = self.columns
+        return table
