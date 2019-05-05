@@ -185,6 +185,11 @@ section 'server-4'""")
             dest="env_password",
             help="If set, the program will load your password from LS_PASSWORD environement variable.")
 
+        group.add_argument(
+            '--password-from-env',
+            action="store",
+            help="If set, the program will load your password from this environement variable.")
+
         self.parser.add_argument(
             '-H',
             '--host',

@@ -116,6 +116,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 
         if args.env_password:
             args.password = os.getenv('LS_PASSWORD')
+        if args.password_from_env:
+            args.password = os.getenv(args.password_from_env.upper())
         if args.ask_password:
             try:
                 args.password = getpass.getpass("Please enter your password :")

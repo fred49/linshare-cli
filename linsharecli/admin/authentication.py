@@ -30,11 +30,12 @@ from __future__ import unicode_literals
 import getpass
 import time
 import urllib2
+import os
 
 from argparse import ArgumentError
-from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
+from argtoolbox import DefaultCompleter as Completer
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options_format
 from linsharecli.common.formatters import DateFormatter
@@ -95,6 +96,8 @@ class ChangePasswordCommand(AuthenticationCommand):
                 print "\nKeyboardInterrupt exception was caught."
                 print "Program terminated."
                 return False
+        if args.new_password_from_env:
+            args.new_password = os.getenv(args.new_password_from_env.upper())
         if not args.new_password:
             msg = "You must provide a new password, see -h for help."
             raise ArgumentError(None, msg)
@@ -175,6 +178,13 @@ def add_parser(subparsers, name, desc, config):
     # command : update
     parser = subparsers2.add_parser(
         'update', help="update my password (local users only).")
-    parser.add_argument('-n', '--new-password')
-    parser.add_argument('-a', '--ask-new-password', action="store_true")
+    password_group = parser.add_argument_group('Password')
+    group = password_group.add_mutually_exclusive_group(required=True)
+    group.add_argument('-n', '--new-password')
+    group.add_argument('-a', '--ask-new-password', action="store_true")
+    group.add_argument(
+        '-e',
+        '--new-password-from-env',
+        action="store",
+        help="If set, the program will load your password from this environement variable.")
     parser.set_defaults(__func__=ChangePasswordCommand(config))
