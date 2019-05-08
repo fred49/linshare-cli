@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""This module contains only filters, they are design to be apply to a row
+of a Vertical or Horizotal table."""
 
 
 # This file is part of Linshare cli.
@@ -29,37 +31,42 @@ from __future__ import unicode_literals
 import types
 import datetime
 import re
+import logging
 
-# pylint: disable=R0921
-# pylint: disable=C0111
-# -----------------------------------------------------------------------------
+
 class Filter(object):
+    """TODO"""
+
     def __init__(self, prop, values=None):
         """ prop name and value(s)"""
         self.prop = prop
         self.values = values
+        classname = str(self.__class__.__name__.lower())
+        self.log = logging.getLogger("linsharecli.filters." + classname)
 
     def is_enable(self):
+        """Return true is the current filter is enabled and should be applied."""
         if self.values is None:
             return False
-        elif isinstance(self.values, list):
+        if isinstance(self.values, list):
+            # pylint: disable=len-as-condition
             if len(self.values) == 0:
                 return False
-            else:
-                for i in self.values:
-                    if i is not None:
-                        return True
-        else:
-            return True
+            for i in self.values:
+                if i is not None:
+                    return True
+            return False
+        return True
 
     def get_val(self, row):
+        """return values from the current row that need to be tested again the
+        current filter."""
         if isinstance(self.prop, list):
             vals = {}
             for prop in self.prop:
                 vals[prop] = self._get_val(row, prop)
             return vals
-        else:
-            return self._get_val(row, self.prop)
+        return self._get_val(row, self.prop)
 
     def _get_val(self, row, prop):
         val = row.get(prop)
@@ -67,7 +74,7 @@ class Filter(object):
             raise ValueError("missing key : " + self.prop)
         return val
 
-# -----------------------------------------------------------------------------
+
 class PartialOr(Filter):
     """Get the current property into the current row, and match the result with
      a list of values"""
@@ -101,7 +108,6 @@ class PartialOr(Filter):
         return False
 
 
-# -----------------------------------------------------------------------------
 class PartialMultipleAnd(Filter):
     """Get the current property into the current row, and match the result with
      a list of values"""
@@ -131,7 +137,6 @@ class PartialMultipleAnd(Filter):
         return True
 
 
-# -----------------------------------------------------------------------------
 class PartialDate(Filter):
     """Get the current property into the current row, and match the result with
      a list of values"""
@@ -146,6 +151,7 @@ class PartialDate(Filter):
         if not self.is_enable():
             return True
         vals = self.get_val(row)
+        self.log.debug("type of values: %s", type(vals))
         if isinstance(vals, dict):
             for val in vals.values():
                 if self.regex.match(val):
@@ -154,18 +160,15 @@ class PartialDate(Filter):
             formatt = "{da:%Y-%m-%d %H:%M:%S}"
             vals = formatt.format(
                 da=datetime.datetime.fromtimestamp(vals / 1000))
+            self.log.debug("type of values: %s", vals)
             if self.regex.match(vals):
                 return True
         return False
 
 
-# -----------------------------------------------------------------------------
 class Equal(Filter):
     """Get the current property into the current row, and test equality.
     Only one value is possible"""
-
-    def __init__(self, prop, values=None):
-        super(Equal, self).__init__(prop, values)
 
     def __call__(self, row):
         if not self.is_enable():
@@ -176,13 +179,9 @@ class Equal(Filter):
         return False
 
 
-# -----------------------------------------------------------------------------
 class Equals(Filter):
     """Get the current property into the current row, and test equality.
     A list of values will be test"""
-
-    def __init__(self, prop, values=None):
-        super(Equals, self).__init__(prop, values)
 
     def __call__(self, row):
         if not self.is_enable():
