@@ -214,6 +214,8 @@ class ComplexCell(object):
         self._format = formatt
 
     def __str__(self):
+        if self.raw:
+            return str(self.value).encode('utf-8')
         if self._format:
             return self._format.format(**self.value)
         return str(self.value).encode('utf-8')
