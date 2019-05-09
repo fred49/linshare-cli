@@ -38,36 +38,38 @@ class CellBuilder(object):
     """TODO"""
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, name, raw=False, vertical=False, debug=0):
-        self.clazz = None
-        self.name = name
+    def __init__(self, raw=False, vertical=False, debug=0):
         self.raw = raw
         self.debug = debug
         self.vertical = vertical
         classname = str(self.__class__.__name__.lower())
         self.log = logging.getLogger("linsharecli.cell." + classname)
+        self.date_cells = ["creationDate", "modificationDate", "expirationDate"]
+        self.size_cells = ["size"]
+        self.custom_cells = {}
 
-    def __call__(self, value):
-        if self.clazz is None:
-            if self.name in ["creationDate", "modificationDate", "expirationDate"]:
-                self.clazz = DateCell
-            elif self.name in ["size"]:
-                self.clazz = SizeCell
-            elif isinstance(value, int):
-                self.clazz = ICell
-            elif isinstance(value, dict):
-                self.clazz = ComplexCell
-            else:
-                self.clazz = SCell
+    def __call__(self, name, value):
+        if name in self.custom_cells.keys():
+            clazz = self.custom_cells.get(name)
+        elif name in self.date_cells:
+            clazz = DateCell
+        elif name in self.size_cells:
+            clazz = SizeCell
+        elif isinstance(value, int):
+            clazz = ICell
+        elif isinstance(value, dict):
+            clazz = ComplexCell
+        else:
+            clazz = SCell
         if self.debug >= 2:
             self.log.debug("building cell ...")
-            self.log.debug("property: %s", self.name)
+            self.log.debug("property: %s", name)
             self.log.debug("value type: %s", type(value))
             self.log.debug("value: %s", value)
             self.log.debug("raw: %s", self.raw)
             self.log.debug("vertical: %s", self.vertical)
-        cell = self.clazz(value)
-        cell.name = self.name
+        cell = clazz(value)
+        cell.name = name
         cell.raw = self.raw
         cell.vertical = self.vertical
         if self.debug >= 3:
@@ -226,3 +228,16 @@ class ComplexCell(object):
 
     def __getitem__(self, key):
         return self.value[key]
+
+
+class ComplexCellBuilder(object):
+    """Helper to build a ComplexCell."""
+    # pylint: disable=too-few-public-methods
+
+    def __init__(self, formatt):
+        self._format = formatt
+
+    def __call__(self, value):
+        cell = ComplexCell(value)
+        cell.formatt = self._format
+        return cell

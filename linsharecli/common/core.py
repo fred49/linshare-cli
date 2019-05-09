@@ -145,7 +145,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             "You must implement the __get_cli_object method.")
 
     def _list(self, args, cli, table, json_obj, formatters=None, filters=None,
-              ignore_exceptions={}):
+              ignore_exceptions=None):
         sort_name = getattr(args, 'sort_name', False)
         sort_size = getattr(args, 'sort_size', False)
         self.log.debug("table.sortby : %s", table.sortby)
@@ -800,7 +800,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 
 def add_list_parser_options(parser, download=False, delete=False, cdate=False,
                             ssize=False):
-    """TODO"""
+    """Add default argparse options for all ListCommands."""
     # filters
     filter_group = parser.add_argument_group('Filters')
     filter_group.add_argument(
@@ -871,6 +871,7 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False,
     return filter_group, sort_group, format_group, actions_group
 
 def add_list_parser_options_format(parser):
+    """Add formatting argparse options for all ListCommands."""
     # format
     format_group = parser.add_argument_group('Format')
     format_group.add_argument(
@@ -918,6 +919,11 @@ def add_download_parser_options(parser, method=None):
 
 class AbstractTable(object):
     """TODO"""
+
+    vertical = False
+    debug = 0
+    no_cell = False
+    cbu = CellBuilder(False, False, 0)
 
     # pylint: disable=inconsistent-return-statements
     def filters(self, row, filters):
@@ -985,7 +991,7 @@ class AbstractTable(object):
                 self.log.debug("key not found: %s", key)
             data[key] = value
             if not off:
-                data[key] = CellBuilder(key, self.raw, self.vertical, self.debug)(value)
+                data[key] = self.cbu(key, value)
         if self.debug >= 2:
             self.log.debug("end row")
         return data
@@ -1015,7 +1021,9 @@ class BaseTable(AbstractTable):
 
     @Time('linsharecli.core.load', label='time : %(time)s')
     def load(self, data, filters=None, formatters=None,
-             ignore_exceptions={}):
+             ignore_exceptions=None):
+        # pylint: disable=unused-argument
+        # Only for compatibility with older lines of code.
         """TODO"""
         self.log.debug("keys: %s", self.keys)
         for row in data:
@@ -1100,7 +1108,9 @@ class VTable(BaseTable):
 
     @Time('linsharecli.core.show_table', label='time : %(time)s')
     def show_table(self, json_obj, filters=None, formatters=None,
-                   ignore_exceptions={}):
+                   ignore_exceptions=None):
+        # pylint: disable=unused-argument
+        # Only for compatibility with older lines of code.
         """TODO"""
         self.load(json_obj, filters, formatters)
         if self.json:
@@ -1169,7 +1179,9 @@ class ConsoleTable(BaseTable):
 
     @Time('linsharecli.core.show_table', label='time : %(time)s')
     def show_table(self, json_obj, filters=None, formatters=None,
-                   ignore_exceptions={}):
+                   ignore_exceptions=None):
+        # pylint: disable=unused-argument
+        # Only for compatibility with older lines of code.
         """TODO"""
         self.load(json_obj, filters, formatters)
         if self.json:
@@ -1198,10 +1210,6 @@ class ConsoleTable(BaseTable):
 class HTable(VeryPrettyTable, AbstractTable):
     """TODO"""
 
-    vertical = False
-    debug = 0
-    no_cell = False
-
     def _transform_to_cell(self, json_row, off=False):
         """TODO"""
         self.log.debug("begin row")
@@ -1215,7 +1223,7 @@ class HTable(VeryPrettyTable, AbstractTable):
                 self.log.debug("key not found: %s", key)
             data[key] = value
             if not off:
-                data[key] = CellBuilder(key, self.raw, self.vertical, self.debug)(value)
+                data[key] = self.cbu(key, value)
         self.log.debug("end row")
         return data
 
@@ -1245,7 +1253,9 @@ class HTable(VeryPrettyTable, AbstractTable):
 
     @Time('linsharecli.core.show_table', label='time : %(time)s')
     def show_table(self, json_obj, filters=None, formatters=None,
-                   ignore_exceptions={}):
+                   ignore_exceptions=None):
+        # pylint: disable=unused-argument
+        # Only for compatibility with older lines of code.
         """TODO"""
         self.load(json_obj, filters, formatters)
         out = self.get_string(fields=self.keys)
@@ -1289,6 +1299,7 @@ class TableBuilder(object):
         self.no_headers = False
         self._vertical_clazz = VTable
         self._horizontal_clazz = HTable
+        self._custom_cells = {}
 
     def load(self, args):
         """load builder attributes from args."""
@@ -1303,6 +1314,10 @@ class TableBuilder(object):
         self.args = args
         return self
 
+    def  add_custom_cell(self, column, clazz):
+        """Add specific cell class to format a column."""
+        self._custom_cells[column] = clazz
+
     def build(self):
         """Build table object"""
         if self.json or self.csv:
@@ -1315,9 +1330,6 @@ class TableBuilder(object):
         #             args.vertical = True
         if self.fields:
             self.columns = self.fields
-        # if self.first_column:
-        #     if self.first_column not in self.columns:
-        #         self.columns.insert(0, self.first_column)
         table = None
         if self.vertical:
             table = self._vertical_clazz(self.columns)
@@ -1343,6 +1355,12 @@ class TableBuilder(object):
         table._pref_end = self.end
         table._pref_limit = self.limit
         table._pref_no_csv_headers = self.no_headers
+        if self._custom_cells:
+            for column, clazz in self._custom_cells.items():
+                table.cbu.custom_cells[column] = clazz
+        table.cbu.raw = self.raw
+        table.cbu.vertical = self.vertical
+        table.cbu.debug = self.debug
         # compat
         table.args = self.args
         table.keys = self.columns
