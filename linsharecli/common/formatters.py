@@ -233,3 +233,18 @@ class UuidFormatter(Formatter):
         if value:
             if not context.args.vertical:
                 row[self.prop] = value[:8]
+
+
+class LastAuthorFormatterV2(Formatter):
+    """Convert resource owner (user) value to a readable name.
+    This formatter requires using row of Cells (type)"""
+
+    def __init__(self, prop):
+        super(LastAuthorFormatterV2, self).__init__(prop)
+
+    def __call__(self, row, context=None):
+        cell = row.get(self.prop)
+        if cell and hasattr(cell, "formatt"):
+            cell.formatt = '{name}'
+            if cell.vertical:
+                cell.formatt = '{name} <{mail}>'
