@@ -165,10 +165,10 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         if sort_name:
             table.sortby = self.DEFAULT_SORT_NAME
         self.log.debug("final table.sortby : %s", table.sortby)
+        table.load(json_obj, filters, formatters)
         cli_mode = getattr(args, 'cli_mode', False)
         for key in self.ACTIONS:
             if getattr(args, key, False):
-                table.load(json_obj, filters, formatters)
                 rows = table.get_raw()
                 if key == 'count_only':
                     if cli_mode:
@@ -973,6 +973,11 @@ class AbstractTable(object):
         """TODO"""
         raise NotImplementedError()
 
+    def load_v2(self, json_list):
+        """Load list of json objects into the table"""
+        self.load(json_list, self._filters, self._formatters)
+        return self
+
     def _transform_to_cell(self, json_row, off=False):
         """TODO"""
         if off:
@@ -995,6 +1000,11 @@ class AbstractTable(object):
         if self.debug >= 2:
             self.log.debug("end row")
         return data
+
+    @Time('linsharecli.core.render', label='render time : %(time)s')
+    def render(self):
+        """TODO"""
+        raise NotImplementedError()
 
 
 class BaseTable(AbstractTable):
@@ -1112,15 +1122,20 @@ class VTable(BaseTable):
         # pylint: disable=unused-argument
         # Only for compatibility with older lines of code.
         """TODO"""
-        self.load(json_obj, filters, formatters)
+        self.render()
+
+    @Time('linsharecli.core.render', label='render time : %(time)s')
+    def render(self):
+        """TODO"""
         if self.json:
             print self.get_json()
-            return
+            return True
         if self.csv:
             print self.get_csv()
-            return
+            return True
         out = self.get_string()
         print unicode(out)
+        return True
 
     def get_string(self):
         """TODO"""
@@ -1183,13 +1198,17 @@ class ConsoleTable(BaseTable):
         # pylint: disable=unused-argument
         # Only for compatibility with older lines of code.
         """TODO"""
-        self.load(json_obj, filters, formatters)
+        self.render()
+
+    @Time('linsharecli.core.render', label='render time : %(time)s')
+    def render(self):
+        """TODO"""
         if self.json:
             print self.get_json()
-            return
+            return True
         if self.csv:
             print self.get_csv()
-            return
+            return True
         for row in self.get_raw():
             record = []
             for k in self.keys:
@@ -1205,6 +1224,7 @@ class ConsoleTable(BaseTable):
                     self.log.error("UnicodeEncodeError: %s", ex)
                     record.append("UnicodeEncodeError")
             print unicode(" ".join(record))
+        return True
 
 
 class HTable(VeryPrettyTable, AbstractTable):
@@ -1257,9 +1277,14 @@ class HTable(VeryPrettyTable, AbstractTable):
         # pylint: disable=unused-argument
         # Only for compatibility with older lines of code.
         """TODO"""
-        self.load(json_obj, filters, formatters)
+        self.render()
+
+    @Time('linsharecli.core.render', label='render time : %(time)s')
+    def render(self):
+        """TODO"""
         out = self.get_string(fields=self.keys)
         print unicode(out)
+        return True
 
     def get_raw(self):
         """TODO"""
@@ -1300,12 +1325,14 @@ class TableBuilder(object):
         self._vertical_clazz = VTable
         self._horizontal_clazz = HTable
         self._custom_cells = {}
+        self.filters = []
+        self.formatters = []
 
-    def load(self, args):
+    def load_args(self, args):
         """load builder attributes from args."""
         attrs = [
             "vertical", "json", "raw", "raw_json", "csv",
-            "sort_by", "reverse", "extended", "no_cell",
+            "sort_by", "reverse", "extended", "no_cell", "verbose", "cli_mode",
             "no_headers", "debug", "start", "end", "limit", "fields"
         ]
         for attr in attrs:
@@ -1341,7 +1368,7 @@ class TableBuilder(object):
             table.padding_width = 1
         attrs = [
             "vertical", "json", "raw", "raw_json", "csv",
-            "reverse", "extended", "no_cell", "debug"
+            "reverse", "extended", "no_cell", "debug", "verbose", "cli_mode",
         ]
         for attr in attrs:
             setattr(table, attr, getattr(self, attr))
@@ -1361,6 +1388,8 @@ class TableBuilder(object):
         table.cbu.raw = self.raw
         table.cbu.vertical = self.vertical
         table.cbu.debug = self.debug
+        table._formatters = self.formatters
+        table._filters = self.filters
         # compat
         table.args = self.args
         table.keys = self.columns

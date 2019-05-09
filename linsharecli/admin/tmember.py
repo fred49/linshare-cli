@@ -43,9 +43,9 @@ class ThreadMembersListCommand(DefaultCommand):
         super(ThreadMembersListCommand, self).__call__(args)
         cli = self.ls.thread_members
         table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        table.show_table(
-            cli.list(args.uuid)
-        )
+        json_obj = cli.list(args.uuid)
+        table.load(json_obj)
+        table.render()
         return True
 
     def complete(self, args, prefix):

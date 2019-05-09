@@ -42,12 +42,14 @@ class UsersListCommand(DefaultCommand):
         if not  (args.firstname or args.lastname or args.mail):
             raise ValueError('You should use at leat one option among : --firstname, --lastname or --mail')
         table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        table.show_table(
-            cli.search(args.firstname, args.lastname, args.mail),
-            formatters=[DateFormatter('creationDate'),
-             DateFormatter('expirationDate'),
-             DateFormatter('modificationDate')]
-        )
+        formatters = [
+            DateFormatter('creationDate'),
+            DateFormatter('expirationDate'),
+            DateFormatter('modificationDate')
+        ]
+        json_obj = cli.search(args.firstname, args.lastname, args.mail)
+        table.load(json_obj)
+        table.render()
         return True
 
     def complete_fields(self, args, prefix):
