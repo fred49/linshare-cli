@@ -248,3 +248,17 @@ class LastAuthorFormatterV2(Formatter):
             cell.formatt = '{name}'
             if cell.vertical:
                 cell.formatt = '{name} <{mail}>'
+
+
+class DebugFormatter(Formatter):
+    """Just print row and cell types and content"""
+
+    def __call__(self, row, context=None):
+        print ">---"
+        print "prop:", self.prop
+        print "row :", type(row)
+        ldate = row.get(self.prop)
+        print "type:", type(ldate)
+        print "raw :", ldate.value
+        print "val :", ldate
+        print "---<"
