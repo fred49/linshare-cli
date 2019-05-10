@@ -1187,6 +1187,21 @@ class VTable(BaseTable):
             self._maxlengthkey = max((len(repr(k)), self._maxlengthkey))
 
 
+class ActionTable(VTable):
+    """TODO"""
+
+    @Time('linsharecli.core.render', label='render time : %(time)s')
+    def render(self):
+        """TODO"""
+        print "Default action table: noop."
+        for row in self.get_raw():
+            print row
+        print "-----"
+        print self.cli
+        print self.endpoint
+        return True
+
+
 class ConsoleTable(BaseTable):
     """TODO"""
 
@@ -1305,9 +1320,11 @@ class TableBuilder(object):
 
     #def __init__(self, args, cli, first_column, in_keys=None, other_table=None):
     # table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-    def __init__(self, columns, first_column=None):
+    def __init__(self, cli, endpoint, first_column=None):
         """TODO"""
-        self.columns = columns
+        self.cli = cli
+        self.endpoint = endpoint
+        self.columns = None
         self.first_column = first_column
         self.vertical = False
         self.json = False
@@ -1324,6 +1341,12 @@ class TableBuilder(object):
         self.no_headers = False
         self._vertical_clazz = VTable
         self._horizontal_clazz = HTable
+        self._actions_clazz = {
+            'delete' : ActionTable,
+            'download' : ActionTable,
+            'share' : ActionTable,
+            'count_only' : ActionTable,
+        }
         self._custom_cells = {}
         self.filters = []
         self.formatters = []
@@ -1345,29 +1368,45 @@ class TableBuilder(object):
         """Add specific cell class to format a column."""
         self._custom_cells[column] = clazz
 
+    def  add_formatters(self, *formatters):
+        """Add some formatters."""
+        for formatter in formatters:
+            self.formatters.append(formatter)
+
+    def  add_filters(self, *filters):
+        """Add some filters."""
+        for filterr in filters:
+            self.filters.append(filterr)
+
     def build(self):
         """Build table object"""
         if self.json or self.csv:
             self.vertical = True
         if self.json:
             self.no_cell = True
-        # if not self.vertical:
-        #     for action in self.ACTIONS:
-        #         if getattr(args, action, False):
-        #             args.vertical = True
         if self.fields:
             self.columns = self.fields
+        if not self.columns:
+            self.columns = self.endpoint.get_rbu().get_keys(self.extended)
         table = None
-        if self.vertical:
-            table = self._vertical_clazz(self.columns)
-        else:
-            table = self._horizontal_clazz(self.columns)
-            # styles
-            if self.first_column and self.first_column in self.columns:
-                table.align[self.first_column] = "l"
-            table.padding_width = 1
+
+        for action, clazz in self._actions_clazz.items():
+            if getattr(self.args, action, False):
+                table = clazz(self.columns)
+                self.no_cell = True
+                self.raw = True
+                break
+        if table is None:
+            if self.vertical:
+                table = self._vertical_clazz(self.columns)
+            else:
+                table = self._horizontal_clazz(self.columns)
+                # styles
+                if self.first_column and self.first_column in self.columns:
+                    table.align[self.first_column] = "l"
+                table.padding_width = 1
         attrs = [
-            "vertical", "json", "raw", "raw_json", "csv",
+            "vertical", "json", "raw", "raw_json", "csv", "cli", "endpoint",
             "reverse", "extended", "no_cell", "debug", "verbose", "cli_mode",
         ]
         for attr in attrs:
