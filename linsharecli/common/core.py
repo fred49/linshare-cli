@@ -1325,6 +1325,8 @@ class TableBuilder(object):
         self.cli = cli
         self.endpoint = endpoint
         self.columns = None
+        self.fields = None
+        self.cli_mode = False
         self.first_column = first_column
         self.vertical = False
         self.json = False
