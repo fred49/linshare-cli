@@ -28,9 +28,8 @@
 from __future__ import unicode_literals
 
 import argparse
-from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
-from linshareapi.core import LinShareException
+from argtoolbox import DefaultCompleter as Completer
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
 from linsharecli.common.formatters import DateFormatter
@@ -43,6 +42,8 @@ from linsharecli.user.core import DefaultCommand
 from linsharecli.common.formatters import Formatter
 from linsharecli.common.actions import CreateAction
 from linsharecli.common.actions import UpdateAction
+from linsharecli.common.cell import ComplexCellBuilder
+from linsharecli.common.core import TableBuilder
 
 
 INVALID_CHARS = [
@@ -331,26 +332,23 @@ class WgNodeContentListCommand(WgNodesCommand):
     @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
         super(WgNodeContentListCommand, self).__call__(args)
-        cli = self.ls.workgroup_nodes
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
+        endpoint = self.ls.workgroup_nodes
         parent = None
         if args.folders:
             parent = get_uuid_from(args.folders[-1])
-        self.show_breadcrumb(cli, args)
-        json_obj = cli.list(args.wg_uuid, parent, flat=args.flat_mode,
-                            node_types=args.node_types)
-        # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.names, True),
-                   PartialDate("creationDate", args.cdate)]
-        # Formatters
-        formatters = [DateFormatter('creationDate'),
-                      DateFormatter('uploadDate'),
-                      SizeFormatter('size', "-"),
-                      LastAuthorFormatter('lastAuthor'),
-                      DateFormatter('modificationDate')]
-        ignore_exceptions = {'size': True, 'uploadDate':True}
-        return self._list(args, cli, table, json_obj, formatters, filters,
-                          ignore_exceptions=ignore_exceptions)
+        self.show_breadcrumb(endpoint, args)
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_custom_cell("lastAuthor", ComplexCellBuilder('{name} <{mail}>'))
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.names, True),
+            PartialDate("creationDate", args.cdate)
+        )
+        json_obj = endpoint.list(
+            args.wg_uuid, parent, flat=args.flat_mode,
+            node_types=args.node_types
+        )
+        return tbu.build().load_v2(json_obj).render()
 
     def complete_fields(self, args, prefix):
         """TODO"""
