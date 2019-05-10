@@ -1383,6 +1383,7 @@ class TableBuilder(object):
         if self.json or self.csv:
             self.vertical = True
         if self.json:
+            self.raw = True
             self.no_cell = True
         if self.fields:
             self.columns = self.fields
