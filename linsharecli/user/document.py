@@ -78,20 +78,21 @@ class DocumentsListCommand(DocumentsCommand):
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsListCommand, self).__call__(args)
-        cli = self.ls.documents
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.names, True),
-                   PartialDate("creationDate", args.cdate)]
-        # Formatters
-        formatters = [
-            DateFormatter('creationDate'),
-            DateFormatter('expirationDate'),
-            SizeFormatter('size'),
-            DateFormatter('modificationDate')
-        ]
-        return self._list(args, cli, table, json_obj, formatters, filters)
+        from linsharecli.common.core import TableBuilder
+        endpoint = self.ls.documents
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.names, True),
+            PartialDate("creationDate", args.cdate)
+        )
+        table = tbu.build().load_v2(endpoint.list())
+        table.render()
+        # FIXME: this part should be in render method.
+        if self.verbose:
+            meta = {'count': len(table.get_raw())}
+            self.pprint(self.DEFAULT_TOTAL, meta)
+        return True
 
     def _share_all(self, args, cli, uuids):
         if self.api_version == 0:
