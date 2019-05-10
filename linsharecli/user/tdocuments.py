@@ -32,9 +32,6 @@ from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
-from linsharecli.common.formatters import DateFormatter
-from linsharecli.common.formatters import SizeFormatter
-from linsharecli.common.formatters import LastAuthorFormatter
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
@@ -42,6 +39,7 @@ from linsharecli.user.core import DefaultCommand
 from linsharecli.common.formatters import Formatter
 from linsharecli.common.actions import CreateAction
 from linsharecli.common.actions import UpdateAction
+from linsharecli.common.cell import ComplexCell
 from linsharecli.common.cell import ComplexCellBuilder
 from linsharecli.common.core import TableBuilder
 
@@ -257,21 +255,18 @@ class WgNodesCommand(DefaultCommand):
             return convert_to_list_nodes(json_obj)
 
 
-# pylint: disable=too-few-public-methods
-class TreePathFormatter(Formatter):
+class TreeCell(ComplexCell):
     """TODO"""
-
-    def __init__(self, prop):
-        super(TreePathFormatter, self).__init__(prop)
-
-    def __call__(self, row, context=None):
-        parameter = row.get(self.prop)
-        if parameter:
-            breadcrumb = []
-            for path in parameter:
-                breadcrumb.append(path.get('name'))
-            breadcrumb.append(row.get('name'))
-            row[self.prop] = " > ".join(breadcrumb)
+    def __str__(self):
+        if self.raw:
+            return str(self.value).encode('utf-8')
+        breadcrumb = []
+        for path in self.value:
+            breadcrumb.append(path.get('name'))
+        if self.row:
+            breadcrumb.append(str(self.row.get('name')))
+        breadcrumb = " > ".join(breadcrumb)
+        return str(breadcrumb).encode('utf-8')
 
 
 class WorkgroupDocumentsUploadCommand(WgNodesCommand):
@@ -364,29 +359,21 @@ class WgNodeContentDisplayCommand(WgNodesCommand):
     @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
         super(WgNodeContentDisplayCommand, self).__call__(args)
-        cli = self.ls.workgroup_nodes
+        endpoint = self.ls.workgroup_nodes
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.vertical = True
+        tbu.load_args(args)
+        tbu.add_custom_cell("lastAuthor", ComplexCellBuilder('{name} <{mail}>'))
+        tbu.add_custom_cell("treePath", TreeCell)
+        tbu.columns = endpoint.get_rbu().get_keys(args.extended)
+        tbu.columns.append('treePath')
         json_obj = []
         for node_uuid in args.nodes:
             node_uuid = get_uuid_from(node_uuid)
-            node = cli.get(args.wg_uuid, node_uuid, tree=True)
+            node = endpoint.get(args.wg_uuid, node_uuid, tree=True)
             # self.pretty_json(node)
             json_obj.append(node)
-        args.vertical = True
-        table = self.get_table(args, cli, self.IDENTIFIER)
-        keys = cli.get_rbu().get_keys(args.extended)
-        keys.append('treePath')
-        table = self.get_raw_table(args, cli, self.IDENTIFIER, keys)
-        # useless and required ! Design flaw ?
-        table.sortby = self.IDENTIFIER
-        formatters = [DateFormatter('creationDate'),
-                      DateFormatter('uploadDate'),
-                      SizeFormatter('size', "-"),
-                      LastAuthorFormatter('lastAuthor'),
-                      TreePathFormatter('treePath'),
-                      DateFormatter('modificationDate')]
-        ignore_exceptions = {'size': True, 'uploadDate':True}
-        return self._list(args, cli, table, json_obj, formatters,
-                          ignore_exceptions=ignore_exceptions)
+        return tbu.build().load_v2(json_obj).render()
 
 
 class WorkgroupDocumentsDownloadCommand(WgNodesCommand):

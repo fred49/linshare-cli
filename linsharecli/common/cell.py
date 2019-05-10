@@ -53,7 +53,7 @@ class CellBuilder(object):
         self.size_cells = ["size"]
         self.custom_cells = {}
 
-    def __call__(self, name, value):
+    def __call__(self, name, value, row=None):
         if name in self.custom_cells.keys():
             clazz = self.custom_cells.get(name)
         elif name in self.date_cells:
@@ -79,6 +79,8 @@ class CellBuilder(object):
         cell.name = name
         cell.raw = self.raw
         cell.vertical = self.vertical
+        if row is not None:
+            cell.row = row
         if self.debug >= 3:
             self.log.debug("cell type: %s", type(cell))
             # str method from all cell must return encoded strings
@@ -96,6 +98,7 @@ class SCell(object):
     def __init__(self, value):
         self.value = value
         self.raw = False
+        self.row = {}
         self.vertical = False
         self.name = None
         self.none = "-"
@@ -129,6 +132,7 @@ class DateCell(object):
     def __init__(self, value):
         self.value = value
         self.raw = False
+        self.row = {}
         self.vertical = False
         self._d_formatt = "{da:%Y-%m-%d %H:%M:%S}"
         self.name = None
@@ -163,6 +167,7 @@ class ICell(int):
         super(ICell, self).__init__(value)
         self.value = value
         self.raw = False
+        self.row = {}
         self.vertical = False
         self.name = None
 
@@ -179,6 +184,7 @@ class SizeCell(object):
     def __init__(self, value):
         self.value = value
         self.raw = False
+        self.row = {}
         self.vertical = False
         self.name = None
         self.none = "-"
@@ -208,6 +214,7 @@ class ComplexCell(object):
     def __init__(self, value):
         self.value = value
         self.raw = False
+        self.row = {}
         self.vertical = False
         self.name = None
         self._format = None

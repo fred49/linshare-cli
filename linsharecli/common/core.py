@@ -996,7 +996,7 @@ class AbstractTable(object):
                 self.log.debug("key not found: %s", key)
             data[key] = value
             if not off:
-                data[key] = self.cbu(key, value)
+                data[key] = self.cbu(key, value, data)
         if self.debug >= 2:
             self.log.debug("end row")
         return data
@@ -1258,7 +1258,7 @@ class HTable(VeryPrettyTable, AbstractTable):
                 self.log.debug("key not found: %s", key)
             data[key] = value
             if not off:
-                data[key] = self.cbu(key, value)
+                data[key] = self.cbu(key, value, data)
         self.log.debug("end row")
         return data
 
