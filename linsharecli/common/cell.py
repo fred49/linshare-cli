@@ -44,7 +44,12 @@ class CellBuilder(object):
         self.vertical = vertical
         classname = str(self.__class__.__name__.lower())
         self.log = logging.getLogger("linsharecli.cell." + classname)
-        self.date_cells = ["creationDate", "modificationDate", "expirationDate"]
+        self.date_cells = [
+            "creationDate",
+            "modificationDate",
+            "expirationDate",
+            "uploadDate"
+        ]
         self.size_cells = ["size"]
         self.custom_cells = {}
 
