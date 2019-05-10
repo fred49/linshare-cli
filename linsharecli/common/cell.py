@@ -62,6 +62,8 @@ class CellBuilder(object):
             clazz = SizeCell
         elif isinstance(value, int):
             clazz = ICell
+        elif isinstance(value, list):
+            clazz = ComplexCell
         elif isinstance(value, dict):
             clazz = ComplexCell
         else:
