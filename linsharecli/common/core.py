@@ -1318,8 +1318,6 @@ class HTable(VeryPrettyTable, AbstractTable):
 class TableBuilder(object):
     """TODO"""
 
-    #def __init__(self, args, cli, first_column, in_keys=None, other_table=None):
-    # table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
     def __init__(self, cli, endpoint, first_column=None):
         """TODO"""
         self.cli = cli
@@ -1366,16 +1364,20 @@ class TableBuilder(object):
         self.args = args
         return self
 
-    def  add_custom_cell(self, column, clazz):
+    def add_custom_cell(self, column, clazz):
         """Add specific cell class to format a column."""
         self._custom_cells[column] = clazz
 
-    def  add_formatters(self, *formatters):
+    def add_action(self, action, clazz):
+        """Add some custom action."""
+        self._actions_clazz[action] = clazz
+
+    def add_formatters(self, *formatters):
         """Add some formatters."""
         for formatter in formatters:
             self.formatters.append(formatter)
 
-    def  add_filters(self, *filters):
+    def add_filters(self, *filters):
         """Add some filters."""
         for filterr in filters:
             self.filters.append(filterr)
