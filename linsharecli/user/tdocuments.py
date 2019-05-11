@@ -41,7 +41,7 @@ from linsharecli.common.actions import CreateAction
 from linsharecli.common.actions import UpdateAction
 from linsharecli.common.cell import ComplexCell
 from linsharecli.common.cell import ComplexCellBuilder
-from linsharecli.common.core import TableBuilder
+from linsharecli.common.tables import TableBuilder
 
 
 INVALID_CHARS = [

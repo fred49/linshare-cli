@@ -28,8 +28,8 @@ from __future__ import unicode_literals
 
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import DateFormatter
-from linsharecli.common.core import VTable
-from linsharecli.common.core import HTable
+from linsharecli.common.tables import VTable
+from linsharecli.common.tables import HTable
 from linsharecli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
 

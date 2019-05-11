@@ -28,23 +28,21 @@ from __future__ import unicode_literals
 
 import re
 
+from argparse import ArgumentError
+from argparse import RawTextHelpFormatter
 from linshareapi.cache import Time
+from linshareapi.core import LinShareException
 from linsharecli.user.core import DefaultCommand
 from linsharecli.user.share import ShareAction
-from linshareapi.core import LinShareException
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
-from linsharecli.common.formatters import DateFormatter
-from linsharecli.common.formatters import SizeFormatter
-from argparse import RawTextHelpFormatter
-from argparse import ArgumentError
+from linsharecli.common.tables import TableBuilder
 from argtoolbox import DefaultCompleter as Completer
 
 
-# -----------------------------------------------------------------------------
 class DocumentsCommand(DefaultCommand):
     """ List all documents store into LinShare."""
 
@@ -78,7 +76,6 @@ class DocumentsListCommand(DocumentsCommand):
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsListCommand, self).__call__(args)
-        from linsharecli.common.core import TableBuilder
         endpoint = self.ls.documents
         tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
         tbu.load_args(args)
