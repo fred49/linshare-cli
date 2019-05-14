@@ -55,6 +55,7 @@ from linsharecli.admin.welcome_messages import add_parser as add_welcome_message
 from linsharecli.admin.public_keys import add_parser as add_public_keys
 from linsharecli.admin.jwt import add_parser as add_jwt
 from linsharecli.admin.authentication import add_parser as add_authentication
+from linsharecli.admin.mail_configs import add_parser as add_mail_configs
 import linsharecli
 
 # if you want to debug argcomplete completion,
@@ -223,6 +224,7 @@ section 'server-4'""")
         add_public_keys(subparsers, "pubkeys", "welcome messages", self.config)
         add_jwt(subparsers, "jwts", "JWT Persistent Token", self.config)
         add_authentication(subparsers, "auth", "Authentication", self.config)
+        add_mail_configs(subparsers, "mail_configs", "mail_configs", self.config)
         add_core_parser(subparsers, self.config)
 
 # if you need debug during class construction, config file loading,
