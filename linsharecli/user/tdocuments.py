@@ -259,14 +259,15 @@ class TreeCell(ComplexCell):
     """TODO"""
     def __str__(self):
         if self.raw:
-            return str(self.value).encode('utf-8')
+            return unicode(self.value).encode('utf-8')
         breadcrumb = []
         for path in self.value:
             breadcrumb.append(path.get('name'))
         if self.row:
-            breadcrumb.append(str(self.row.get('name')))
+            cell_name = self.row.get('name')
+            breadcrumb.append(unicode(cell_name))
         breadcrumb = " > ".join(breadcrumb)
-        return str(breadcrumb).encode('utf-8')
+        return breadcrumb.encode('utf-8')
 
 
 class WorkgroupDocumentsUploadCommand(WgNodesCommand):
