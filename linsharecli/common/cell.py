@@ -92,7 +92,7 @@ class CellBuilder(object):
 class SCell(object):
     """This class is used to emulate str type for veryprettytable.
     VeryPrettyTable will call the __str__ method on non-unicode objects.
-    It excepts that the __str__ output is utf-8 encoded."""
+    It requires that the __str__ output is utf-8 encoded."""
     # pylint: disable=too-few-public-methods
 
     def __init__(self, value):
@@ -104,6 +104,10 @@ class SCell(object):
         self.none = "-"
 
     def __str__(self):
+        return self.__unicode__().encode('utf-8')
+
+    def __unicode__(self):
+        """TODO"""
         value = None
         if self.raw:
             if self.value is None:
@@ -114,8 +118,8 @@ class SCell(object):
             if self.value is None:
                 value = self.none
             else:
-                value = self.value
-        return value.encode('utf-8')
+                value = unicode(self.value)
+        return value
 
     def __cmp__(self, value):
         if self.value == value:
@@ -139,8 +143,11 @@ class DateCell(object):
         self.none = "-"
 
     def __str__(self):
+        return self.__unicode__().encode('utf-8')
+
+    def __unicode__(self):
         if self.raw:
-            return str(self.value)
+            return unicode(self.value)
         if self.value is not None:
             # if self.vertical:
             #     self._d_formatt = "{da:%Y-%m-%d}"
@@ -172,9 +179,12 @@ class ICell(int):
         self.name = None
 
     def __str__(self):
+        return self.__unicode__().encode('utf-8')
+
+    def __unicode__(self):
         if self.raw:
-            return str(self.value)
-        return str(self.value)
+            return unicode(self.value)
+        return unicode(self.value)
 
 
 class SizeCell(object):
@@ -200,8 +210,11 @@ class SizeCell(object):
         return self.value / value
 
     def __str__(self):
+        return self.__unicode__().encode('utf-8')
+
+    def __unicode__(self):
         if self.raw:
-            return str(self.value)
+            return unicode(self.value)
         if self.value is None:
             return self.none
         return filesize(self.value, system=si)
@@ -230,11 +243,14 @@ class ComplexCell(object):
         self._format = formatt
 
     def __str__(self):
+        return self.__unicode__().encode('utf-8')
+
+    def __unicode__(self):
         if self.raw:
-            return str(self.value).encode('utf-8')
+            return unicode(self.value)
         if self._format:
             return self._format.format(**self.value)
-        return str(self.value).encode('utf-8')
+        return unicode(self.value)
 
     def keys(self):
         """TODO"""
