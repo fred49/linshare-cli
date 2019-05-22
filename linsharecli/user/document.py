@@ -83,13 +83,7 @@ class DocumentsListCommand(DocumentsCommand):
             PartialOr(self.IDENTIFIER, args.names, True),
             PartialDate("creationDate", args.cdate)
         )
-        table = tbu.build().load_v2(endpoint.list())
-        table.render()
-        # FIXME: this part should be in render method.
-        if self.verbose:
-            meta = {'count': len(table.get_raw())}
-            self.pprint(self.DEFAULT_TOTAL, meta)
-        return True
+        return tbu.build().load_v2(endpoint.list()).render()
 
     def _share_all(self, args, cli, uuids):
         if self.api_version == 0:

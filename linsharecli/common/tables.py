@@ -43,11 +43,14 @@ from linsharecli.common.cell import CellBuilder
 class AbstractTable(object):
     """TODO"""
 
+    DEFAULT_TOTAL = "\nRessources found : %(count)s"
+
     log = None
     vertical = False
     csv = False
     json = False
     debug = 0
+    verbose = False
     raw = False
     no_cell = False
     cli_mode = False
@@ -135,6 +138,20 @@ class AbstractTable(object):
     def render(self):
         """TODO"""
         raise NotImplementedError()
+
+    def pprint(self, msg, meta=None):
+        """TODO"""
+        if meta:
+            msg = msg % meta
+        self.log.debug(msg)
+        print msg
+
+    def _post_render(self):
+        """TODO"""
+        if self.verbose:
+            meta = {'count': len(self.get_raw())}
+            self.pprint(self.DEFAULT_TOTAL, meta)
+        return True
 
 
 class BaseTable(AbstractTable):
@@ -275,6 +292,7 @@ class VTable(BaseTable):
             return True
         out = self.get_string()
         print unicode(out)
+        self._post_render()
         return True
 
     def get_string(self):
@@ -364,6 +382,7 @@ class ConsoleTable(BaseTable):
                     self.log.error("UnicodeEncodeError: %s", ex)
                     record.append("UnicodeEncodeError")
             print unicode(" ".join(record))
+        self._post_render()
         return True
 
 
@@ -425,6 +444,7 @@ class HTable(VeryPrettyTable, AbstractTable):
         """TODO"""
         out = self.get_string(fields=self.keys)
         print unicode(out)
+        self._post_render()
         return True
 
     def get_raw(self):
