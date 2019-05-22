@@ -46,22 +46,6 @@ from argtoolbox import DefaultCompleter as Completer
 class DocumentsCommand(DefaultCommand):
     """ List all documents store into LinShare."""
 
-    DEFAULT_TOTAL = "Documents found : %(count)s"
-    MSG_RS_NOT_FOUND = "No documents could be found."
-    MSG_RS_DELETED = "%(position)s/%(count)s: The document '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
-    MSG_RS_CAN_NOT_BE_DELETED = "The document '%(uuid)s' can not be deleted."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s document(s) can not be deleted."
-    MSG_RS_DOWNLOADED = "%(position)s/%(count)s: The document '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
-    MSG_RS_CAN_NOT_BE_DOWNLOADED = "One document can not be downloaded."
-    MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%(count)s documents can not be downloaded."
-
-    ACTIONS = {
-        'delete' : '_delete_all',
-        'download' : '_download_all',
-        'share' : '_share_all',
-        'count_only' : '_count_only',
-    }
-
     def complete(self, args, prefix):
         super(DocumentsCommand, self).__call__(args)
         json_obj = self.ls.documents.list()
@@ -69,7 +53,6 @@ class DocumentsCommand(DefaultCommand):
             v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 class DocumentsListCommand(DocumentsCommand):
     """ List all documents store into LinShare."""
 
@@ -112,7 +95,6 @@ class DocumentsListCommand(DocumentsCommand):
             warn("---------------------------------------")
 
 
-# -----------------------------------------------------------------------------
 class DocumentsUploadCommand(DefaultCommand):
     """ Upload a file to LinShare using its rest api. return the uploaded
     document uuid  """
@@ -135,7 +117,6 @@ class DocumentsUploadCommand(DefaultCommand):
         return True
 
 
-# -----------------------------------------------------------------------------
 class DocumentsDownloadCommand(DocumentsCommand):
 
     @Time('linsharecli.document', label='Global time : %(time)s')
@@ -145,7 +126,6 @@ class DocumentsDownloadCommand(DocumentsCommand):
         return self._download_all(args, cli, args.uuids)
 
 
-# -----------------------------------------------------------------------------
 class DocumentsDeleteCommand(DocumentsCommand):
 
     @Time('linsharecli.document', label='Global time : %(time)s')
@@ -155,7 +135,6 @@ class DocumentsDeleteCommand(DocumentsCommand):
         return self._delete_all(args, cli, args.uuids)
 
 
-# -----------------------------------------------------------------------------
 class DocumentsUpdateCommand(DocumentsCommand):
 
     @Time('linsharecli.document', label='Global time : %(time)s')
@@ -205,7 +184,6 @@ class DocumentsUpdateCommand(DocumentsCommand):
         return False
 
 
-# -----------------------------------------------------------------------------
 class DocumentsUploadAndSharingCommand(DefaultCommand):
 
     @Time('linsharecli.document', label='Global time : %(time)s')
@@ -295,7 +273,6 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
             warn("Completion need at least 3 characters.")
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     """This method adds to the input subparser, all parsers for document
     methods"""
