@@ -33,16 +33,16 @@ from argparse import RawTextHelpFormatter
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
 from linsharecli.user.core import DefaultCommand
-from linsharecli.user.share import ShareAction
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
 from linsharecli.common.tables import TableBuilder
-from argtoolbox import DefaultCompleter as Completer
+from linsharecli.common.tables import Action
 from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import DownloadAction
+from argtoolbox import DefaultCompleter as Completer
 
 
 class DocumentsCommand(DefaultCommand):
@@ -55,6 +55,82 @@ class DocumentsCommand(DefaultCommand):
             v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
 
 
+class ShareAction(Action):
+    """TODO"""
+
+    def __init__(self,
+                 api_version,
+                 identifier="name",
+                 resource_identifier="uuid"
+                ):
+        super(ShareAction, self).__init__()
+        self.api_version = api_version
+        self.identifier = identifier
+        self.resource_identifier = resource_identifier
+        self.mails = None
+        self.rbu = None
+
+    def init(self, args, cli, endpoint):
+        super(ShareAction, self).init(args, cli, endpoint)
+        self.mails = getattr(args, "mails", None)
+        if not self.mails:
+            raise ValueError("To share files, you need to use -m/--mail option.")
+        self.rbu = cli.shares.get_rbu()
+        self.rbu.load_from_args(args)
+        self.log.debug("rbu share: " + str(self.rbu))
+        return self
+
+    def __call__(self, args, cli, endpoint, data):
+        # pylint: disable=too-many-locals
+        """TODO"""
+        self.init(args, cli, endpoint)
+        uuids = [row.get(self.resource_identifier) for row in data]
+        self.share_all(uuids)
+
+    def share_all(self, uuids):
+        """TODO"""
+        if self.api_version == 0:
+            raise ValueError("Not supported for the current api version : " + str(self.api_version))
+        # copy of very very old lines of code.
+        self.rbu.set_value('documents', uuids)
+        recipients = []
+        for mail in self.mails:
+            recipients.append({'mail': mail})
+        self.rbu.set_value('recipients', recipients)
+        self.log.debug("rbu share: " + str(self.rbu))
+        json_obj = self.cli.shares.create(self.rbu.to_resource())
+        if self.debug >= 2:
+            self.pretty_json(json_obj)
+        documents = []
+        recipients = []
+        for i in json_obj:
+            doc = i.get('document')
+            if doc is None:
+                # Somewhere between 1.8.4 and 1.8.7,
+                # the attribute was properly renamed.
+                # This line of code is just for compatibility
+                doc = i.get('documentDto')
+            document = doc['name'] + " (" + doc['uuid'] +")"
+            if document not in documents:
+                documents.append(document)
+            # recipients
+            reci = i['recipient']
+            if reci['firstName']:
+                recipient = "%(firstName)s %(lastName)s (%(mail)s)" % reci
+            else:
+                recipient = "%(mail)s" % reci
+            if recipient not in recipients:
+                recipients.append(recipient)
+        self.pprint("The following documents :\n")
+        for doc in sorted(documents):
+            self.pprint(" - " + doc)
+        self.pprint("\n were shared with :\n")
+        for doc in sorted(recipients):
+            self.pprint(" - " + doc)
+        self.pprint("")
+        return 0
+
+
 class DocumentsListCommand(DocumentsCommand):
     """ List all documents store into LinShare."""
 
@@ -64,19 +140,12 @@ class DocumentsListCommand(DocumentsCommand):
         endpoint = self.ls.documents
         tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
         tbu.load_args(args)
+        tbu.add_action('share', ShareAction(self.api_version))
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.names, True),
             PartialDate("creationDate", args.cdate)
         )
         return tbu.build().load_v2(endpoint.list()).render()
-
-    def _share_all(self, args, cli, uuids):
-        if self.api_version == 0:
-            raise ValueError("Not supported for the current api version : " + str(self.api_version))
-        if not args.mails:
-            raise ValueError("To share files, you need to use -m/--mail option.")
-        command = ShareAction(self)
-        return command(args, cli, uuids)
 
     def complete_fields(self, args, prefix):
         """TODO"""
@@ -191,17 +260,11 @@ class DocumentsUpdateCommand(DocumentsCommand):
 
 
 class DocumentsUploadAndSharingCommand(DefaultCommand):
+    """TODO"""
 
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
-        if self.api_version == 0:
-            return self._upshare_1_7(args)
-        else:
-            return self._upshare_1_8(args)
-
-    def _upshare_1_8(self, args):
-        """Method to share documents. compatible >= 1.8 """
         uuids = []
         for file_path in args.files:
             json_obj = self.ls.documents.upload(file_path)
@@ -210,31 +273,9 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
             self.log.info(
                 "The file '%(name)s' (%(uuid)s) was uploaded. (%(time)ss)",
                 json_obj)
-        command = ShareAction(self)
-        cli = self.ls.shares
-        return command(args, cli, uuids)
-
-    def _upshare_1_7(self, args):
-        for file_path in args.files:
-            json_obj = self.ls.documents.upload(file_path)
-            uuid = json_obj.get('uuid')
-            json_obj['time'] = self.ls.last_req_time
-            self.log.info(
-                "The file '%(name)s' (%(uuid)s) was uploaded. (%(time)ss)",
-                json_obj)
-            for mail in args.mails:
-                code, msg, req_time = self.ls.shares.share(uuid, mail)
-                if code == 204:
-                    self.log.info(
-                        "The document '" + uuid +
-                        "' was successfully shared with " + mail +
-                        " ( " + req_time + "s)")
-                else:
-                    self.log.warn("Trying to share document '" +
-                                  uuid + "' with " + mail)
-                    self.log.error("Unexpected return code : " +
-                                   str(code) + " : " + msg)
-        return True
+        act = ShareAction(self.api_version)
+        act.init(args, self.ls, self.ls.documents)
+        return act.share_all(uuids)
 
     def complete(self, args, prefix):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)

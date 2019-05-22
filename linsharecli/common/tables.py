@@ -489,17 +489,26 @@ class Action(object):
         self.log.debug(msg)
         print msg
 
-    def pprint_warn(self, msg, meta={}):
+    def pprint_warn(self, msg, meta=None):
         """TODO"""
+        if meta is None:
+            meta = {}
         msg = "WARN: " + msg % meta
         self.log.warn(msg)
         print msg
 
-    def pprint_error(self, msg, meta={}):
+    def pprint_error(self, msg, meta=None):
         """TODO"""
+        if meta is None:
+            meta = {}
         msg = "ERROR: " + msg % meta
         self.log.error(msg)
         print msg
+
+    def pretty_json(self, obj):
+        """Just a pretty printer for a json object."""
+        # pylint: disable=no-self-use
+        print json.dumps(obj, sort_keys=True, indent=2)
 
     def __call__(self, args, cli, endpoint, data):
         raise NotImplementedError()
