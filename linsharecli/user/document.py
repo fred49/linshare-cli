@@ -41,6 +41,8 @@ from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
 from linsharecli.common.tables import TableBuilder
 from argtoolbox import DefaultCompleter as Completer
+from linsharecli.common.tables import DeleteAction
+from linsharecli.common.tables import DownloadAction
 
 
 class DocumentsCommand(DefaultCommand):
@@ -118,21 +120,25 @@ class DocumentsUploadCommand(DefaultCommand):
 
 
 class DocumentsDownloadCommand(DocumentsCommand):
+    """TODO"""
 
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsDownloadCommand, self).__call__(args)
-        cli = self.ls.documents
-        return self._download_all(args, cli, args.uuids)
+        act = DownloadAction()
+        act.init(args, self.ls, self.ls.documents)
+        return act.download(args.uuids)
 
 
 class DocumentsDeleteCommand(DocumentsCommand):
+    """TODO"""
 
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsDeleteCommand, self).__call__(args)
-        cli = self.ls.documents
-        return self._delete_all(args, cli, args.uuids)
+        act = DeleteAction()
+        act.init(args, self.ls, self.ls.documents)
+        return act.delete(args.uuids)
 
 
 class DocumentsUpdateCommand(DocumentsCommand):
