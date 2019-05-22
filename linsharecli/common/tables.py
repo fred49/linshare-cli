@@ -28,13 +28,16 @@
 from __future__ import unicode_literals
 
 
+import os
 import json
 import types
 import logging
+import urllib2
 
+from linshareapi.cache import Time
+from linshareapi.core import LinShareException
 from ordereddict import OrderedDict
 from veryprettytable import VeryPrettyTable
-from linshareapi.cache import Time
 from linsharecli.common.cell import CellBuilder
 
 class AbstractTable(object):
@@ -47,6 +50,7 @@ class AbstractTable(object):
     debug = 0
     raw = False
     no_cell = False
+    cli_mode = False
     cbu = CellBuilder(False, False, 0)
     keys = []
     _filters = []
@@ -323,21 +327,6 @@ class VTable(BaseTable):
             self._maxlengthkey = max((len(repr(k)), self._maxlengthkey))
 
 
-class ActionTable(VTable):
-    """TODO"""
-
-    @Time('linsharecli.core.render', label='render time : %(time)s')
-    def render(self):
-        """TODO"""
-        print "Default action table: noop."
-        for row in self.get_raw():
-            print row
-        print "-----"
-        print self.cli
-        print self.endpoint
-        return True
-
-
 class ConsoleTable(BaseTable):
     """TODO"""
 
@@ -380,6 +369,7 @@ class ConsoleTable(BaseTable):
 
 class HTable(VeryPrettyTable, AbstractTable):
     """TODO"""
+    # pylint: disable=too-many-instance-attributes
 
     def _transform_to_cell(self, json_row, off=False):
         """TODO"""
@@ -451,10 +441,411 @@ class HTable(VeryPrettyTable, AbstractTable):
         raise NotImplementedError()
 
 
-class TableBuilder(object):
+class Action(object):
     """TODO"""
 
-    def __init__(self, cli, endpoint, first_column=None):
+    def __init__(self):
+        self.cli_mode = False
+        self.verbose = False
+        self.dry_run = False
+        self.debug = 0
+        classname = str(self.__class__.__name__.lower())
+        self.log = logging.getLogger('linsharecli.' + classname)
+        self.cli = None
+        self.endpoint = None
+
+    def init(self, args, cli, endpoint):
+        """Init object members with values in args object"""
+        self.cli = cli
+        self.endpoint = endpoint
+        for att in ['cli_mode', 'verbose', 'debug', 'dry_run']:
+            if hasattr(args, att):
+                setattr(self, att, getattr(args, att))
+
+    def pprint(self, msg, meta=None):
+        """TODO"""
+        if meta:
+            msg = msg % meta
+        self.log.debug(msg)
+        print msg
+
+    def pprint_warn(self, msg, meta={}):
+        """TODO"""
+        msg = "WARN: " + msg % meta
+        self.log.warn(msg)
+        print msg
+
+    def pprint_error(self, msg, meta={}):
+        """TODO"""
+        msg = "ERROR: " + msg % meta
+        self.log.error(msg)
+        print msg
+
+    def __call__(self, args, cli, endpoint, data):
+        raise NotImplementedError()
+
+
+class CountAction(Action):
+    """TODO"""
+    # pylint: disable=too-few-public-methods
+
+    DEFAULT_TOTAL = "Ressources found : %(count)s"
+
+    def __call__(self, args, cli, endpoint, data):
+        """TODO"""
+        self.init(args, cli, endpoint)
+        if self.cli_mode:
+            print len(data)
+        else:
+            meta = {'count': len(data)}
+            self.pprint(self.DEFAULT_TOTAL, meta)
+        return True
+
+
+class SampleAction(Action):
+    """TODO"""
+    # pylint: disable=too-many-instance-attributes
+
+    def __init__(self, name):
+        super(SampleAction, self).__init__()
+        self.name = name
+
+    def __call__(self, args, cli, endpoint, data):
+        """TODO"""
+        self.init(args, cli, endpoint)
+        print "ACTION:", self.name
+        print cli
+        print endpoint
+        print ">--- Filtered data ----"
+        for row in data:
+            print row
+        print "---- Filtered data ---<"
+        return True
+
+
+class DeleteAction(Action):
+    """TODO"""
+
+    MSG_RS_DELETED = (
+        "%(position)s/%(count)s: "
+        "The resource '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
+    )
+    MSG_RS_CAN_NOT_BE_DELETED = "The resource '%(uuid)s' can not be deleted."
+    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s resource(s) can not be deleted."
+
+    def __init__(self, mode=0,
+                 identifier="name",
+                 resource_identifier="uuid",
+                 parent_identifier="parent_uuid"
+                ):
+        super(DeleteAction, self).__init__()
+        self.cfg_mode = mode
+        self.parent_uuid = None
+        self.identifier = identifier
+        self.resource_identifier = resource_identifier
+        self.parent_identifier_attr = parent_identifier
+
+    def init(self, args, cli, endpoint):
+        super(DeleteAction, self).init(args, cli, endpoint)
+        if self.cfg_mode == 1:
+            self.parent_uuid = getattr(args, self.parent_identifier_attr, None)
+            if not self.parent_uuid:
+                raise ValueError("missing required arg : " + self.parent_identifier_attr)
+        return self
+
+    def delete(self, uuids):
+        """TODO"""
+        count = len(uuids)
+        position = 0
+        res = 0
+        for uuid in uuids:
+            position += 1
+            if self.cfg_mode == 0:
+                status = self._delete(uuid, position, count)
+            elif self.cfg_mode == 1:
+                status = self._delete_with_parent(uuid, position, count)
+            else:
+                raise NotImplementedError()
+            res += abs(status - 1)
+        if res > 0:
+            meta = {'count': res}
+            if not self.cli_mode:
+                self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED_M, meta)
+            return False
+        return True
+
+    def __call__(self, args, cli, endpoint, data):
+        """TODO"""
+        self.init(args, cli, endpoint)
+        uuids = [row.get(self.resource_identifier) for row in data]
+        return self.delete(uuids)
+
+    def _delete(self, uuid, position=None, count=None):
+        try:
+            if not position:
+                position = 1
+                count = 1
+            meta = {}
+            meta['uuid'] = uuid
+            meta[self.resource_identifier] = uuid
+            meta['time'] = " -"
+            meta['position'] = position
+            meta['count'] = count
+            if self.dry_run:
+                json_obj = self.endpoint.get(uuid)
+            else:
+                json_obj = self.endpoint.delete(uuid)
+                meta['time'] = self.cli.last_req_time
+            if not json_obj:
+                meta = {'uuid': uuid}
+                self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
+                return False
+            if self.cli_mode:
+                print json_obj.get(self.resource_identifier)
+            else:
+                meta[self.identifier] = json_obj.get(self.identifier)
+                self.pprint(self.MSG_RS_DELETED, meta)
+            return True
+        except (urllib2.HTTPError, LinShareException) as ex:
+            self.log.error("Delete error : %s", ex)
+            return False
+
+    def _delete_with_parent(self, uuid, position=None, count=None):
+        try:
+            if not position:
+                position = 1
+                count = 1
+            meta = {}
+            meta['uuid'] = uuid
+            meta['time'] = " -"
+            meta['position'] = position
+            meta['count'] = count
+            if self.dry_run:
+                json_obj = self.endpoint.get(self.parent_uuid, uuid)
+            else:
+                json_obj = self.endpoint.delete(self.parent_uuid, uuid)
+                meta['time'] = self.cli.last_req_time
+            if not json_obj:
+                meta = {'uuid': uuid}
+                self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
+                return False
+            meta[self.identifier] = json_obj.get(self.identifier)
+            self.pprint(self.MSG_RS_DELETED, meta)
+            return True
+        except (urllib2.HTTPError, LinShareException) as ex:
+            self.log.error("Delete error : %s", ex)
+            return False
+
+
+class DownloadAction(Action):
+    """TODO"""
+
+    MSG_RS_DOWNLOADED = (
+        "%(position)s/%(count)s: "
+        "The resource '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
+    )
+    MSG_RS_CAN_NOT_BE_DOWNLOADED = "One resource can not be downloaded."
+    MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%(count)s resources can not be downloaded."
+
+    def __init__(self, mode=0,
+                 identifier="name",
+                 resource_identifier="uuid",
+                 parent_identifier="parent_uuid"
+                ):
+        super(DownloadAction, self).__init__()
+        self.cfg_mode = mode
+        self.parent_uuid = None
+        self.directory = None
+        self.progress_bar = True
+        self.identifier = identifier
+        self.resource_identifier = resource_identifier
+        self.parent_identifier_attr = parent_identifier
+
+    def init(self, args, cli, endpoint):
+        super(DownloadAction, self).init(args, cli, endpoint)
+        if self.cfg_mode == 1 or self.cfg_mode == 2:
+            self.parent_uuid = getattr(args, self.parent_identifier_attr, None)
+            print self.parent_uuid
+            if not self.parent_uuid:
+                raise ValueError("missing required arg : " + self.parent_identifier_attr)
+        self.directory = getattr(args, "directory", None)
+        if self.cli_mode:
+            self.progress_bar = False
+        else:
+            self.progress_bar = not getattr(args, 'no_progress', False)
+        return self
+
+    def __call__(self, args, cli, endpoint, data):
+        """TODO"""
+        self.init(args, cli, endpoint)
+        uuids = [row.get(self.resource_identifier) for row in data]
+        return self.download(uuids)
+
+    def download(self, uuids):
+        """TODO"""
+        count = len(uuids)
+        position = 0
+        res = 0
+        for uuid in uuids:
+            position += 1
+            if self.cfg_mode == 0:
+                status = self._download(uuid, position, count)
+            elif self.cfg_mode == 1:
+                status = self._download_with_parent(uuid, position, count)
+            elif self.cfg_mode == 2:
+                status = self._download_folder_with_parent(uuid, position, count)
+            else:
+                raise NotImplementedError()
+            res += abs(status - 1)
+        if res > 0:
+            meta = {'count': res}
+            self.pprint(self.MSG_RS_CAN_NOT_BE_DOWNLOADED_M, meta)
+            return False
+        return True
+
+    def _download(self, uuid, position=None, count=None):
+        if self.directory:
+            if not os.path.isdir(self.directory):
+                os.makedirs(self.directory)
+        meta = {}
+        meta['uuid'] = uuid
+        meta['time'] = " -"
+        meta['position'] = position
+        meta['count'] = count
+        try:
+            if self.dry_run:
+                json_obj = self.endpoint.get(uuid)
+                meta['name'] = json_obj.get('name')
+            else:
+                file_name, req_time = self.endpoint.download(
+                    uuid, self.directory, progress_bar=self.progress_bar)
+                meta['name'] = file_name
+                meta['time'] = req_time
+            if self.cli_mode:
+                print uuid
+            else:
+                self.pprint(self.MSG_RS_DOWNLOADED, meta)
+            return True
+        except urllib2.HTTPError as ex:
+            meta['code'] = ex.code
+            meta['ex'] = str(ex)
+            if ex.code == 404:
+                self.pprint_error("http error : %(ex)s", meta)
+                self.pprint_error("Can not download the missing document : %(uuid)s", meta)
+            return False
+
+    def _download_with_parent(self, uuid, position=None, count=None, directory=None):
+        if not directory:
+            directory = self.directory
+
+        if directory:
+            if not os.path.isdir(directory):
+                os.makedirs(directory)
+        meta = {}
+        meta['uuid'] = uuid
+        meta['time'] = " -"
+        meta['position'] = position
+        meta['count'] = count
+        try:
+            if self.dry_run:
+                json_obj = self.endpoint.get(self.parent_uuid, uuid)
+                meta['name'] = json_obj.get('name')
+            else:
+                file_name, req_time = self.endpoint.download(self.parent_uuid, uuid, directory)
+                meta['name'] = file_name
+                meta['time'] = req_time
+            self.pprint(self.MSG_RS_DOWNLOADED, meta)
+            return True
+        except urllib2.HTTPError as ex:
+            self.log.debug("http error : %s", ex.code)
+            meta['code'] = ex.code
+            meta['ex'] = str(ex)
+            if ex.code == 404:
+                self.pprint_error("Can not find and download the document : %(uuid)s", meta)
+            elif ex.code == 400:
+                json_obj = self.endpoint.core.get_json_result(ex)
+                meta.update(json_obj)
+                self.pprint_error("%(message)s : %(uuid)s (error: %(errCode)s)", meta)
+            return False
+
+    def _download_folder_with_parent(self, uuid, position=None, count=None, directory=None):
+        meta = {}
+        meta['uuid'] = uuid
+        meta['time'] = " -"
+        meta['position'] = position
+        meta['count'] = count
+
+        if not directory:
+            directory = self.directory
+
+        try:
+            json_obj = self.endpoint.get(self.parent_uuid, uuid)
+            meta['name'] = json_obj.get('name')
+            if json_obj.get('type') == "FOLDER":
+                # recursive
+                if directory:
+                    directory += "/" + json_obj.get('name')
+                else:
+                    directory = json_obj.get('name')
+                if not os.path.isdir(directory) and not self.dry_run:
+                    os.makedirs(directory)
+                res = 0
+                for nested in self.endpoint.list(self.parent_uuid, uuid):
+                    if nested.get('type') == "FOLDER":
+                        self.pprint("Downloading folder : %(name)s (%(uuid)s)",
+                                    nested)
+                        status = self._download_folder_with_parent(
+                            nested.get('uuid'),
+                            position,
+                            count,
+                            directory=directory
+                        )
+                        continue
+                    status = self._download_with_parent(
+                        nested.get('uuid'), position, count, directory=directory)
+                    res += abs(status - 1)
+                if res > 0:
+                    meta = {'count': res}
+                    self.pprint(self.MSG_RS_CAN_NOT_BE_DOWNLOADED_M, meta)
+                    return False
+                return True
+            elif json_obj.get('type') == "DOCUMENT":
+                return self._download_with_parent(uuid, position, count, directory=directory)
+            else:
+                return False
+        except urllib2.HTTPError as ex:
+            self.log.debug("http error : %s", ex.code)
+            meta['code'] = ex.code
+            meta['ex'] = str(ex)
+            if ex.code == 404:
+                self.pprint_error("Can not find and download the document : %(uuid)s", meta)
+            elif ex.code == 400:
+                json_obj = self.endpoint.core.get_json_result(ex)
+                meta.update(json_obj)
+                self.pprint_error("%(message)s : %(uuid)s (error: %(errCode)s)", meta)
+            return False
+
+
+class ActionTable(VTable):
+    """TODO"""
+    # pylint: disable=too-many-instance-attributes
+
+    action = Action()
+
+    # workaround
+    no_breadcrumb = True
+
+    def render(self):
+        """Call the action method with filtered data."""
+        return self.action(self.args, self.cli, self.endpoint, self.get_raw())
+
+
+class TableBuilder(object):
+    """TODO"""
+    # pylint: disable=too-many-instance-attributes
+
+    def __init__(self, cli, endpoint, first_column=None,
+                 default_actions=True):
         """TODO"""
         self.cli = cli
         self.endpoint = endpoint
@@ -472,18 +863,21 @@ class TableBuilder(object):
         self.reverse = False
         self.extended = False
         self.no_cell = False
+        self.debug = 0
         self.start = 0
         self.end = 0
         self.limit = 0
         self.no_headers = False
         self._vertical_clazz = VTable
         self._horizontal_clazz = HTable
-        self._actions_clazz = {
-            'delete' : ActionTable,
-            'download' : ActionTable,
-            'share' : ActionTable,
-            'count_only' : ActionTable,
-        }
+        self._action_classes = {}
+        self._action_table = ActionTable
+        if default_actions:
+            self._action_classes = {
+                'count_only' : CountAction(),
+                'delete' : DeleteAction(),
+                'download' : DownloadAction(),
+            }
         self._custom_cells = {}
         self.filters = []
         self.formatters = []
@@ -505,9 +899,9 @@ class TableBuilder(object):
         """Add specific cell class to format a column."""
         self._custom_cells[column] = clazz
 
-    def add_action(self, action, clazz):
-        """Add some custom action."""
-        self._actions_clazz[action] = clazz
+    def add_action(self, flag, clazz):
+        """Add some custom action class trigger by a flag."""
+        self._action_classes[flag] = clazz
 
     def add_formatters(self, *formatters):
         """Add some formatters."""
@@ -520,6 +914,8 @@ class TableBuilder(object):
             self.filters.append(filterr)
 
     def build(self):
+        # pylint: disable=too-many-branches
+        # This method is a little bit diry, need some refactoring.
         """Build table object"""
         if self.json or self.csv:
             self.vertical = True
@@ -531,10 +927,10 @@ class TableBuilder(object):
         if not self.columns:
             self.columns = self.endpoint.get_rbu().get_keys(self.extended)
         table = None
-
-        for action, clazz in self._actions_clazz.items():
-            if getattr(self.args, action, False):
-                table = clazz(self.columns)
+        for flag, action in self._action_classes.items():
+            if getattr(self.args, flag, False):
+                table = self._action_table(self.columns)
+                table.action = action
                 self.no_cell = True
                 self.raw = True
                 break

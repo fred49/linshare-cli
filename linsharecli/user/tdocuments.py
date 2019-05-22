@@ -36,12 +36,13 @@ from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
 from linsharecli.user.core import DefaultCommand
-from linsharecli.common.formatters import Formatter
 from linsharecli.common.actions import CreateAction
 from linsharecli.common.actions import UpdateAction
 from linsharecli.common.cell import ComplexCell
 from linsharecli.common.cell import ComplexCellBuilder
 from linsharecli.common.tables import TableBuilder
+from linsharecli.common.tables import DeleteAction
+from linsharecli.common.tables import DownloadAction
 
 
 INVALID_CHARS = [
@@ -149,19 +150,6 @@ class WorkgroupCompleter(object):
 class WgNodesCommand(DefaultCommand):
     """TODO"""
 
-    DEFAULT_TOTAL = "Documents found : %(count)s"
-    MSG_RS_NOT_FOUND = "No documents could be found."
-    MSG_RS_DELETED = ("%(position)s/%(count)s: "
-                      "The document '%(name)s' (%(uuid)s) was deleted. "
-                      "(%(time)s s)")
-    MSG_RS_CAN_NOT_BE_DELETED = "The document '%(uuid)s' can not be deleted."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s document(s) can not be deleted."
-    MSG_RS_DOWNLOADED = ("%(position)s/%(count)s: "
-                         "The document '%(name)s' (%(uuid)s) was downloaded. "
-                         "(%(time)s s)")
-    MSG_RS_CAN_NOT_BE_DOWNLOADED = "One document can not be downloaded."
-    MSG_RS_CAN_NOT_BE_DOWNLOADED_M = ("%(count)s "
-                                      "documents can not be downloaded.")
     MSG_RS_CREATED = ("The following folder '%(name)s' "
                       "(%(uuid)s) was successfully created")
 
@@ -173,12 +161,6 @@ class WgNodesCommand(DefaultCommand):
     CFG_DOWNLOAD_ARG_ATTR = "wg_uuid"
     CFG_DELETE_MODE = 1
     CFG_DELETE_ARG_ATTR = "wg_uuid"
-
-    ACTIONS = {
-        'delete': '_delete_all',
-        'download': '_download_all',
-        'count_only': '_count_only',
-    }
 
     def complete_root_only(self, args, prefix):
         """Autocomplete on every node in the current folder, file or folder"""
@@ -299,7 +281,7 @@ class WorkgroupDocumentsUploadCommand(WgNodesCommand):
 
 
 class WgNodeContentListCommand(WgNodesCommand):
-    """ List all workgroup content."""
+    """List all workgroup content."""
 
     def get_last_valid_node(self, cli, args):
         """TODO"""
@@ -332,10 +314,17 @@ class WgNodeContentListCommand(WgNodesCommand):
         parent = None
         if args.folders:
             parent = get_uuid_from(args.folders[-1])
-        self.show_breadcrumb(endpoint, args)
         tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
         tbu.load_args(args)
         tbu.add_custom_cell("lastAuthor", ComplexCellBuilder('{name} <{mail}>'))
+        tbu.add_action('download', DownloadAction(
+            mode=self.CFG_DOWNLOAD_MODE,
+            parent_identifier=self.CFG_DOWNLOAD_ARG_ATTR
+        ))
+        tbu.add_action('delete', DeleteAction(
+            mode=self.CFG_DELETE_MODE,
+            parent_identifier=self.CFG_DELETE_ARG_ATTR
+        ))
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.names, True),
             PartialDate("creationDate", args.cdate)
@@ -344,7 +333,11 @@ class WgNodeContentListCommand(WgNodesCommand):
             args.wg_uuid, parent, flat=args.flat_mode,
             node_types=args.node_types
         )
-        return tbu.build().load_v2(json_obj).render()
+        table = tbu.build()
+        # dirty workaround to avoid displaying breadcrumb for action tables.
+        if not getattr(table, 'no_breadcrumb', False):
+            self.show_breadcrumb(endpoint, args)
+        return table.load_v2(json_obj).render()
 
     def complete_fields(self, args, prefix):
         """TODO"""
@@ -383,8 +376,12 @@ class WorkgroupDocumentsDownloadCommand(WgNodesCommand):
     @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
         super(WorkgroupDocumentsDownloadCommand, self).__call__(args)
-        cli = self.ls.workgroup_nodes
-        return self._download_all(args, cli, args.uuids)
+        act = DownloadAction(
+            mode=self.CFG_DOWNLOAD_MODE,
+            parent_identifier=self.CFG_DOWNLOAD_ARG_ATTR
+        )
+        act.init(args, self.ls, self.ls.workgroup_nodes)
+        return act.download(args.uuids)
 
 
 class WorkgroupDocumentsDeleteCommand(WgNodesCommand):
@@ -393,8 +390,12 @@ class WorkgroupDocumentsDeleteCommand(WgNodesCommand):
     @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
         super(WorkgroupDocumentsDeleteCommand, self).__call__(args)
-        cli = self.ls.workgroup_nodes
-        return self._delete_all(args, cli, args.uuids)
+        act = DeleteAction(
+            mode=self.CFG_DELETE_MODE,
+            parent_identifier=self.CFG_DELETE_ARG_ATTR
+        )
+        act.init(args, self.ls, self.ls.workgroup_nodes)
+        return act.delete(args.uuids)
 
 
 class FolderCreateCommand(WgNodesCommand):
