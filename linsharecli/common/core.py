@@ -114,6 +114,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         self.verbose = args.verbose
         self.debug = args.debug
 
+        if self.verbose:
+            print "\nAPI VERSION:", self.api_version, "(See env variable LS_API.)\n"
+
         if args.env_password:
             args.password = os.getenv('LS_PASSWORD')
         if args.password_from_env:

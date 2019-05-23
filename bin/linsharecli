@@ -78,12 +78,13 @@ class LinShareCliProgram(BasicProgram):
             required=True))
         section_server.add_element(Element(
             'api_version',
-            default=int(os.getenv('LS_API', 2)),
-            e_type=int,
+            default=float(os.getenv('LS_API', 2.2)),
+            e_type=float,
             desc="""The linshare api version to be used. Default '2'.
-* For LinShare Core = 1.7.x, use api_version=0.
-* For LinShare Core >= 1.8.x, use api_version=1.
-* For LinShare Core >= 2.0.x, use api_version=2.
+* For LinShare Core = 1.7.x, use api_version=0
+* For LinShare Core >= 1.8.x, use api_version=1
+* For LinShare Core >= 2.0.x, use api_version=2
+* For LinShare Core >= 2.2.x, use api_version=2.2
 The default value can be overriden by the env variable LS_API, which can be
 overriden by this parameter."""))
 
