@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -26,30 +27,26 @@
 
 from __future__ import unicode_literals
 
+from argparse import RawTextHelpFormatter
+from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand as Command
 from linsharecli.common.filters import PartialOr
-from linsharecli.common.formatters import OwnerFormatter
-from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
-from argtoolbox import DefaultCompleter as Completer
-from argparse import RawTextHelpFormatter
+from linsharecli.common.cell import ComplexCellBuilder
+from linsharecli.common.tables import TableBuilder
+from linsharecli.common.tables import DeleteAction
 
 
-# -----------------------------------------------------------------------------
 class DefaultCommand(Command):
+    """TODO"""
 
-    IDENTIFIER = "identifier"
-    DEFAULT_SORT = "identifier"
+    IDENTIFIER = "name"
+    DEFAULT_SORT = "name"
 
-    DEFAULT_TOTAL = "ContactsList found : %(count)s"
-    MSG_RS_NOT_FOUND = "No contactslist could be found."
-    MSG_RS_DELETED = "%(position)s/%(count)s: The contactslist '%(identifier)s' (%(uuid)s) was deleted. (%(time)s s)"
-    MSG_RS_CAN_NOT_BE_DELETED = "The contactslist '%(identifier)s'  '%(uuid)s' can not be deleted."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s contactslist(s) can not be deleted."
-    MSG_RS_UPDATED = "The contactslist '%(identifier)s' (%(uuid)s) was successfully updated."
-    MSG_RS_CREATED = "The contactslist '%(identifier)s' (%(uuid)s) was successfully created."
+    MSG_RS_UPDATED = "The contactslist '%(name)s' (%(uuid)s) was successfully updated."
+    MSG_RS_CREATED = "The contactslist '%(name)s' (%(uuid)s) was successfully created."
 
     ACTIONS = {
         'delete': '_delete_all',
@@ -63,34 +60,31 @@ class DefaultCommand(Command):
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 class ListCommand(DefaultCommand):
     """ List all contactslists store into LinShare."""
 
     @Time('linsharecli.contactslists', label='Global time : %(time)s')
     def __call__(self, args):
         super(ListCommand, self).__call__(args)
-        cli = self.ls.contactslists
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        filters = [
+        endpoint = self.ls.contactslists
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_custom_cell("owner", ComplexCellBuilder('{firstName} {lastName} <{mail}>'))
+        tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.pattern, True)
-        ]
-        formatters = [
-            OwnerFormatter('owner'),
-        ]
-        return self._list(args, cli, table, json_obj, filters=filters,
-                          formatters=formatters)
+        )
+        return tbu.build().load_v2(endpoint.list()).render()
 
     def complete_fields(self, args, prefix):
+        """TODO"""
+        # pylint: disable=unused-argument
         super(ListCommand, self).__call__(args)
         cli = self.ls.contactslists
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
 class CreateCommand(DefaultCommand):
+    """TODO"""
 
     @Time('linsharecli.contactslists', label='Global time : %(time)s')
     def __call__(self, args):
@@ -105,19 +99,19 @@ class CreateCommand(DefaultCommand):
             rbu.to_resource())
 
 
-# -----------------------------------------------------------------------------
 class DeleteCommand(DefaultCommand):
     """Delete contactslist."""
 
     @Time('linsharecli.contactslists', label='Global time : %(time)s')
     def __call__(self, args):
         super(DeleteCommand, self).__call__(args)
-        cli = self.ls.contactslists
-        return self._delete_all(args, cli, args.uuids)
+        act = DeleteAction()
+        act.init(args, self.ls, self.ls.contactslists)
+        return act.delete(args.uuids)
 
 
-# -----------------------------------------------------------------------------
 class UpdateCommand(DefaultCommand):
+    """TODO"""
 
     @Time('linsharecli.contactslists', label='Global time : %(time)s')
     def __call__(self, args):
@@ -128,6 +122,7 @@ class UpdateCommand(DefaultCommand):
         rbu = cli.get_rbu()
         rbu.copy(resource)
         rbu.load_from_args(args)
+        # FIXME : CREATE
         return self._run(
             cli.update,
             self.MSG_RS_UPDATED,
@@ -135,8 +130,8 @@ class UpdateCommand(DefaultCommand):
             rbu.to_resource())
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
+    """TODO"""
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
 
@@ -152,12 +147,11 @@ def add_parser(subparsers, name, desc, config):
     add_list_parser_options(parser, delete=True, cdate=True)
     parser.set_defaults(__func__=ListCommand(config))
 
-
     # command : create
     parser = subparsers2.add_parser(
         'create', help="create contactslist.")
-    parser.add_argument('identifier', action="store", help="")
-    parser.add_argument( '--public', dest="public", action="store_true", help="")
+    parser.add_argument('name', action="store", help="")
+    parser.add_argument('--public', dest="public", action="store_true", help="")
     parser.set_defaults(__func__=CreateCommand(config))
 
     # command : delete
