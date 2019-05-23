@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -26,50 +27,29 @@
 
 from __future__ import unicode_literals
 
+from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.filters import PartialOr
-from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.actions import CreateAction
-from argtoolbox import DefaultCompleter as Completer
+from linsharecli.common.tables import TableBuilder
+from linsharecli.common.tables import DeleteAction
 
 
-# -----------------------------------------------------------------------------
 class ThreadsCommand(DefaultCommand):
+    """TODO"""
 
-    DEFAULT_TOTAL = "Workgroups found : %(count)s"
-    MSG_RS_NOT_FOUND = "No workgroups could be found."
-    MSG_RS_DELETED = "%(position)s/%(count)s: The workgroup '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
-    MSG_RS_CAN_NOT_BE_DELETED = "The workgroup '%(uuid)s' can not be deleted."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s workgroup(s) can not be deleted."
     MSG_RS_CREATED = "The workgroup '%(name)s' (%(uuid)s) was successfully created. (%(_time)s s)"
-
-    ACTIONS = {
-        'delete' : '_delete_all',
-        'count_only' : '_count_only',
-    }
-
-    def init_old_language_key(self):
-        """For api <= 2"""
-        self.DEFAULT_TOTAL = "Threads found : %(count)s"
-        self.MSG_RS_NOT_FOUND = "No threads could be found."
-        self.MSG_RS_DELETED = "%(position)s/%(count)s: The thread '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
-        self.MSG_RS_CAN_NOT_BE_DELETED = "The thread '%(uuid)s' can not be deleted."
-        self.MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s thread(s) can not be deleted."
-        self.MSG_RS_CREATED = "The thread '%(name)s' (%(uuid)s) was successfully created. (%(_time)s s)"
 
     def complete(self, args, prefix):
         super(ThreadsCommand, self).__call__(args)
-        if self.api_version < 2:
-            self.init_old_language_key()
         json_obj = self.ls.threads.list()
         return (v.get(self.RESOURCE_IDENTIFIER)
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 class ThreadsListCommand(ThreadsCommand):
     """ List all threads store."""
     IDENTIFIER = "name"
@@ -78,68 +58,62 @@ class ThreadsListCommand(ThreadsCommand):
     @Time('linsharecli.threads', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadsListCommand, self).__call__(args)
-        if self.api_version < 2:
-            self.init_old_language_key()
-        cli = self.ls.threads
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        filters = PartialOr(self.IDENTIFIER, args.identifiers, True)
-        # Formatters
-        formatters = [DateFormatter('creationDate'),
-                      DateFormatter('modificationDate')]
-        return self._list(args, cli, table, json_obj, formatters, filters)
+        endpoint = self.ls.threads
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.identifiers, True),
+        )
+        return tbu.build().load_v2(endpoint.list()).render()
 
     def complete_fields(self, args, prefix):
+        # pylint: disable=unused-argument
+        """TODO"""
         super(ThreadsListCommand, self).__call__(args)
         cli = self.ls.threads
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
 class ThreadsCreateCommand(ThreadsCommand):
+    """TODO"""
 
     @Time('linsharecli.threads', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadsCreateCommand, self).__call__(args)
-        if self.api_version < 2:
-            self.init_old_language_key()
         act = CreateAction(self, self.ls.threads)
         return act.load(args).execute()
 
 
-# -----------------------------------------------------------------------------
 class ThreadsUpdateCommand(ThreadsCommand):
+    """TODO"""
 
     @Time('linsharecli.threads', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadsUpdateCommand, self).__call__(args)
-        if self.api_version < 2:
-            self.init_old_language_key()
         rbu = self.ls.threads.get_rbu()
         rbu.load_from_args(args)
+        # FIXME: CREATE
         return self._run(
             self.ls.threads.update,
-            "The following threads '%(name)s' was successfully \
-updated",
+            ("The following threads '%(name)s' "
+             "was successfully updated"),
             args.uuid,
             rbu.to_resource())
 
 
-# -----------------------------------------------------------------------------
 class ThreadsDeleteCommand(ThreadsCommand):
+    """TODO"""
 
     @Time('linsharecli.thread', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadsDeleteCommand, self).__call__(args)
-        if self.api_version < 2:
-            self.init_old_language_key()
-        cli = self.ls.threads
-        return self._delete_all(args, cli, args.uuids)
+        act = DeleteAction()
+        act.init(args, self.ls, self.ls.threads)
+        return act.delete(args.uuids)
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
+    """TODO"""
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
