@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -26,36 +27,24 @@
 
 from __future__ import unicode_literals
 
+from argparse import RawTextHelpFormatter
+from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.filters import PartialMultipleAnd
 from linsharecli.common.filters import PartialOr
-from linsharecli.common.formatters import OwnerFormatter
-from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
-from argtoolbox import DefaultCompleter as Completer
-from argparse import RawTextHelpFormatter
+from linsharecli.common.cell import ComplexCellBuilder
+from linsharecli.common.tables import DeleteAction
+from linsharecli.common.tables import TableBuilder
 
 
-# -----------------------------------------------------------------------------
 class GuestsCommand(DefaultCommand):
+    """TODO"""
 
     IDENTIFIER = "mail"
     DEFAULT_SORT = "mail"
-
-    DEFAULT_TOTAL = "Guests found : %(count)s"
-    MSG_RS_NOT_FOUND = "No guests could be found."
-    MSG_RS_DELETED = "%(position)s/%(count)s: The guest '%(mail)s' (%(uuid)s) was deleted. (%(time)s s)"
-    MSG_RS_CAN_NOT_BE_DELETED = "The guest '%(mail)s'  '%(uuid)s' can not be deleted."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s guest(s) can not be deleted."
-    MSG_RS_UPDATED = "The guest '%(mail)s' (%(uuid)s) was successfully updated."
-    MSG_RS_CREATED = "The guest '%(firstName)s %(lastName)s <%(mail)s>' (%(uuid)s) was successfully created."
-
-    ACTIONS = {
-        'delete': '_delete_all',
-        'count_only': '_count_only',
-    }
 
     def complete(self, args, prefix):
         super(GuestsCommand, self).__call__(args)
@@ -64,18 +53,16 @@ class GuestsCommand(DefaultCommand):
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 class GuestsListCommand(GuestsCommand):
     """ List all guests store into LinShare."""
 
     @Time('linsharecli.guests', label='Global time : %(time)s')
     def __call__(self, args):
         super(GuestsListCommand, self).__call__(args)
-        cli = self.ls.guests
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        filters = [
+        endpoint = self.ls.guests
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_filters(
             PartialMultipleAnd(
                 {
                     "mail": args.mail,
@@ -85,54 +72,49 @@ class GuestsListCommand(GuestsCommand):
                 True),
             PartialOr("uuid", args.uuid),
             PartialOr(self.IDENTIFIER, args.pattern, True)
-        ]
-        formatters = [
-            OwnerFormatter('owner'),
-            DateFormatter('creationDate'),
-            DateFormatter('modificationDate'),
-            DateFormatter('expirationDate')
-        ]
-        return self._list(args, cli, table, json_obj, filters=filters,
-                          formatters=formatters)
+        )
+        tbu.add_custom_cell(
+            "owner",
+            ComplexCellBuilder('{firstName} {lastName} <{mail}>'))
+        return tbu.build().load_v2(endpoint.list()).render()
 
     def complete_fields(self, args, prefix):
+        """TODO"""
+        # pylint: disable=unused-argument
         super(GuestsListCommand, self).__call__(args)
         cli = self.ls.guests
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
 class GuestsInfoCommand(GuestsCommand):
     """ List all guests store into LinShare."""
 
     @Time('linsharecli.guests', label='Global time : %(time)s')
     def __call__(self, args):
         super(GuestsInfoCommand, self).__call__(args)
-        cli = self.ls.guests
-        # args.extended = True
-        # args.vertical = True
-        table = self.get_table(args, cli, self.IDENTIFIER)
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
+        endpoint = self.ls.guests
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.vertical = True
+        tbu.extended = True
         json_obj = []
         for uuid in args.uuids:
-            json_obj.append(cli.get(uuid))
-        formatters = [
-            OwnerFormatter('owner'),
-            DateFormatter('creationDate'),
-            DateFormatter('modificationDate'),
-            DateFormatter('expirationDate')
-        ]
-        return self._list(args, cli, table, json_obj,
-                          formatters=formatters)
+            json_obj.append(endpoint.get(uuid))
+        tbu.add_custom_cell(
+            "owner",
+            ComplexCellBuilder('{firstName} {lastName} <{mail}>'))
+        return tbu.build().load_v2(json_obj).render()
 
     def complete_fields(self, args, prefix):
+        """TODO"""
+        # pylint: disable=unused-argument
         super(GuestsInfoCommand, self).__call__(args)
         cli = self.ls.guests
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
 class GuestsCreateCommand(GuestsCommand):
+    """TODO"""
 
     @Time('linsharecli.guests', label='Global time : %(time)s')
     def __call__(self, args):
@@ -140,6 +122,7 @@ class GuestsCreateCommand(GuestsCommand):
         rbu = self.ls.guests.get_rbu()
         rbu.load_from_args(args)
         identifier = getattr(args, self.IDENTIFIER)
+        # TODO:Fix CREATE
         return self._run(
             self.ls.guests.create,
             self.MSG_RS_CREATED,
@@ -147,19 +130,19 @@ class GuestsCreateCommand(GuestsCommand):
             rbu.to_resource())
 
 
-# -----------------------------------------------------------------------------
 class GuestsDeleteCommand(GuestsCommand):
     """Delete guest."""
 
     @Time('linsharecli.guests', label='Global time : %(time)s')
     def __call__(self, args):
         super(GuestsDeleteCommand, self).__call__(args)
-        cli = self.ls.guests
-        return self._delete_all(args, cli, args.uuids)
+        act = DeleteAction(identifier="mail")
+        act.init(args, self.ls, self.ls.guests)
+        return act.delete(args.uuids)
 
 
-# -----------------------------------------------------------------------------
 class GuestsUpdateCommand(GuestsCommand):
+    """TODO"""
 
     @Time('linsharecli.guests', label='Global time : %(time)s')
     def __call__(self, args):
@@ -170,6 +153,7 @@ class GuestsUpdateCommand(GuestsCommand):
         rbu = cli.get_rbu()
         rbu.copy(resource)
         rbu.load_from_args(args)
+        # TODO:Fix UPDATE
         return self._run(
             cli.update,
             self.MSG_RS_UPDATED,
@@ -177,8 +161,8 @@ class GuestsUpdateCommand(GuestsCommand):
             rbu.to_resource())
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
+    """TODO"""
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
 
@@ -200,10 +184,10 @@ def add_parser(subparsers, name, desc, config):
     # command : create
     parser = subparsers2.add_parser(
         'create', help="create guest.")
-    parser.add_argument( '--mail', dest="mail", required=True, help="")
-    parser.add_argument( '--firstname', dest="first_name", required=True, help="")
-    parser.add_argument( '--lastname', dest="last_name", required=True, help="")
-    parser.add_argument( '--can-upload', dest="can_upload", action="store_true", help="")
+    parser.add_argument('--mail', dest="mail", required=True, help="")
+    parser.add_argument('--firstname', dest="first_name", required=True, help="")
+    parser.add_argument('--lastname', dest="last_name", required=True, help="")
+    parser.add_argument('--can-upload', dest="can_upload", action="store_true", help="")
     parser.set_defaults(__func__=GuestsCreateCommand(config))
 
     # command : delete
