@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -35,9 +36,14 @@ from linsharecli.common.filters import PartialOr
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.actions import CreateAction
+from linsharecli.common.tables import TableBuilder
+from linsharecli.common.tables import DeleteAction
+
 
 
 class ThreadCompleter(object):
+    """TODO"""
+    # pylint: disable=too-few-public-methods
 
     def __init__(self, config):
         self.config = config
@@ -60,35 +66,26 @@ class ThreadCompleter(object):
 
 
 class ThreadMembersCommand(DefaultCommand):
+    """TODO"""
 
     IDENTIFIER = "userMail"
     RESOURCE_IDENTIFIER = "userUuid"
     DEFAULT_SORT = "userMail"
     DEFAULT_SORT_NAME = "userMail"
 
-    DEFAULT_TOTAL = "Thread members found : %(count)s"
-    MSG_RS_NOT_FOUND = "No thread members could be found."
-    MSG_RS_DELETED = (
-        "%(position)s/%(count)s: "
-        "The thread member (%(uuid)s) was deleted.")
-    MSG_RS_CAN_NOT_BE_DELETED = (
-        "The thread member '%(uuid)s' can not be deleted.")
-    MSG_RS_CAN_NOT_BE_DELETED_M = (
-        "%(count)s thread entries can not be deleted.")
     MSG_RS_CREATED = (
         "The thread member '%(firstName)s %(lastName)s' "
         "(%(userUuid)s) was successfully created. (%(_time)s s)")
 
-    ACTIONS = {
-        'delete': '_delete_all',
-        'count_only': '_count_only',
-    }
+    CFG_DELETE_MODE = 1
+    CFG_DELETE_ARG_ATTR = "thread_uuid"
 
     def init_old_language_key(self):
         """For api <= 2"""
         pass
 
     def _delete(self, args, cli, uuid, position=None, count=None):
+        # pylint: disable=too-many-arguments
         try:
             meta = {}
             meta['uuid'] = uuid
@@ -122,22 +119,25 @@ class ThreadMembersCommand(DefaultCommand):
             ).startswith(prefix))
 
     def complete_threads(self, args, prefix):
+        """TODO"""
         super(ThreadMembersCommand, self).__call__(args)
         json_obj = self.ls.threads.list()
         return (v.get('uuid')
                 for v in json_obj if v.get('uuid').startswith(prefix))
 
     def complete_mail(self, args, prefix):
+        """TODO"""
+         # pylint: disable=unused-argument
         super(ThreadMembersCommand, self).__call__(args)
         from argcomplete import warn
         if len(prefix) >= 3:
             json_obj = self.ls.users.list()
             return (v.get('mail')
                     for v in json_obj if v.get('mail').startswith(prefix))
-        else:
-            warn("---------------------------------------")
-            warn("Completion need at least 3 characters.")
-            warn("---------------------------------------")
+        warn("---------------------------------------")
+        warn("Completion need at least 3 characters.")
+        warn("---------------------------------------")
+        return None
 
     def _run(self, method, message_ok, err_suffix, *args):
         try:
@@ -158,17 +158,17 @@ class ThreadMembersListCommand(ThreadMembersCommand):
     @Time('linsharecli.tmembers', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadMembersListCommand, self).__call__(args)
-        cli = self.ls.thread_members
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list(args.thread_uuid)
-        # Filters
-        filters = PartialOr(self.IDENTIFIER, args.identifiers, True)
-        # Formatters
-        # formatters = [DateFormatter('creationDate'),
-        #            DateFormatter('modificationDate')]
-        return self._list(args, cli, table, json_obj, filters=filters)
+        endpoint = self.ls.thread_members
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.identifiers, True)
+        )
+        return tbu.build().load_v2(endpoint.list(args.thread_uuid)).render()
 
     def complete_fields(self, args, prefix):
+        """TODO"""
+         # pylint: disable=unused-argument
         super(ThreadMembersListCommand, self).__call__(args)
         cli = self.ls.thread_members
         return cli.get_rbu().get_keys(True)
@@ -199,8 +199,8 @@ class ThreadMembersCreateCommand(ThreadMembersCommand):
         return user_mail
 
 
-
 class ThreadMembersUpdateCommand(ThreadMembersCommand):
+    """TODO"""
 
     def __call__(self, args):
         super(ThreadMembersUpdateCommand, self).__call__(args)
@@ -214,15 +214,22 @@ class ThreadMembersUpdateCommand(ThreadMembersCommand):
 
 
 class ThreadMembersDeleteCommand(ThreadMembersCommand):
+    """TODO"""
 
     @Time('linsharecli.thread', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadMembersDeleteCommand, self).__call__(args)
-        cli = self.ls.thread_members
-        return self._delete_all(args, cli, args.uuids)
+        act = DeleteAction(
+            mode=self.CFG_DELETE_MODE,
+            parent_identifier=self.CFG_DELETE_ARG_ATTR
+        )
+        act.init(args, self.ls, self.ls.thread_members)
+        return act.delete(args.uuids)
 
 
 def add_parser(subparsers, name, desc, config):
+    """TODO"""
+    # api_version = config.server.api_version.value
     parser_tmp = subparsers.add_parser(name, help=desc)
     parser_tmp.add_argument(
         '-u',
@@ -239,7 +246,11 @@ def add_parser(subparsers, name, desc, config):
         'list',
         help="list thread members")
     parser.add_argument('identifiers', nargs="*", help="")
-    add_list_parser_options(parser, delete=True, cdate=True)
+    add_list_parser_options(
+        parser,
+        delete=False,
+        cdate=True
+    )
     parser.set_defaults(__func__=ThreadMembersListCommand(config))
 
     # command : delete
