@@ -32,70 +32,53 @@ from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.filters import PartialOr
-from linsharecli.common.formatters import Formatter
-from linsharecli.common.formatters import NoneFormatter
 from linsharecli.admin.core import DefaultCommand
+from linsharecli.common.tables import TableBuilder
+from linsharecli.common.cell import ComplexCell
 
 
-class PolicyFormatter(Formatter):
+class PolicyCell(ComplexCell):
     """TODO"""
-    # pylint: disable=too-few-public-methods
 
-    def __init__(self, prop):
-        super(PolicyFormatter, self).__init__(prop)
-
-    def __call__(self, row, context=None):
-        light = False
-        if not context.vertical:
-            light = True
-        # do not create/format a property that does not already exist.
-        # Because Htable does not support it
-        if not self.prop in row.keys():
-            return
-        policy = row.get(self.prop)
-        if policy is not None:
+    def __unicode__(self):
+        if self.raw:
+            return unicode(self.value)
+        if self.value is None:
+            return self.none
+        dformat = "{status!s:<5} | {policy:.1}"
+        if self.vertical:
             dformat = "Enable={status!s:<5} | {policy:<10}"
-            if light:
-                dformat = "{status!s:<5} | {policy:.1}"
-            if not policy['parentAllowUpdate']:
-                if not light:
-                    dformat += " | READONLY"
-            row[self.prop] = dformat.format(**policy)
-        else:
-            row[self.prop] = ""
+        if not self.value.get('parentAllowUpdate'):
+            if self.vertical:
+                dformat += " | READONLY"
+        return dformat.format(**self.value)
 
 
-class ParameterFormatter(Formatter):
+class ParameterCell(ComplexCell):
     """TODO"""
-    # pylint: disable=too-few-public-methods
 
-    def __init__(self, prop):
-        super(ParameterFormatter, self).__init__(prop)
-
-    def __call__(self, row, context=None):
-        # do not create/format a property that does not already exist.
-        # Because Htable does not support it
-        if not self.prop in row.keys():
-            return
-        parameters = row.get(self.prop)
-        if parameters is not None:
-            res = []
-            # every func has only one parameter except SHARE_EXPIRATION.
-            # before 1.9, there is two parameters,
-            # since 1.9 there is two functionality
-            for parameter in parameters:
-                dformat = "Unknown parameter type : {type}"
-                p_type = parameter['type']
-                if p_type in ["STRING", "INTEGER"]:
-                    dformat = "{" + p_type.lower() + "}"
-                elif p_type == "BOOLEAN":
-                    dformat = "{bool}"
-                elif p_type in ["UNIT_SIZE", "UNIT_TIME"]:
-                    dformat = "{integer} {string}"
-                elif p_type == "ENUM_LANG":
-                    dformat = "{string}"
-                res.append(dformat.format(**parameter))
-            row[self.prop] = " | ".join(res)
+    def __unicode__(self):
+        if self.raw:
+            return unicode(self.value)
+        if self.value is None:
+            return self.none
+        res = []
+        # every func has only one parameter except SHARE_EXPIRATION.
+        # before 1.9, there is two parameters,
+        # since 1.9 there is two functionality
+        for parameter in self.value:
+            dformat = "Unknown parameter type : {type}"
+            p_type = parameter['type']
+            if p_type in ["STRING", "INTEGER"]:
+                dformat = "{" + p_type.lower() + "}"
+            elif p_type == "BOOLEAN":
+                dformat = "{bool}"
+            elif p_type in ["UNIT_SIZE", "UNIT_TIME"]:
+                dformat = "{integer} {string}"
+            elif p_type == "ENUM_LANG":
+                dformat = "{string}"
+            res.append(dformat.format(**parameter))
+        return " | ".join(res)
 
 
 class FunctionalityCommand(DefaultCommand):
@@ -175,21 +158,21 @@ class FunctionalityListCommand(FunctionalityCommand):
     @Time('linsharecli.funcs', label='Global time : %(time)s')
     def __call__(self, args):
         super(FunctionalityListCommand, self).__call__(args)
-        cli = self.ls.funcs
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        if args.sort_type:
-            table.sortby = "type"
-        json_obj = cli.list(args.domain, args.sub_funcs)
-        # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True),
-                   PartialOr("type", args.funct_type, True)]
-        formatters = [PolicyFormatter("activationPolicy"),
-                      PolicyFormatter("configurationPolicy"),
-                      PolicyFormatter("delegationPolicy"),
-                      NoneFormatter("parentIdentifier"),
-                      ParameterFormatter("parameters"), ]
+        endpoint = self.ls.funcs
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_custom_cell("parameters", ParameterCell)
+        tbu.add_custom_cell("activationPolicy", PolicyCell)
+        tbu.add_custom_cell("configurationPolicy", PolicyCell)
+        tbu.add_custom_cell("delegationPolicy", PolicyCell)
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.identifiers, True),
+            PartialOr("type", args.funct_type, True)
+        )
+        json_obj = endpoint.list(args.domain, args.sub_funcs)
+        table = tbu.build()
         table.align['parameters'] = "l"
-        return self._list(args, cli, table, json_obj, filters=filters, formatters=formatters)
+        return table.load_v2(json_obj).render()
 
     def complete(self, args, prefix):
         """TODO"""

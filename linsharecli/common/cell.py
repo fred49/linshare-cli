@@ -231,6 +231,7 @@ class ComplexCell(object):
         self.vertical = False
         self.name = None
         self._format = None
+        self.none = "-"
 
     @property
     def formatt(self):
