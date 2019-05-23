@@ -41,6 +41,7 @@ from linsharecli.common.actions import UpdateAction
 from linsharecli.common.cell import ComplexCell
 from linsharecli.common.cell import ComplexCellBuilder
 from linsharecli.common.tables import TableBuilder
+from linsharecli.common.tables import Action
 from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import DownloadAction
 
@@ -280,25 +281,21 @@ class WorkgroupDocumentsUploadCommand(WgNodesCommand):
         return True
 
 
-class WgNodeContentListCommand(WgNodesCommand):
-    """List all workgroup content."""
+class Breadcrumb(Action):
+    """TODO"""
 
-    def get_last_valid_node(self, cli, args):
-        """TODO"""
-        if args.folders:
-            nodes = reversed(args.folders)
-            for node in nodes:
-                parent = get_uuid_from(node)
-                if cli.head(args.wg_uuid, parent):
-                    return parent
-        return args.wg_uuid
+    display = True
 
-    def show_breadcrumb(self, cli, args):
-        """TODO"""
-        if not getattr(args, 'no_breadcrumb', False):
-            node_uuid = self.get_last_valid_node(cli, args)
+    def init(self, args, cli, endpoint):
+        super(Breadcrumb, self).init(args, cli, endpoint)
+        self.display = not getattr(args, 'no_breadcrumb', False)
+
+    def __call__(self, args, cli, endpoint, data):
+        self.init(args, cli, endpoint)
+        if self.display:
+            node_uuid = self.get_last_valid_node(args)
             if node_uuid:
-                node = cli.get(args.wg_uuid, node_uuid, tree=True)
+                node = endpoint.get(args.wg_uuid, node_uuid, tree=True)
                 breadcrumb = []
                 for path in node.get('treePath'):
                     breadcrumb.append(path.get('name'))
@@ -306,6 +303,20 @@ class WgNodeContentListCommand(WgNodesCommand):
                 print
                 print "###>", " > ".join(breadcrumb)
                 print
+
+    def get_last_valid_node(self, args):
+        """TODO"""
+        if args.folders:
+            nodes = reversed(args.folders)
+            for node in nodes:
+                parent = get_uuid_from(node)
+                if self.endpoint.head(args.wg_uuid, parent):
+                    return parent
+        return args.wg_uuid
+
+
+class WgNodeContentListCommand(WgNodesCommand):
+    """List all workgroup content."""
 
     @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
@@ -333,11 +344,8 @@ class WgNodeContentListCommand(WgNodesCommand):
             args.wg_uuid, parent, flat=args.flat_mode,
             node_types=args.node_types
         )
-        table = tbu.build()
-        # dirty workaround to avoid displaying breadcrumb for action tables.
-        if not getattr(table, 'no_breadcrumb', False):
-            self.show_breadcrumb(endpoint, args)
-        return table.load_v2(json_obj).render()
+        tbu.add_pre_render_class(Breadcrumb())
+        return tbu.build().load_v2(json_obj).render()
 
     def complete_fields(self, args, prefix):
         """TODO"""

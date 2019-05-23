@@ -56,8 +56,12 @@ class AbstractTable(object):
     cli_mode = False
     cbu = CellBuilder(False, False, 0)
     keys = []
+    args = None
+    cli = None
+    endpoint = None
     _filters = []
     _formatters = []
+    _pre_render_classes = []
 
     # pylint: disable=inconsistent-return-statements
     def filters(self, row, filters):
@@ -146,13 +150,22 @@ class AbstractTable(object):
         self.log.debug(msg)
         print msg
 
-    def _post_render(self):
+    def _display_nb_elts(self):
         """TODO"""
         if self.verbose:
             meta = {'count': len(self.get_raw())}
             self.pprint(self.DEFAULT_TOTAL, meta)
         return True
 
+    def _pre_render(self):
+        """Trigger some classes before rendering filtered data."""
+        for clazz in self._pre_render_classes:
+            self.log.debug(clazz)
+            clazz(self.args, self.cli, self.endpoint, self.get_raw())
+
+    def add_pre_render_class(self, clazz):
+        """TODO"""
+        self._pre_render_classes.append(clazz)
 
 class BaseTable(AbstractTable):
     """TODO"""
@@ -164,10 +177,7 @@ class BaseTable(AbstractTable):
     _pref_end = 0
     _pref_limit = 0
     raw_json = False
-    args = None
     _pref_no_csv_headers = False
-    cli = None
-    endpoint = None
 
     def __init__(self, keys=[], reverse=False, debug=0):
         self.debug = debug
@@ -291,8 +301,9 @@ class VTable(BaseTable):
             print self.get_csv()
             return True
         out = self.get_string()
+        self._pre_render()
         print unicode(out)
-        self._post_render()
+        self._display_nb_elts()
         return True
 
     def get_string(self):
@@ -367,6 +378,7 @@ class ConsoleTable(BaseTable):
         if self.csv:
             print self.get_csv()
             return True
+        self._pre_render()
         for row in self.get_raw():
             record = []
             for k in self.keys:
@@ -382,7 +394,7 @@ class ConsoleTable(BaseTable):
                     self.log.error("UnicodeEncodeError: %s", ex)
                     record.append("UnicodeEncodeError")
             print unicode(" ".join(record))
-        self._post_render()
+        self._display_nb_elts()
         return True
 
 
@@ -442,9 +454,10 @@ class HTable(VeryPrettyTable, AbstractTable):
     @Time('linsharecli.core.render', label='render time : %(time)s')
     def render(self):
         """TODO"""
+        self._pre_render()
         out = self.get_string(fields=self.keys)
         print unicode(out)
-        self._post_render()
+        self._display_nb_elts()
         return True
 
     def get_raw(self):
@@ -861,9 +874,6 @@ class ActionTable(VTable):
 
     action = Action()
 
-    # workaround
-    no_breadcrumb = True
-
     def render(self):
         """Call the action method with filtered data."""
         return self.action(self.args, self.cli, self.endpoint, self.get_raw())
@@ -910,6 +920,7 @@ class TableBuilder(object):
         self._custom_cells = {}
         self.filters = []
         self.formatters = []
+        self._pre_render_classes = []
 
     def load_args(self, args):
         """load builder attributes from args."""
@@ -942,6 +953,10 @@ class TableBuilder(object):
         for filterr in filters:
             self.filters.append(filterr)
 
+    def add_pre_render_class(self, clazz):
+        """TODO"""
+        self._pre_render_classes.append(clazz)
+
     def build(self):
         # pylint: disable=too-many-branches
         # This method is a little bit diry, need some refactoring.
@@ -972,6 +987,8 @@ class TableBuilder(object):
                 if self.first_column and self.first_column in self.columns:
                     table.align[self.first_column] = "l"
                 table.padding_width = 1
+            for clazz in self._pre_render_classes:
+                table.add_pre_render_class(clazz)
         attrs = [
             "vertical", "json", "raw", "raw_json", "csv", "cli", "endpoint",
             "reverse", "extended", "no_cell", "debug", "verbose", "cli_mode",
