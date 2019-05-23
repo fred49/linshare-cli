@@ -26,15 +26,15 @@
 
 from __future__ import unicode_literals
 
+from argparse import RawTextHelpFormatter
 from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.filters import PartialMultipleAnd
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.core import add_list_parser_options
-from argparse import RawTextHelpFormatter
+from linsharecli.common.tables import TableBuilder
 
 
-# -----------------------------------------------------------------------------
 class UsersListCommand(DefaultCommand):
     """ List all users store into LinShare."""
     IDENTIFIER = "mail"
@@ -43,11 +43,10 @@ class UsersListCommand(DefaultCommand):
     @Time('linsharecli.users', label='Global time : %(time)s')
     def __call__(self, args):
         super(UsersListCommand, self).__call__(args)
-        cli = self.ls.users
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        filters = [
+        endpoint = self.ls.users
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_filters(
             PartialMultipleAnd(
                 {
                     "mail": args.mail,
@@ -57,8 +56,8 @@ class UsersListCommand(DefaultCommand):
                 True),
             PartialOr("uuid", args.uuid),
             PartialOr(self.IDENTIFIER, args.pattern, True)
-        ]
-        return self._list(args, cli, table, json_obj, filters=filters)
+        )
+        return tbu.build().load_v2(endpoint.list()).render()
 
     def complete_fields(self, args, prefix):
         super(UsersListCommand, self).__call__(args)
@@ -66,7 +65,6 @@ class UsersListCommand(DefaultCommand):
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
