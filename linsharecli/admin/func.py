@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -26,18 +27,19 @@
 
 from __future__ import unicode_literals
 
+from argparse import ArgumentError
+from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import Formatter
 from linsharecli.common.formatters import NoneFormatter
 from linsharecli.admin.core import DefaultCommand
-from argtoolbox import DefaultCompleter as Completer
-import argparse
 
 
-# -----------------------------------------------------------------------------
 class PolicyFormatter(Formatter):
+    """TODO"""
+    # pylint: disable=too-few-public-methods
 
     def __init__(self, prop):
         super(PolicyFormatter, self).__init__(prop)
@@ -63,8 +65,9 @@ class PolicyFormatter(Formatter):
             row[self.prop] = ""
 
 
-# -----------------------------------------------------------------------------
 class ParameterFormatter(Formatter):
+    """TODO"""
+    # pylint: disable=too-few-public-methods
 
     def __init__(self, prop):
         super(ParameterFormatter, self).__init__(prop)
@@ -95,8 +98,8 @@ class ParameterFormatter(Formatter):
             row[self.prop] = " | ".join(res)
 
 
-# -----------------------------------------------------------------------------
 class FunctionalityCommand(DefaultCommand):
+    """TODO"""
     IDENTIFIER = "identifier"
     DEFAULT_SORT = "identifier"
     DEFAULT_SORT_NAME = "identifier"
@@ -104,11 +107,17 @@ class FunctionalityCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Functionality found : %(count)s"
     MSG_RS_NOT_FOUND = "No Functionality could be found."
-    MSG_RS_DELETED = "%(position)s/%(count)s: The Functionality '%(identifier)s' was deleted. (%(time)s s)"
+    MSG_RS_DELETED = (
+        "%(position)s/%(count)s: "
+        "The Functionality '%(identifier)s' was deleted. (%(time)s s)"
+    )
     MSG_RS_CAN_NOT_BE_DELETED = "The Functionality '%(identifier)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s Functionality(s) can not be reset."
 
-    MSG_RS_UPDATED = "%(position)s/%(count)s: The Functionality '%(identifier)s' was updated. (%(time)s s)"
+    MSG_RS_UPDATED = (
+        "%(position)s/%(count)s: "
+        "The Functionality '%(identifier)s' was updated. (%(time)s s)"
+    )
     MSG_RS_CAN_NOT_BE_UPDATED = "The Functionality '%(identifier)s' can not be updated."
     MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s Functionality(s) can not be updated."
 
@@ -125,24 +134,29 @@ class FunctionalityCommand(DefaultCommand):
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_domain(self, args, prefix):
+        """TODO"""
         super(FunctionalityCommand, self).__call__(args)
         json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def _update_all(self, args, cli, uuids):
+        """TODO"""
         return self._apply_to_all(
             args, cli, uuids,
             self.MSG_RS_CAN_NOT_BE_UPDATED_M,
             self._update_func_policies)
 
     def _update_func_policies(self, args, cli, uuid, position=None, count=None):
+        """TODO"""
+        # pylint: disable=too-many-arguments
+        # pylint: disable=unused-argument
         resource = cli.get(uuid, args.domain)
         policy = resource.get('activationPolicy')
         if args.policy_type is not None:
             policy = resource.get(args.policy_type)
         if policy is None:
-            raise argparse.ArgumentError(None, "No delegation policy for this functionality")
+            raise ArgumentError(None, "No delegation policy for this functionality")
         policy['policy'] = args.status
         if args.status == "ENABLE" or args.status == "DISABLE":
             if args.status == "ENABLE":
@@ -153,7 +167,6 @@ class FunctionalityCommand(DefaultCommand):
         return self._update(args, cli, resource)
 
 
-# -----------------------------------------------------------------------------
 class FunctionalityListCommand(FunctionalityCommand):
     """ List all functionalities."""
     IDENTIFIER = "identifier"
@@ -179,24 +192,27 @@ class FunctionalityListCommand(FunctionalityCommand):
         return self._list(args, cli, table, json_obj, filters=filters, formatters=formatters)
 
     def complete(self, args, prefix):
+        """TODO"""
         super(FunctionalityListCommand, self).__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_domain(self, args, prefix):
+        """TODO"""
         super(FunctionalityListCommand, self).__call__(args)
         json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_fields(self, args, prefix):
+        """TODO"""
+        # pylint: disable=unused-argument
         super(FunctionalityListCommand, self).__call__(args)
         cli = self.ls.funcs
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
 class FunctionalityUpdateCommand(FunctionalityCommand):
     """ List all functionalities."""
 
@@ -206,7 +222,6 @@ class FunctionalityUpdateCommand(FunctionalityCommand):
         return self._update_func_policies(args, cli, args.identifier)
 
 
-# -----------------------------------------------------------------------------
 class FunctionalityUpdateStringCommand(FunctionalityCommand):
     """ Update STRING functionalities."""
 
@@ -217,19 +232,20 @@ class FunctionalityUpdateStringCommand(FunctionalityCommand):
         if self.debug:
             self.pretty_json(resource)
         if resource.get('type') != 'STRING':
-            raise argparse.ArgumentError(None, "Invalid functionality type")
+            raise ArgumentError(None, "Invalid functionality type")
         param = resource['parameters'][0]
         param['string'] = args.string
         return self._update(args, cli, resource)
 
     def complete(self, args, prefix):
+        """TODO"""
         super(FunctionalityUpdateStringCommand, self).__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix) and v.get('type') == 'STRING')
+                for v in json_obj if v.get('identifier')
+                .startswith(prefix) and v.get('type') == 'STRING')
 
 
-# -----------------------------------------------------------------------------
 class FunctionalityUpdateTimeCommand(FunctionalityCommand):
     """ Update TIME functionalities."""
 
@@ -240,7 +256,7 @@ class FunctionalityUpdateTimeCommand(FunctionalityCommand):
         if self.debug:
             self.pretty_json(resource)
         if resource.get('type') not in ('UNIT', 'UNIT_BOOLEAN_TIME'):
-            raise argparse.ArgumentError(None, "Invalid functionality type")
+            raise ArgumentError(None, "Invalid functionality type")
         parameters = resource.get('parameters')
         param_type1 = parameters[0].get('type')
         param_type2 = None
@@ -249,7 +265,7 @@ class FunctionalityUpdateTimeCommand(FunctionalityCommand):
         param = parameters[0]
         if param_type1 != 'UNIT_TIME':
             if param_type2 != 'UNIT_TIME':
-                raise argparse.ArgumentError(None, "Invalid functionality type")
+                raise ArgumentError(None, "Invalid functionality type")
             else:
                 param = parameters[1]
         param['integer'] = args.value
@@ -258,18 +274,19 @@ class FunctionalityUpdateTimeCommand(FunctionalityCommand):
         return self._update(args, cli, resource)
 
     def complete(self, args, prefix):
+        """TODO"""
         super(FunctionalityUpdateTimeCommand, self).__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         res = []
-        for v in json_obj:
-            if v.get('identifier').startswith(prefix):
-                if v.get('type') in ('UNIT', 'UNIT_BOOLEAN_TIME'):
-                    for param in v.get('parameters'):
+        for val in json_obj:
+            if val.get('identifier').startswith(prefix):
+                if val.get('type') in ('UNIT', 'UNIT_BOOLEAN_TIME'):
+                    for param in val.get('parameters'):
                         if param.get('type') == 'UNIT_TIME':
-                            res.append(v.get('identifier'))
+                            res.append(val.get('identifier'))
         return res
 
-# -----------------------------------------------------------------------------
+
 class FunctionalityUpdateLangCommand(FunctionalityCommand):
     """ Update TIME functionalities."""
 
@@ -280,20 +297,21 @@ class FunctionalityUpdateLangCommand(FunctionalityCommand):
         if self.debug:
             self.pretty_json(resource)
         if resource.get('type') != 'ENUM_LANG':
-            raise argparse.ArgumentError(None, "Invalid functionality type")
+            raise ArgumentError(None, "Invalid functionality type")
         parameters = resource.get('parameters')
         param = parameters[0]
         param['string'] = args.lang
         return self._update(args, cli, resource)
 
     def complete(self, args, prefix):
-        super(FunctionalityUpdateIntegerCommand, self).__call__(args)
+        """TODO"""
+        super(FunctionalityUpdateLangCommand, self).__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix) and v.get('type') == 'ENUM_LANG')
+        return (val.get('identifier')
+                for val in json_obj if val.get('identifier')
+                .startswith(prefix) and val.get('type') == 'ENUM_LANG')
 
 
-# -----------------------------------------------------------------------------
 class FunctionalityUpdateSizeCommand(FunctionalityCommand):
     """ Update TIME functionalities."""
 
@@ -304,9 +322,9 @@ class FunctionalityUpdateSizeCommand(FunctionalityCommand):
         if self.debug:
             self.pretty_json(resource)
         if resource.get('type') != 'UNIT':
-            raise argparse.ArgumentError(None, "Invalid functionality type")
+            raise ArgumentError(None, "Invalid functionality type")
         if resource.get('parameters')[0].get('type') != 'UNIT_SIZE':
-            raise argparse.ArgumentError(None, "Invalid functionality type")
+            raise ArgumentError(None, "Invalid functionality type")
         param = resource['parameters'][0]
         param['integer'] = args.value
         if args.unit:
@@ -314,18 +332,18 @@ class FunctionalityUpdateSizeCommand(FunctionalityCommand):
         return self._update(args, cli, resource)
 
     def complete(self, args, prefix):
+        """TODO"""
         super(FunctionalityUpdateSizeCommand, self).__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         res = []
-        for v in json_obj:
-            if v.get('identifier').startswith(prefix):
-                if v.get('type') == 'UNIT':
-                    if v.get('parameters')[0].get('type') == 'UNIT_SIZE':
-                        res.append(v.get('identifier'))
+        for val in json_obj:
+            if val.get('identifier').startswith(prefix):
+                if val.get('type') == 'UNIT':
+                    if val.get('parameters')[0].get('type') == 'UNIT_SIZE':
+                        res.append(val.get('identifier'))
         return res
 
 
-# -----------------------------------------------------------------------------
 class FunctionalityUpdateIntegerCommand(FunctionalityCommand):
     """ Update INTEGER functionalities."""
 
@@ -336,19 +354,20 @@ class FunctionalityUpdateIntegerCommand(FunctionalityCommand):
         if self.debug:
             self.pretty_json(resource)
         if resource.get('type') != 'INTEGER':
-            raise argparse.ArgumentError(None, "Invalid functionality type")
+            raise ArgumentError(None, "Invalid functionality type")
         param = resource['parameters'][0]
         param['integer'] = args.integer
         return self._update(args, cli, resource)
 
     def complete(self, args, prefix):
+        """TODO"""
         super(FunctionalityUpdateIntegerCommand, self).__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix) and v.get('type') == 'INTEGER')
+        return (val.get('identifier')
+                for val in json_obj if val.get('identifier')
+                .startswith(prefix) and val.get('type') == 'INTEGER')
 
 
-# -----------------------------------------------------------------------------
 class FunctionalityUpdateBooleanCommand(FunctionalityCommand):
     """ Update BOOLEAN functionalities."""
 
@@ -359,7 +378,7 @@ class FunctionalityUpdateBooleanCommand(FunctionalityCommand):
         if self.debug:
             self.pretty_json(resource)
         if resource.get('type') not in ('BOOLEAN', 'UNIT_BOOLEAN_TIME'):
-            raise argparse.ArgumentError(None, "Invalid functionality type")
+            raise ArgumentError(None, "Invalid functionality type")
         parameters = resource.get('parameters')
         param_type1 = parameters[0].get('type')
         param_type2 = None
@@ -368,27 +387,26 @@ class FunctionalityUpdateBooleanCommand(FunctionalityCommand):
         param = parameters[0]
         if param_type1 != 'BOOLEAN':
             if param_type2 != 'BOOLEAN':
-                raise argparse.ArgumentError(None, "Invalid functionality type")
+                raise ArgumentError(None, "Invalid functionality type")
             else:
                 param = parameters[1]
         param['bool'] = args.boolean
         return self._update(args, cli, resource)
 
     def complete(self, args, prefix):
+        """TODO"""
         super(FunctionalityUpdateBooleanCommand, self).__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         res = []
-        for v in json_obj:
-            if v.get('identifier').startswith(prefix):
-                if v.get('type') in ('BOOLEAN', 'UNIT_BOOLEAN_TIME'):
-                    for param in v.get('parameters'):
+        for val in json_obj:
+            if val.get('identifier').startswith(prefix):
+                if val.get('type') in ('BOOLEAN', 'UNIT_BOOLEAN_TIME'):
+                    for param in val.get('parameters'):
                         if param.get('type') == 'BOOLEAN':
-                            res.append(v.get('identifier'))
+                            res.append(val.get('identifier'))
         return res
 
 
-
-# -----------------------------------------------------------------------------
 class FunctionalityResetCommand(FunctionalityCommand):
     """ Reset a functionality."""
 
@@ -406,21 +424,24 @@ class FunctionalityResetCommand(FunctionalityCommand):
             json_obj)
 
     def complete(self, args, prefix):
+        """TODO"""
         super(FunctionalityResetCommand, self).__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix))
+        return (val.get('identifier')
+                for val in json_obj if val.get('identifier').startswith(prefix))
 
     def complete_domain(self, args, prefix):
+        """TODO"""
         super(FunctionalityResetCommand, self).__call__(args)
         json_obj = self.ls.domains.list()
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix))
+        return (val.get('identifier')
+                for val in json_obj if val.get('identifier').startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 def add_update_parser(parser, required=True):
-    policy_group = parser.add_argument_group('Choose the policy to update, default is activation policy ')
+    """TODO"""
+    policy_group = parser.add_argument_group(
+        'Choose the policy to update, default is activation policy ')
     group = policy_group.add_mutually_exclusive_group()
     group.add_argument(
         '--ap',
@@ -473,9 +494,9 @@ def add_update_parser(parser, required=True):
         const="FORBIDDEN",
         dest="status")
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     """Add all domain sub commands."""
+    # pylint: disable=too-many-statements
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
 
@@ -483,21 +504,25 @@ def add_parser(subparsers, name, desc, config):
     parser = subparsers2.add_parser(
         'list', help="list functionalities.")
     parser.add_argument('identifiers', nargs="*")
-    parser.add_argument('-d', '--domain', action="store",
-                             help="").completer = Completer('complete_domain')
+    parser.add_argument(
+        '-d', '--domain', action="store",
+        help="").completer = Completer('complete_domain')
     groups = add_list_parser_options(parser)
     # groups : filter_group, sort_group, format_group, actions_group
     actions_group = groups[3]
     actions_group.add_argument('--dry-run', action="store_true")
     filter_group = groups[0]
-    filter_group.add_argument('--type', action="append",
-                        dest="funct_type",
-                        help="Filter on functionality type")
-    filter_group.add_argument('--sub-funcs', action="store_true",
-                        help="Sub functionalities will not be displayed, since core 1.7")
+    filter_group.add_argument(
+        '--type', action="append",
+        dest="funct_type",
+        help="Filter on functionality type")
+    filter_group.add_argument(
+        '--sub-funcs', action="store_true",
+        help="Sub functionalities will not be displayed, since core 1.7")
     sort_group = groups[1]
-    sort_group.add_argument('--sort-type', action="store_true",
-                        help="Sort functionalities by type")
+    sort_group.add_argument(
+        '--sort-type', action="store_true",
+        help="Sort functionalities by type")
     add_update_parser(parser, required=False)
     parser.set_defaults(__func__=FunctionalityListCommand(config))
 
