@@ -196,7 +196,6 @@ class BaseTable(AbstractTable):
             self.sortby = k
             break
 
-    @Time('linsharecli.core.load', label='time : %(time)s')
     def load(self, data, filters=None, formatters=None,
              ignore_exceptions=None):
         # pylint: disable=unused-argument
@@ -419,7 +418,6 @@ class HTable(VeryPrettyTable, AbstractTable):
         self.log.debug("end row")
         return data
 
-    @Time('linsharecli.core.load', label='time : %(time)s')
     def load(self, json_obj, filters=None, formatters=None):
         """TODO"""
         classname = str(self.__class__.__name__.lower())
