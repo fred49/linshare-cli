@@ -542,6 +542,22 @@ class CountAction(Action):
         return True
 
 
+class CliModeAction(Action):
+    """TODO"""
+    # pylint: disable=too-few-public-methods
+
+    def __init__(self, identifier="uuid"):
+        super(CliModeAction, self).__init__()
+        self.identifier = identifier
+
+    def __call__(self, args, cli, endpoint, data):
+        """TODO"""
+        self.init(args, cli, endpoint)
+        for row in data:
+            print unicode(row.get(self.identifier))
+        return True
+
+
 class SampleAction(Action):
     """TODO"""
     # pylint: disable=too-many-instance-attributes
@@ -882,14 +898,16 @@ class TableBuilder(object):
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, cli, endpoint, first_column=None,
-                 default_actions=True):
+                 default_actions=True, cli_mode_identifier="uuid"):
         """TODO"""
+        # pylint: disable=too-many-arguments
         self.cli = cli
         self.endpoint = endpoint
         self.args = None
         self.columns = None
         self.fields = None
         self.cli_mode = False
+        self.cli_mode_identifier = cli_mode_identifier
         self.first_column = first_column
         self.vertical = False
         self.json = False
@@ -907,14 +925,12 @@ class TableBuilder(object):
         self.no_headers = False
         self._vertical_clazz = VTable
         self._horizontal_clazz = HTable
-        self._action_classes = {}
+        self._action_classes = OrderedDict()
         self._action_table = ActionTable
         if default_actions:
-            self._action_classes = {
-                'count_only' : CountAction(),
-                'delete' : DeleteAction(),
-                'download' : DownloadAction(),
-            }
+            self._action_classes['count_only'] = CountAction()
+            self._action_classes['delete'] = DeleteAction()
+            self._action_classes['download'] = DownloadAction()
         self._custom_cells = {}
         self.filters = []
         self.formatters = []
@@ -969,9 +985,12 @@ class TableBuilder(object):
         if not self.columns:
             self.columns = self.endpoint.get_rbu().get_keys(self.extended)
         table = None
-        for flag, action in self._action_classes.items():
+        action_classes = OrderedDict(self._action_classes)
+        action_classes['cli_mode'] = CliModeAction(self.cli_mode_identifier)
+        for flag, action in action_classes.items():
             if getattr(self.args, flag, False):
                 table = self._action_table(self.columns)
+                # a little bit ugly. :(
                 table.action = action
                 self.no_cell = True
                 self.raw = True
@@ -998,6 +1017,7 @@ class TableBuilder(object):
                 table.sortby = self.first_column
         else:
             table.sortby = self.sort_by
+        # very ugly. need big refactoring of all tables.
         table.reversesort = self.reverse
         table._pref_start = self.start
         table._pref_end = self.end
