@@ -41,7 +41,7 @@ class Filter(object):
         """ prop name and value(s)"""
         self.prop = prop
         self.values = values
-        classname = str(self.__class__.__name__.lower())
+        classname = unicode(self.__class__.__name__.lower())
         self.log = logging.getLogger("linsharecli.filters." + classname)
 
     def is_enable(self):
@@ -96,14 +96,14 @@ class PartialOr(Filter):
         vals = self.get_val(row)
         if isinstance(vals, dict):
             for val in vals.values():
-                if self.regex.match(val):
+                if self.regex.match(unicode(val)):
                     return True
         else:
             if isinstance(vals, types.UnicodeType):
                 if self.regex.match(vals):
                     return True
             else:
-                if self.regex.match(str(vals)):
+                if self.regex.match(unicode(vals)):
                     return True
         return False
 
@@ -132,7 +132,7 @@ class PartialMultipleAnd(Filter):
         vals = self.get_val(row)
         for key, val in vals.items():
             if self.regex[key]:
-                if not self.regex[key].match(val):
+                if not self.regex[key].match(unicode(val)):
                     return False
         return True
 
@@ -144,7 +144,7 @@ class PartialDate(Filter):
     def __init__(self, prop, value):
         super(PartialDate, self).__init__(prop, value)
         if self.is_enable():
-            pattern = r"" + str(value)
+            pattern = r"" + unicode(value)
             self.regex = re.compile(pattern)
 
     def __call__(self, row):
@@ -154,14 +154,14 @@ class PartialDate(Filter):
         self.log.debug("type of values: %s", type(vals))
         if isinstance(vals, dict):
             for val in vals.values():
-                if self.regex.match(val):
+                if self.regex.match(unicode(val)):
                     return True
         else:
             formatt = "{da:%Y-%m-%d %H:%M:%S}"
             vals = formatt.format(
                 da=datetime.datetime.fromtimestamp(vals / 1000))
             self.log.debug("type of values: %s", vals)
-            if self.regex.match(vals):
+            if self.regex.match(unicode(vals)):
                 return True
         return False
 
@@ -174,7 +174,7 @@ class Equal(Filter):
         if not self.is_enable():
             return True
         val = self.get_val(row)
-        if val == self.values:
+        if unicode(val) == self.values:
             return True
         return False
 
@@ -187,6 +187,6 @@ class Equals(Filter):
         if not self.is_enable():
             return True
         val = self.get_val(row)
-        if val in self.values:
+        if unicode(val) in self.values:
             return True
         return False
