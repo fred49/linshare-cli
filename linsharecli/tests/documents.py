@@ -16,11 +16,11 @@ from linsharecli.tests.core import load_data
 from linsharecli.tests.core import MockServerResults
 from linsharecli.tests.core import LinShareTestCase
 
-from linsharecli.user.document import add_parser as add_document_parser
-from linsharecli.user.share import add_parser as add_share_parser
-from linsharecli.user.rshare import add_parser as add_received_share_parser
-from linsharecli.user.thread import add_parser as add_threads_parser
-from linsharecli.user.user import add_parser as add_users_parser
+from linsharecli.user.documents import add_parser as add_document_parser
+from linsharecli.user.shares import add_parser as add_share_parser
+from linsharecli.user.rshares import add_parser as add_received_share_parser
+from linsharecli.user.workgroups import add_parser as add_threads_parser
+from linsharecli.user.users import add_parser as add_users_parser
 
 LOG = logging.getLogger("documents")
 

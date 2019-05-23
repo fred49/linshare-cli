@@ -40,14 +40,14 @@ from argtoolbox import SimpleSection
 from argtoolbox import Element
 from argtoolbox import Base64ElementHook
 from argtoolbox import SectionHook
-from linsharecli.user.document import add_parser as add_document_parser
-from linsharecli.user.share import add_parser as add_share_parser
-from linsharecli.user.rshare import add_parser as add_received_share_parser
-from linsharecli.user.thread import add_parser as add_threads_parser
-from linsharecli.user.tmember import add_parser as add_tmembers_parser
-from linsharecli.user.tdocuments import add_parser as add_tdocuments_parser
-from linsharecli.user.user import add_parser as add_users_parser
-from linsharecli.user.guest import add_parser as add_guest_parser
+from linsharecli.user.documents import add_parser as add_documents_parser
+from linsharecli.user.shares import add_parser as add_shares_parser
+from linsharecli.user.rshares import add_parser as add_received_shares_parser
+from linsharecli.user.workgroups import add_parser as add_workgroups_parser
+from linsharecli.user.wg_members import add_parser as add_wg_members_parser
+from linsharecli.user.wg_documents import add_parser as add_wg_documents_parser
+from linsharecli.user.users import add_parser as add_users_parser
+from linsharecli.user.guests import add_parser as add_guests_parser
 from linsharecli.user.contactslists import add_parser as add_contactslists_parser
 from linsharecli.user.contactslistscontacts import add_parser as add_contactslistscontacts_parser
 from linsharecli.user.core import add_parser as add_core_parser
@@ -207,7 +207,7 @@ section 'server-4'""")
 
         # Adding all others parsers.
         subparsers = self.parser.add_subparsers()
-        add_document_parser(subparsers, "documents", "Documents management",
+        add_documents_parser(subparsers, "documents", "Documents management",
                             self.config)
 
         self.parser.add_argument('--debugger-names', action="append")
@@ -218,33 +218,33 @@ section 'server-4'""")
         if self.config.server.api_version.value >= 2:
             cmd_name = "workgroups"
             cmd_desc = "workgroups management"
-        add_threads_parser(subparsers, cmd_name, cmd_desc, self.config)
+        add_workgroups_parser(subparsers, cmd_name, cmd_desc, self.config)
 
         cmd_name = "tmembers"
         cmd_desc = "thread members management"
         if self.config.server.api_version.value >= 2:
             cmd_name = "wg-members"
             cmd_desc = "workgroup members management"
-        add_tmembers_parser(subparsers, cmd_name, cmd_desc, self.config)
+        add_wg_members_parser(subparsers, cmd_name, cmd_desc, self.config)
 
         cmd_name = "tdocuments"
         cmd_desc = "thread documents management"
         if self.config.server.api_version.value >= 2:
             cmd_name = "wg-content"
             cmd_desc = "workgroup content management"
-        add_tdocuments_parser(subparsers, cmd_name, cmd_desc, self.config)
+        add_wg_documents_parser(subparsers, cmd_name, cmd_desc, self.config)
 
-        add_share_parser(subparsers, "shares", "Created shares management",
+        add_shares_parser(subparsers, "shares", "Created shares management",
                          self.config)
-        add_received_share_parser(subparsers,
+        add_received_shares_parser(subparsers,
                                   "received_shares",
                                   "Received shares management", self.config)
-        add_received_share_parser(subparsers,
+        add_received_shares_parser(subparsers,
                                   "rshares",
                                   "Alias of received_share command",
                                   self.config)
         add_users_parser(subparsers, "users", "users", self.config)
-        add_guest_parser(subparsers, "guests", "guests", self.config)
+        add_guests_parser(subparsers, "guests", "guests", self.config)
         add_contactslists_parser(
             subparsers, "lists",
             "list all lists of contacts (aka mailing lists)",
