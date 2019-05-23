@@ -39,11 +39,12 @@ from linsharecli.common.actions import CreateAction
 from linsharecli.common.actions import UpdateAction
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import Formatter
-from linsharecli.common.formatters import GenericFormatter
-from linsharecli.common.formatters import ActorFormatter
 from linsharecli.common.formatters import UuidFormatter
 from linsharecli.common.core import add_delete_parser_options
+from linsharecli.common.cell import ComplexCellBuilder
 from linsharecli.common.formatters import DateFormatter
+from linsharecli.common.tables import DeleteAction
+from linsharecli.common.tables import TableBuilder
 
 
 class JwtCreateAction(CreateAction):
@@ -117,7 +118,6 @@ class ResourceFormatter(Formatter):
             l_format = '{label} ({uuid:.8})'
             if context.args.vertical:
                 l_format = '{label} ({uuid})'
-                # l_format = '{label} ({description})'
             row[self.prop] = l_format.format(**parameter)
 
 
@@ -129,14 +129,6 @@ class JwtCommand(DefaultCommand):
     DEFAULT_SORT_NAME = "label"
     RESOURCE_IDENTIFIER = "uuid"
 
-    DEFAULT_TOTAL = "Jwt found : %(count)s"
-    MSG_RS_NOT_FOUND = "No Jwt could be found."
-    MSG_RS_DELETED = (
-        "%(position)s/%(count)s: The Jwt '%(label)s' (%(uuid)s) was deleted."
-        "(%(time)s s)"
-    )
-    MSG_RS_CAN_NOT_BE_DELETED = "The Jwt '%(label)s'  '%(uuid)s' can not be deleted."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s Jwt(s) can not be deleted."
     MSG_RS_UPDATED = "The Jwt '%(label)s' (%(uuid)s) was successfully updated."
     MSG_RS_CREATED = (
         "The Jwt '%(label)s' (%(uuid)s) was successfully created. (%(_time)s s)\n"
@@ -170,21 +162,16 @@ class JwtListCommand(JwtCommand):
     @Time('linsharecli.jwt', label='Global time : %(time)s')
     def __call__(self, args):
         super(JwtListCommand, self).__call__(args)
-        cli = self.ls.jwt
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        filters = [
+        endpoint = self.ls.jwt
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
             PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True),
-        ]
-        formatters = [
-            DateFormatter('creationDate'),
-            GenericFormatter("domain"),
-            GenericFormatter("actor")
-        ]
-        return self._list(args, cli, table, json_obj, formatters=formatters,
-                          filters=filters)
+        )
+        tbu.add_custom_cell("actor", ComplexCellBuilder('{name} ({uuid})'))
+        tbu.add_custom_cell("domain", ComplexCellBuilder('{name} ({uuid})'))
+        return tbu.build().load_v2(endpoint.list()).render()
 
 
 class JwtListAuditCommand(JwtCommand):
@@ -198,23 +185,21 @@ class JwtListAuditCommand(JwtCommand):
     @Time('linsharecli.jwt', label='Global time : %(time)s')
     def __call__(self, args):
         super(JwtListAuditCommand, self).__call__(args)
-        cli = self.ls.jwt.audit
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        filters = [
+        endpoint = self.ls.jwt.audit
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
             PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True),
-        ]
-        formatters = [
-            DateFormatter('creationDate'),
-            ActorFormatter('actor'),
-            ActorFormatter('authUser'),
+        )
+        tbu.add_formatters(
             ResourceFormatter('resource'),
             UuidFormatter('uuid'),
-        ]
-        return self._list(args, cli, table, json_obj, formatters=formatters,
-                          filters=filters)
+        )
+        tbu.add_custom_cell("actor", ComplexCellBuilder('{name} ({uuid})'))
+        tbu.add_custom_cell("authUser", ComplexCellBuilder('{name} ({uuid})'))
+        tbu.add_custom_cell("domain", ComplexCellBuilder('{name} ({uuid})'))
+        return tbu.build().load_v2(endpoint.list()).render()
 
 
 class JwtCreateCommand(JwtCommand):
@@ -252,8 +237,9 @@ class JwtDeleteCommand(JwtCommand):
     @Time('linsharecli.jwt', label='Global time : %(time)s')
     def __call__(self, args):
         super(JwtDeleteCommand, self).__call__(args)
-        cli = self.ls.jwt
-        return self._delete_all(args, cli, args.uuids)
+        act = DeleteAction()
+        act.init(args, self.ls, self.ls.jwt)
+        return act.delete(args.uuids)
 
 
 def add_parser(subparsers, name, desc, config):
