@@ -232,7 +232,7 @@ class UuidFormatter(Formatter):
         value = row.get(self.prop)
         if value:
             if not context.args.vertical:
-                row[self.prop] = value[:8]
+                row[self.prop] = '{uuid:8.8}'.format(uuid=value)
 
 
 class LastAuthorFormatterV2(Formatter):
