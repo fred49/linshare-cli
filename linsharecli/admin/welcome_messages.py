@@ -34,9 +34,9 @@ from linsharecli.common.actions import CreateAction
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_delete_parser_options
-from linsharecli.common.formatters import Formatter
-from linsharecli.common.formatters import DomainFormatter
-from linsharecli.common.formatters import DateFormatter
+from linsharecli.common.tables import TableBuilder
+from linsharecli.common.cell import ComplexCell
+from linsharecli.common.cell import ComplexCellBuilder
 
 
 class WelcomeMessagesCommand(DefaultCommand):
@@ -78,19 +78,18 @@ class WelcomeMessagesCommand(DefaultCommand):
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
 
-# pylint: disable=too-few-public-methods
-class WelcomeEntriesFormatter(Formatter):
+class WelcomeEntriesCell(ComplexCell):
     """TODO"""
 
-    def __init__(self, prop):
-        super(WelcomeEntriesFormatter, self).__init__(prop)
-
-    def __call__(self, row, context=None):
-        parameter = row.get(self.prop)
-        if parameter:
-            keys = (v[0:2] for v in parameter.keys())
-            row[self.prop] = " ".join(keys)
-            row[self.prop] += ". See --detail."
+    def __unicode__(self):
+        if self.raw:
+            return unicode(self.value)
+        if self.value is None:
+            return self.none
+        keys = (v[0:2] for v in self.value.keys())
+        res = " ".join(keys)
+        res += ". See --detail."
+        return unicode(res)
 
 
 class WelcomeMessagesListCommand(WelcomeMessagesCommand):
@@ -99,53 +98,38 @@ class WelcomeMessagesListCommand(WelcomeMessagesCommand):
     @Time('linsharecli.wlcmsg', label='Global time : %(time)s')
     def __call__(self, args):
         super(WelcomeMessagesListCommand, self).__call__(args)
-        cli = self.ls.welcome_messages
-        if args.detail:
-            return self.list_detail(args, cli)
-        return self.list_table(args, cli)
-
-    def list_detail(self, args, cli):
-        """TODO"""
-        keys = []
-        keys.append(self.IDENTIFIER)
-        keys.append(self.RESOURCE_IDENTIFIER)
-        keys += cli.languages()
-        self.log.debug("keys: %s", keys)
-        args.vertical = True
-        table = self.get_raw_table(args, cli, self.IDENTIFIER, keys)
-        # useless and required ! Design flaw ?
-        table.sortby = self.IDENTIFIER
+        endpoint = self.ls.welcome_messages
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_custom_cell("welcomeMessagesEntries", WelcomeEntriesCell)
+        tbu.add_custom_cell("myDomain", ComplexCellBuilder('{label} <{identifier}>'))
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.identifiers, True),
+        )
         json_obj = []
-        filteror = PartialOr(self.IDENTIFIER, args.identifiers, True)
-        for json_row in cli.list(args.current_domain):
-            if filteror(json_row):
-                data = json_row.get('welcomeMessagesEntries')
-                data[self.IDENTIFIER] = json_row.get(self.IDENTIFIER)
-                data[self.RESOURCE_IDENTIFIER] = json_row.get(self.RESOURCE_IDENTIFIER)
-                json_obj.append(data)
-        json_obj = sorted(json_obj, reverse=args.reverse, key=lambda x: x.get(table.sortby))
-        return self._list(args, cli, table, json_obj)
+        if args.detail:
+            keys = []
+            keys.append(self.IDENTIFIER)
+            keys.append(self.RESOURCE_IDENTIFIER)
+            keys += endpoint.languages()
+            tbu.columns = keys
+            tbu.vertical = True
+            filteror = PartialOr(self.IDENTIFIER, args.identifiers, True)
+            for json_row in endpoint.list(args.current_domain):
+                if filteror(json_row):
+                    data = json_row.get('welcomeMessagesEntries')
+                    data[self.IDENTIFIER] = json_row.get(self.IDENTIFIER)
+                    data[self.RESOURCE_IDENTIFIER] = json_row.get(self.RESOURCE_IDENTIFIER)
+                    json_obj.append(data)
+            # json_obj = sorted(json_obj, reverse=args.reverse, key=lambda x: x.get(table.sortby))
+        else:
+            json_obj = endpoint.list(args.current_domain)
+        table = tbu.build()
+        return table.load_v2(json_obj).render()
 
-    def list_table(self, args, cli):
-        """TODO"""
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list(args.current_domain)
-        # Filters
-        filters = [
-            PartialOr(self.IDENTIFIER, args.identifiers, True)
-        ]
-        formatters = [
-            DomainFormatter("myDomain"),
-            DateFormatter('creationDate'),
-            DateFormatter('modificationDate'),
-            WelcomeEntriesFormatter('welcomeMessagesEntries')
-        ]
-        return self._list(args, cli, table, json_obj, formatters=formatters,
-                          filters=filters)
-
-    # pylint: disable=unused-argument
     def complete_fields(self, args, prefix):
         """TODO"""
+        # pylint: disable=unused-argument
         super(WelcomeMessagesListCommand, self).__call__(args)
         cli = self.ls.welcome_messages
         return cli.get_rbu().get_keys(True)
