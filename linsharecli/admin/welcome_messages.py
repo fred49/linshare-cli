@@ -27,8 +27,8 @@
 
 from __future__ import unicode_literals
 
-from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
+from argtoolbox import DefaultCompleter as Completer
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.actions import CreateAction
 from linsharecli.common.filters import PartialOr
@@ -49,11 +49,20 @@ class WelcomeMessagesCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Welcome message found : %(count)s"
     MSG_RS_NOT_FOUND = "No welcome message could be found."
-    MSG_RS_DELETED = "%(position)s/%(count)s: The welcome message '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
-    MSG_RS_CAN_NOT_BE_DELETED = "The welcome message '%(name)s'  '%(uuid)s' can not be deleted."
+    MSG_RS_DELETED = (
+        "%(position)s/%(count)s: "
+        "The welcome message '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
+    )
+    MSG_RS_CAN_NOT_BE_DELETED = (
+        "The welcome message '%(name)s'  '%(uuid)s' "
+        "can not be deleted."
+    )
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s welcome message(s) can not be deleted."
     MSG_RS_UPDATED = "The welcome message '%(name)s' (%(uuid)s) was successfully updated."
-    MSG_RS_CREATED = "The welcome message '%(name)s' (%(uuid)s) was successfully created. (%(_time)s s)"
+    MSG_RS_CREATED = (
+        "The welcome message '%(name)s' (%(uuid)s) was "
+        "successfully created. (%(_time)s s)"
+    )
 
     def complete(self, args, prefix):
         super(WelcomeMessagesCommand, self).__call__(args)
@@ -69,7 +78,6 @@ class WelcomeMessagesCommand(DefaultCommand):
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 # pylint: disable=too-few-public-methods
 class WelcomeEntriesFormatter(Formatter):
     """TODO"""
@@ -85,7 +93,6 @@ class WelcomeEntriesFormatter(Formatter):
             row[self.prop] += ". See --detail."
 
 
-# -----------------------------------------------------------------------------
 class WelcomeMessagesListCommand(WelcomeMessagesCommand):
     """ List all welcome messages."""
 
@@ -95,8 +102,7 @@ class WelcomeMessagesListCommand(WelcomeMessagesCommand):
         cli = self.ls.welcome_messages
         if args.detail:
             return self.list_detail(args, cli)
-        else:
-            return self.list_table(args, cli)
+        return self.list_table(args, cli)
 
     def list_detail(self, args, cli):
         """TODO"""
@@ -125,11 +131,15 @@ class WelcomeMessagesListCommand(WelcomeMessagesCommand):
         table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
         json_obj = cli.list(args.current_domain)
         # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
-        formatters = [DomainFormatter("myDomain"),
-                      DateFormatter('creationDate'),
-                      DateFormatter('modificationDate'),
-                      WelcomeEntriesFormatter('welcomeMessagesEntries')]
+        filters = [
+            PartialOr(self.IDENTIFIER, args.identifiers, True)
+        ]
+        formatters = [
+            DomainFormatter("myDomain"),
+            DateFormatter('creationDate'),
+            DateFormatter('modificationDate'),
+            WelcomeEntriesFormatter('welcomeMessagesEntries')
+        ]
         return self._list(args, cli, table, json_obj, formatters=formatters,
                           filters=filters)
 
@@ -141,7 +151,6 @@ class WelcomeMessagesListCommand(WelcomeMessagesCommand):
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
 class WelcomeMessagesCreateCommand(WelcomeMessagesCommand):
     """Create welcome message."""
 
@@ -153,7 +162,6 @@ class WelcomeMessagesCreateCommand(WelcomeMessagesCommand):
         return act.load(args).execute()
 
 
-# -----------------------------------------------------------------------------
 class WelcomeMessagesUpdateCommand(WelcomeMessagesCommand):
     """Update welcome message."""
 
@@ -178,7 +186,6 @@ class WelcomeMessagesUpdateCommand(WelcomeMessagesCommand):
             resource)
 
 
-# -----------------------------------------------------------------------------
 class WelcomeMessagesDeleteCommand(WelcomeMessagesCommand):
     """Delete welcome message."""
 
@@ -188,7 +195,6 @@ class WelcomeMessagesDeleteCommand(WelcomeMessagesCommand):
         return self._delete_all(args, cli, args.uuids)
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     """Add all welcome message sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
