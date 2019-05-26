@@ -27,9 +27,8 @@
 
 from __future__ import unicode_literals
 
-from argtoolbox import DefaultCompleter as Completer
-# pylint: disable=import-error
 from linshareapi.cache import Time
+from argtoolbox import DefaultCompleter as Completer
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import NoneFormatter
 from linsharecli.common.formatters import WelcomeMessageFormatter
@@ -40,9 +39,9 @@ from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.actions import CreateAction
 
 
-# pylint: disable=too-many-instance-attributes
 class DomainsCommand(DefaultCommand):
     """For  api >= 1.9"""
+    # pylint: disable=too-many-instance-attributes
     IDENTIFIER = "label"
     DEFAULT_SORT = "label"
     DEFAULT_SORT_NAME = "label"
@@ -50,12 +49,17 @@ class DomainsCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Domain found : %(count)s"
     MSG_RS_NOT_FOUND = "No domain could be found."
-    # pylint: disable=line-too-long
-    MSG_RS_DELETED = "%(position)s/%(count)s: The domain '%(label)s' (%(identifier)s) was deleted. (%(time)s s)"
+    MSG_RS_DELETED = (
+        "%(position)s/%(count)s: "
+        "The domain '%(label)s' (%(identifier)s) was deleted. (%(time)s s)"
+    )
     MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(label)s'  '%(identifier)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain (s) can not be deleted."
     MSG_RS_UPDATED = "The domain '%(label)s' (%(identifier)s) was successfully updated."
-    MSG_RS_CREATED = "The domain '%(label)s' (%(identifier)s) was successfully created. (%(_time)s s)"
+    MSG_RS_CREATED = (
+        "The domain '%(label)s' (%(identifier)s) "
+        "was successfully created. (%(_time)s s)"
+    )
 
     # pylint: disable=no-self-use
     def init_old_language_key(self):
@@ -68,7 +72,10 @@ class DomainsCommand(DefaultCommand):
         DomainsCommand.DEFAULT_TOTAL = "Domain found : %(count)s"
         DomainsCommand.MSG_RS_NOT_FOUND = "No domain could be found."
         DomainsCommand.MSG_RS_DELETED = "The domain '%(identifier)s' was deleted. (%(time)s s)"
-        DomainsCommand.MSG_RS_DELETED = "%(position)s/%(count)s: The domain '%(identifier)s' was deleted. (%(time)s s)"
+        DomainsCommand.MSG_RS_DELETED = (
+            "%(position)s/%(count)s: "
+            "The domain '%(identifier)s' was deleted. (%(time)s s)"
+        )
         DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(identifier)s' can not be deleted."
         DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain (s) can not be deleted."
         DomainsCommand.MSG_RS_UPDATED = "The domain '%(identifier)s' was successfully updated."
@@ -90,7 +97,6 @@ class DomainsCommand(DefaultCommand):
                 for v in json_obj if v.get('uuid').startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 class DomainsListCommand(DomainsCommand):
     """ List all domains."""
 
@@ -121,17 +127,17 @@ class DomainsListCommand(DomainsCommand):
                           formatters=formatters,
                           ignore_exceptions=ignore_exceptions)
 
-    # pylint: disable=unused-argument
     def complete_fields(self, args, prefix):
         """TODO"""
+        # pylint: disable=unused-argument
         super(DomainsListCommand, self).__call__(args)
         cli = self.ls.domains
         return cli.get_rbu().get_keys(True)
 
 
-# pylint: disable=unused-argument
 class DomainsCreateCommand(DomainsCommand):
     """ List all domains."""
+    # pylint: disable=unused-argument
 
     def __call__(self, args):
         super(DomainsCreateCommand, self).__call__(args)
@@ -169,7 +175,6 @@ class DomainsCreateCommand(DomainsCommand):
         return self.ls.domains.options_mail_language()
 
 
-# -----------------------------------------------------------------------------
 class DomainsUpdateCommand(DomainsCommand):
     """ Update a domain."""
 
@@ -205,16 +210,17 @@ class DomainsUpdateCommand(DomainsCommand):
 
     def complete_role(self, args, prefix):
         """ Complete with available role."""
+        # pylint: disable=unused-argument
         super(DomainsUpdateCommand, self).__call__(args)
         return self.ls.domains.options_role()
 
     def complete_language(self, args, prefix):
         """ Complete with available language."""
+        # pylint: disable=unused-argument
         super(DomainsUpdateCommand, self).__call__(args)
         return self.ls.domains.options_language()
 
 
-# -----------------------------------------------------------------------------
 class DomainsDeleteCommand(DomainsCommand):
     """ List all domains."""
 
@@ -227,11 +233,9 @@ class DomainsDeleteCommand(DomainsCommand):
                 args,
                 cli,
                 args.identifier)
-        else:
-            return self._delete_all(args, cli, args.uuids)
+        return self._delete_all(args, cli, args.uuids)
 
 
-# -----------------------------------------------------------------------------
 class DomainProvidersCreateCommand(DomainsCommand):
     """ Update a domain."""
 
@@ -287,7 +291,6 @@ successfully created",
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 class DomainProvidersDeleteCommand(DomainsCommand):
     """ List all domains."""
 
@@ -319,7 +322,6 @@ deleted",
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 class DomainProvidersUpdateCommand(DomainsCommand):
     """ Update a user provider."""
 
@@ -376,10 +378,9 @@ updated",
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
-# pylint: disable=too-many-statements
 def add_parser(subparsers, name, desc, config):
     """Add all domain sub commands."""
+    # pylint: disable=too-many-statements
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
     api_version = config.server.api_version.value

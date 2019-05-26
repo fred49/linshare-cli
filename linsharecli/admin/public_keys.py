@@ -27,8 +27,8 @@
 
 from __future__ import unicode_literals
 
-from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
+from argtoolbox import DefaultCompleter as Completer
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import hook_file_content
 from linsharecli.common.actions import CreateAction

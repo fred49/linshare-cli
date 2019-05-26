@@ -36,10 +36,9 @@ from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_delete_parser_options
 
 
-# pylint: disable=too-many-instance-attributes
 class LdapConnectionsCommand(DefaultCommand):
-
     """For  api >= 1.9"""
+    # pylint: disable=too-many-instance-attributes
     IDENTIFIER = "label"
     DEFAULT_SORT = "label"
     DEFAULT_SORT_NAME = "label"
@@ -89,7 +88,6 @@ class LdapConnectionsCommand(DefaultCommand):
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 class LdapConnectionsListCommand(LdapConnectionsCommand):
     """ List all ldap connections."""
 
@@ -112,7 +110,6 @@ class LdapConnectionsListCommand(LdapConnectionsCommand):
         cli = self.ls.ldap_connections
         return cli.get_rbu().get_keys(True)
 
-# -----------------------------------------------------------------------------
 class LdapConnectionsCreateCommand(LdapConnectionsCommand):
     """Create ldap connection."""
 
@@ -124,7 +121,6 @@ class LdapConnectionsCreateCommand(LdapConnectionsCommand):
         act = CreateAction(self, self.ls.ldap_connections)
         return act.load(args).execute()
 
-# -----------------------------------------------------------------------------
 class LdapConnectionsUpdateCommand(LdapConnectionsCommand):
     """Update ldap connection."""
 
@@ -144,7 +140,6 @@ class LdapConnectionsUpdateCommand(LdapConnectionsCommand):
             rbu.to_resource())
 
 
-# -----------------------------------------------------------------------------
 class LdapConnectionsDeleteCommand(LdapConnectionsCommand):
     """Delete ldap connection."""
 
@@ -157,11 +152,9 @@ class LdapConnectionsDeleteCommand(LdapConnectionsCommand):
                 args,
                 cli,
                 args.identifier)
-        else:
-            return self._delete_all(args, cli, args.uuids)
+        return self._delete_all(args, cli, args.uuids)
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     """Add all ldap connections sub commands."""
     api_version = config.server.api_version.value

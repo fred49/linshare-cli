@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -26,12 +27,10 @@
 
 from __future__ import unicode_literals
 
-from linsharecli.common.formatters import DateFormatter
 from linsharecli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
 
 
-# -----------------------------------------------------------------------------
 class UsersListCommand(DefaultCommand):
     """ List all users store into LinShare."""
     IDENTIFIER = "mail"
@@ -42,23 +41,19 @@ class UsersListCommand(DefaultCommand):
         if not  (args.firstname or args.lastname or args.mail):
             raise ValueError('You should use at leat one option among : --firstname, --lastname or --mail')
         table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        formatters = [
-            DateFormatter('creationDate'),
-            DateFormatter('expirationDate'),
-            DateFormatter('modificationDate')
-        ]
         json_obj = cli.search(args.firstname, args.lastname, args.mail)
         table.load(json_obj)
         table.render()
         return True
 
     def complete_fields(self, args, prefix):
+        """TODO"""
+        # pylint: disable=unused-argument
         super(UsersListCommand, self).__call__(args)
         cli = self.ls.users
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     """Add all user sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
@@ -78,6 +73,7 @@ def add_parser(subparsers, name, desc, config):
     parser_tmp2.add_argument('--csv', action="store_true", help="Csv output")
     parser_tmp2.add_argument('--raw', action="store_true",
                              help="Disable all formatters")
-    parser_tmp2.add_argument('-k', '--field', action='append', dest="fields"
-        ).completer = Completer("complete_fields")
+    parser_tmp2.add_argument(
+        '-k', '--field', action='append', dest="fields"
+    ).completer = Completer("complete_fields")
     parser_tmp2.set_defaults(__func__=UsersListCommand(config))

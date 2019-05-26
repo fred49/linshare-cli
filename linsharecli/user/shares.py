@@ -30,7 +30,6 @@ from linsharecli.user.core import DefaultCommand
 from argtoolbox import DefaultCompleter
 
 
-# -----------------------------------------------------------------------------
 class ShareAction(object):
     """"""
     def __init__(self, command):
@@ -142,7 +141,6 @@ class ShareAction(object):
                     meta)
         return err_count
 
-# -----------------------------------------------------------------------------
 class SharesCommand(DefaultCommand):
 
     def __call__(self, args):
@@ -193,7 +191,6 @@ class SharesCommand(DefaultCommand):
                     for v in json_obj if v.get('mail').startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     parser_tmp = subparsers.add_parser(name, help=desc)
 

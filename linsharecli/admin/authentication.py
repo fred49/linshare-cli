@@ -84,6 +84,7 @@ class ChangePasswordCommand(AuthenticationCommand):
 
     @Time('linsharecli.jwt', label='Global time : %(time)s')
     def __call__(self, args):
+        # pylint: disable=too-many-return-statements
         super(ChangePasswordCommand, self).__call__(args)
         if args.ask_new_password:
             try:

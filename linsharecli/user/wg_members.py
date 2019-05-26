@@ -60,7 +60,7 @@ class ThreadCompleter(object):
             args = kwargs.get('parsed_args')
             thread_cmd = ThreadMembersListCommand(self.config)
             return thread_cmd.complete_threads(args, prefix)
-        # pylint: disable-msg=W0703
+        # pylint: disable=broad-except
         except Exception as ex:
             debug("\nERROR:An exception was caught :" + str(ex) + "\n")
 

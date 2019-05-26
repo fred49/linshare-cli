@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -36,8 +37,8 @@ from argtoolbox import DefaultCompleter as Completer
 
 
 class DomainPatternsCommand(DefaultCommand):
-
     """For  api >= 1.9"""
+    # pylint: disable=too-many-instance-attributes
     IDENTIFIER = "label"
     DEFAULT_SORT = "label"
     DEFAULT_SORT_NAME = "label"
@@ -45,14 +46,21 @@ class DomainPatternsCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Domain pattern found : %(count)s"
     MSG_RS_NOT_FOUND = "No domain pattern could be found."
-    MSG_RS_DELETED = "%(position)s/%(count)s: The domain pattern '%(label)s' (%(uuid)s) was deleted. (%(time)s s)"
+    MSG_RS_DELETED = (
+        "%(position)s/%(count)s: "
+        "The domain pattern '%(label)s' (%(uuid)s) was deleted. (%(time)s s)"
+    )
     MSG_RS_CAN_NOT_BE_DELETED = "The domain pattern '%(label)s'  '%(uuid)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain pattern(s) can not be deleted."
     MSG_RS_UPDATED = "The domain pattern '%(label)s' (%(uuid)s) was successfully updated."
-    MSG_RS_CREATED = "The domain pattern '%(label)s' (%(uuid)s) was successfully created. (%(_time)s s)"
+    MSG_RS_CREATED = (
+        "The domain pattern '%(label)s' (%(uuid)s) "
+        "was successfully created. (%(_time)s s)"
+    )
 
     def init_old_language_key(self):
         """For  api >= 1.6 and api <= 1.8"""
+        # pylint: disable=invalid-name
         self.IDENTIFIER = "identifier"
         self.DEFAULT_SORT = "identifier"
         self.RESOURCE_IDENTIFIER = "identifier"
@@ -61,13 +69,17 @@ class DomainPatternsCommand(DefaultCommand):
         self.DEFAULT_TOTAL = "Domain pattern found : %(count)s"
         self.MSG_RS_NOT_FOUND = "No domain pattern could be found."
         self.MSG_RS_DELETED = "The domain pattern '%(identifier)s' was deleted. (%(time)s s)"
-        self.MSG_RS_DELETED = "%(position)s/%(count)s: The domain pattern '%(identifier)s' was deleted. (%(time)s s)"
+        self.MSG_RS_DELETED = (
+            "%(position)s/%(count)s: "
+            "The domain pattern '%(identifier)s' was deleted. (%(time)s s)"
+        )
         self.MSG_RS_CAN_NOT_BE_DELETED = "The domain pattern '%(identifier)s' can not be deleted."
         self.MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain pattern(s) can not be deleted."
         self.MSG_RS_UPDATED = "The domain pattern '%(identifier)s' was successfully updated."
         self.MSG_RS_CREATED = "The domain pattern '%(identifier)s' was successfully created."
 
     def complete_identifier(self, args, prefix):
+        """TODO"""
         super(DomainPatternsCommand, self).__call__(args)
         json_obj = self.ls.domain_patterns.list()
         return (v.get('identifier')
@@ -82,7 +94,6 @@ class DomainPatternsCommand(DefaultCommand):
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 class DomainPatternsListCommand(DomainPatternsCommand):
     """ List all domain patterns."""
 
@@ -104,12 +115,13 @@ class DomainPatternsListCommand(DomainPatternsCommand):
         return self._list(args, cli, table, json_obj, filters=filters)
 
     def complete_fields(self, args, prefix):
+        """TODO"""
+        # pylint: disable=unused-argument
         super(DomainPatternsListCommand, self).__call__(args)
         cli = self.ls.domain_patterns
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
 class DomainPatternsUpdateCommand(DomainPatternsCommand):
     """ Update a domain pattern."""
 
@@ -129,7 +141,6 @@ class DomainPatternsUpdateCommand(DomainPatternsCommand):
             rbu.to_resource())
 
 
-# -----------------------------------------------------------------------------
 class DomainPatternsCreateCommand(DomainPatternsCommand):
     """ Create a domain pattern."""
 
@@ -151,7 +162,6 @@ class DomainPatternsCreateCommand(DomainPatternsCommand):
         return act.load(args).execute(rbu.to_resource())
 
 
-# -----------------------------------------------------------------------------
 class DomainPatternsCreateCommand2(DomainPatternsCommand):
     """ Create a domain pattern."""
 
@@ -179,7 +189,6 @@ class DomainPatternsCreateCommand2(DomainPatternsCommand):
                 for v in json_obj if v.get('uuid').startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 class DomainPatternsDeleteCommand(DomainPatternsCommand):
     """ List all domain patterns."""
 
@@ -191,8 +200,7 @@ class DomainPatternsDeleteCommand(DomainPatternsCommand):
                 args,
                 cli,
                 args.identifier)
-        else:
-            return self._delete_all(args, cli, args.uuids)
+        return self._delete_all(args, cli, args.uuids)
 
     def complete(self, args, prefix):
         super(DomainPatternsDeleteCommand, self).__call__(args)
@@ -204,9 +212,9 @@ class DomainPatternsDeleteCommand(DomainPatternsCommand):
                 for v in json_obj if v.get(identifier).startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     """Add all domain pattern sub commands."""
+    # pylint: disable=too-many-statements
     api_version = config.server.api_version.value
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
@@ -214,7 +222,8 @@ def add_parser(subparsers, name, desc, config):
     # command : list
     parser = subparsers2.add_parser(
         'list', help="list domain patterns.")
-    parser.add_argument('identifiers', nargs="*",
+    parser.add_argument(
+        'identifiers', nargs="*",
         help="Filter domain patterns by their names")
     parser.add_argument('-m', '--model', action="store_true",
                         help="show model of domain patterns")

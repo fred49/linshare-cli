@@ -898,7 +898,6 @@ def add_list_parser_options_format(parser):
                               without any information messages.""")
     return format_group
 
-# -----------------------------------------------------------------------------
 def add_delete_parser_options(parser, method=None):
     """TODO"""
     if method:
@@ -907,7 +906,6 @@ def add_delete_parser_options(parser, method=None):
         parser.add_argument('uuids', nargs='+').completer = Completer()
     parser.add_argument('--dry-run', action="store_true")
 
-# -----------------------------------------------------------------------------
 def add_download_parser_options(parser, method=None):
     """TODO"""
     if method:

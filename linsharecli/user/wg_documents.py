@@ -139,7 +139,7 @@ class WorkgroupCompleter(object):
             # FIXME
             wg_cmd = WgNodeContentListCommand(self.config)
             return wg_cmd.complete_workgroups(args, prefix)
-        # pylint: disable-msg=W0703
+        # pylint: disable=broad-except
         except Exception as ex:
             debug("\nERROR:An exception was caught :" + str(ex) + "\n")
             import traceback

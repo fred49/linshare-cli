@@ -1,9 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
-
-# -----------------------------------------------------------------------------
-# Imports
+"""TODO"""
 
 import re
 import logging
@@ -23,7 +21,6 @@ from linsharecli.admin.domainpolicies import add_parser as add_domain_policies
 LOG = logging.getLogger("external_tests")
 
 
-# -----------------------------------------------------------------------------
 # pylint: disable=too-few-public-methods
 class SkipIfDisable(object):
     """Decorator to disable unsupported tests"""
@@ -43,7 +40,6 @@ class SkipIfDisable(object):
         return wrapper
 
 
-# -----------------------------------------------------------------------------
 # pylint: disable=unused-variable
 # pylint: disable=too-many-public-methods
 class AdminGenericTestList(LinShareTestCase):

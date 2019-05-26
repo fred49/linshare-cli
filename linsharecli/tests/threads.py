@@ -3,9 +3,6 @@
 # PYTHON_ARGCOMPLETE_OK
 """TODO"""
 
-# -----------------------------------------------------------------------------
-# Imports
-
 import logging
 from mock import patch
 

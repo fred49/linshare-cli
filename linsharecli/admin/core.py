@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -26,15 +27,12 @@
 
 from __future__ import unicode_literals
 
-import linsharecli.common.core as common
 from linshareapi.admin import AdminCli
 from linshareapi.core import LinShareException
+import linsharecli.common.core as common
 import argtoolbox
 
 
-# pylint: disable-msg=C0111
-# pylint: disable-msg=R0903
-# -----------------------------------------------------------------------------
 class DefaultCommand(common.DefaultCommand):
     """ Default command object use by the serer API. If you want to add a new
     command to the command line interface, your class should extend this class.
@@ -62,20 +60,17 @@ class DefaultCommand(common.DefaultCommand):
         return False
 
 
-# -----------------------------------------------------------------------------
 class NotYetImplementedCommand(argtoolbox.DefaultCommand):
     """Just for test. Print test to stdout"""
-
-    def __init__(self, config=None):
-        super(NotYetImplementedCommand, self).__init__(config)
+    # pylint: disable=too-few-public-methods
 
     def __call__(self, args):
         print "Not Yet Implemented."
 
 
-# -----------------------------------------------------------------------------
 class TestCommand(argtoolbox.DefaultCommand):
     """Just for test. Print test to stdout"""
+    # pylint: disable=too-few-public-methods
 
     def __init__(self, config=None):
         super(TestCommand, self).__init__(config)
@@ -91,9 +86,8 @@ class TestCommand(argtoolbox.DefaultCommand):
         self.log.info("End of test command.")
 
 
-# -----------------------------------------------------------------------------
 class ListConfigCommand(DefaultCommand):
-    """"""
+    """TODO"""
 
     def __init__(self, config=None):
         super(ListConfigCommand, self).__init__(config)
@@ -114,7 +108,6 @@ class ListConfigCommand(DefaultCommand):
         print ""
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, config):
     """Add test commands."""
     parser_tmp = subparsers.add_parser('test', add_help=False)

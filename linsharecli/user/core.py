@@ -33,7 +33,6 @@ import argtoolbox
 
 # pylint: disable=C0111
 # Missing docstring
-# -----------------------------------------------------------------------------
 class DefaultCommand(common.DefaultCommand):
     """ Default command object use by the ser API. If you want to add a new
     command to the command line interface, your class should extend this one.
@@ -52,7 +51,6 @@ class DefaultCommand(common.DefaultCommand):
         return cli
 
 
-# -----------------------------------------------------------------------------
 class TestCommand(argtoolbox.DefaultCommand):
     """Just for test. Print test to stdout"""
 
@@ -70,7 +68,6 @@ class TestCommand(argtoolbox.DefaultCommand):
         print ""
 
 
-# -----------------------------------------------------------------------------
 class ListConfigCommand(DefaultCommand):
     """"""
 
@@ -92,7 +89,6 @@ class ListConfigCommand(DefaultCommand):
                 print " - " + "-".join(i.split('-')[1:])
         print ""
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, config):
     parser = subparsers.add_parser('test', add_help=False)
     parser.add_argument('files', nargs='*')

@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -33,7 +34,6 @@ from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import DateFormatter
 
 
-# -----------------------------------------------------------------------------
 class ThreadsListCommand(DefaultCommand):
     """ List all threads store into LinShare."""
     IDENTIFIER = "name"
@@ -55,20 +55,20 @@ class ThreadsListCommand(DefaultCommand):
                           formatters=formatters, filters=filters)
 
     def complete_fields(self, args, prefix):
+        """TODO"""
+        # pylint: disable=unused-argument
         super(ThreadsListCommand, self).__call__(args)
         cli = self.ls.threads
         return cli.get_rbu().get_keys(True)
 
 
-
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     """Add all thread sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
 
     # command : list
-    parser= subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'list',
         help="list threads from linshare")
     parser.add_argument('identifiers', nargs="*", help="")

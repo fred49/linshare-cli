@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -27,14 +28,13 @@
 from __future__ import unicode_literals
 
 from linshareapi.cache import Time
+from argtoolbox import DefaultCompleter as Completer
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
-from argtoolbox import DefaultCompleter as Completer
-from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.actions import CreateAction
+from linsharecli.common.core import add_list_parser_options
 
 
-# -----------------------------------------------------------------------------
 class DomainPoliciesCommand(DefaultCommand):
     """ List all domain policies store into LinShare."""
 
@@ -44,13 +44,22 @@ class DomainPoliciesCommand(DefaultCommand):
     RESOURCE_IDENTIFIER = "identifier"
     DEFAULT_TOTAL = "Domain policies found : %(count)s"
     MSG_RS_NOT_FOUND = "No domain policies could be found."
-    MSG_RS_DELETED = "%(position)s/%(count)s: The domain policy '%(uuid)s' was deleted. (%(time)s s)"
+    MSG_RS_DELETED = (
+        "%(position)s/%(count)s: "
+        "The domain policy '%(uuid)s' was deleted. (%(time)s s)"
+    )
     MSG_RS_CAN_NOT_BE_DELETED = "The domain policy '%(uuid)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%s domain policy(s) can not be deleted."
-    MSG_RS_DOWNLOADED = "%(position)s/%(count)s: The domain policy '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
+    MSG_RS_DOWNLOADED = (
+        "%(position)s/%(count)s: "
+        "The domain policy '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
+    )
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One domain policy can not be downloaded."
     MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%s domain policies can not be downloaded."
-    MSG_RS_CREATED = "The domain policy '%(identifier)s' (%(uuid)s) was successfully created. (%(_time)s s)"
+    MSG_RS_CREATED = (
+        "The domain policy '%(identifier)s' (%(uuid)s) was "
+        "successfully created. (%(_time)s s)"
+    )
 
     def complete(self, args, prefix):
         super(DomainPoliciesCommand, self).__call__(args)
@@ -59,7 +68,6 @@ class DomainPoliciesCommand(DefaultCommand):
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 class DomainPoliciesListCommand(DomainPoliciesCommand):
     """ List all domain policies."""
 
@@ -74,12 +82,13 @@ class DomainPoliciesListCommand(DomainPoliciesCommand):
         return self._list(args, cli, table, json_obj, filters=filters)
 
     def complete_fields(self, args, prefix):
+        """TODO"""
+        # pylint: disable=unused-argument
         super(DomainPoliciesListCommand, self).__call__(args)
         cli = self.ls.domain_policies
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
 class DomainPoliciesCreateCommand(DomainPoliciesCommand):
     """Create domain policy."""
 
@@ -90,7 +99,6 @@ class DomainPoliciesCreateCommand(DomainPoliciesCommand):
         return act.load(args).execute()
 
 
-# -----------------------------------------------------------------------------
 class DomainPoliciesUpdateCommand(DomainPoliciesCommand):
     """Update domain policy."""
 
@@ -111,7 +119,6 @@ updated",
             rbu.to_resource())
 
 
-# -----------------------------------------------------------------------------
 class DomainPoliciesDeleteCommand(DomainPoliciesCommand):
     """Delete domain policy."""
 
@@ -122,7 +129,6 @@ class DomainPoliciesDeleteCommand(DomainPoliciesCommand):
         return self._delete_all(args, cli, args.identifiers)
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     """Add all domain policies sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)

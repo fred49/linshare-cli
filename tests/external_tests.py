@@ -18,8 +18,6 @@ LOG = logging.getLogger('core')
 LOG.info("loading tests")
 
 
-# -----------------------------------------------------------------------------
-# pylint: disable-msg=R0903
 class LaunchTestsCommand(DefaultCommand):
     """Launchtests command"""
 

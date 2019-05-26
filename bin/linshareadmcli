@@ -24,9 +24,6 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-# -----------------------------------------------------------------------------
-# Imports
-# -----------------------------------------------------------------------------
 from __future__ import unicode_literals
 
 import os
@@ -67,7 +64,6 @@ sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
 #sys.stdin = codecs.getreader(locale.getpreferredencoding())(sys.stdin)
 
 
-# -----------------------------------------------------------------------------
 class LinShareCliProgram(BasicProgram):
     """Main program."""
 

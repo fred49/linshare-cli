@@ -26,15 +26,10 @@
 
 from __future__ import unicode_literals
 
-from linsharecli.common.filters import PartialOr
-from linsharecli.common.formatters import DateFormatter
-from linsharecli.common.tables import VTable
-from linsharecli.common.tables import HTable
 from linsharecli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
 
 
-# -----------------------------------------------------------------------------
 class ThreadMembersListCommand(DefaultCommand):
     """ List all thread members store from a thread."""
     IDENTIFIER = "name"
@@ -55,13 +50,13 @@ class ThreadMembersListCommand(DefaultCommand):
                 for v in json_obj if v.get('uuid').startswith(prefix))
 
     def complete_fields(self, args, prefix):
+        """TODO"""
+        # pylint: disable=unused-argument
         super(ThreadMembersListCommand, self).__call__(args)
         cli = self.ls.thread_members
         return cli.get_rbu().get_keys(True)
 
 
-
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     """Add all thread member sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)

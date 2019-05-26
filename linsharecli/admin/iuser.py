@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -36,10 +37,9 @@ from linsharecli.common.core import add_list_parser_options
 from linsharecli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
 
-from argcomplete import warn
+# from argcomplete import warn
 from argcomplete import debug
 
-# -----------------------------------------------------------------------------
 class InconsistentUsersCommand(DefaultCommand):
     """For  api >= 1.9"""
     IDENTIFIER = "mail"
@@ -49,7 +49,10 @@ class InconsistentUsersCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Inconsistent user found : %(count)s"
     MSG_RS_NOT_FOUND = "No inconsistent user could be found."
-    MSG_RS_DELETED = "%(position)s/%(count)s: The inconsistent user '%(mail)s' (%(uuid)s) was deleted. (%(time)s s)"
+    MSG_RS_DELETED = (
+        "%(position)s/%(count)s: "
+        "The inconsistent user '%(mail)s' (%(uuid)s) was deleted. (%(time)s s)"
+    )
     MSG_RS_CAN_NOT_BE_DELETED = "The inconsistent user '%(mail)s'  '%(uuid)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s inconsistent user (s) can not be deleted."
     MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s inconsistent user (s) can not be updated."
@@ -64,15 +67,15 @@ class InconsistentUsersCommand(DefaultCommand):
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
     def complete_domain(self, args, prefix):
+        """TODO"""
         super(InconsistentUsersCommand, self).__call__(args)
         json_obj = self.ls.domains.list()
         debug(str(json_obj))
-        RESOURCE_IDENTIFIER = "identifier"
-        return (v.get(RESOURCE_IDENTIFIER)
-                for v in json_obj if v.get(RESOURCE_IDENTIFIER).startswith(prefix))
+        resource_identifier = "identifier"
+        return (v.get(resource_identifier)
+                for v in json_obj if v.get(resource_identifier).startswith(prefix))
 
 
-# -----------------------------------------------------------------------------
 class InconsistentUsersListCommand(InconsistentUsersCommand):
     """ List all users store into LinShare."""
 
@@ -90,9 +93,11 @@ class InconsistentUsersListCommand(InconsistentUsersCommand):
         json_obj = cli.list()
         # Filters
         filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
-        formatters=[DateFormatter('creationDate'),
-             DateFormatter('expirationDate'),
-             DateFormatter('modificationDate')]
+        formatters = [
+            DateFormatter('creationDate'),
+            DateFormatter('expirationDate'),
+            DateFormatter('modificationDate')
+        ]
         return self._list(args, cli, table, json_obj, filters=filters,
                           formatters=formatters)
 
@@ -110,6 +115,7 @@ class InconsistentUsersListCommand(InconsistentUsersCommand):
         return True
 
     def _set_domain(self, args, cli, uuid, position=None, count=None):
+        # pylint: disable=too-many-arguments
         try:
             if not position:
                 position = 1
@@ -136,12 +142,13 @@ class InconsistentUsersListCommand(InconsistentUsersCommand):
             return 1
 
     def complete_fields(self, args, prefix):
+        """TODO"""
+        # pylint: disable=unused-argument
         super(InconsistentUsersListCommand, self).__call__(args)
         cli = self.ls.iusers
         return cli.get_rbu().get_keys(True)
 
 
-# -----------------------------------------------------------------------------
 class InconsistentUsersDeleteCommand(InconsistentUsersCommand):
     """ Delete inconsistent users."""
 
@@ -152,7 +159,6 @@ class InconsistentUsersDeleteCommand(InconsistentUsersCommand):
         return self._delete_all(args, cli, args.uuids)
 
 
-# -----------------------------------------------------------------------------
 class InconsistentUsersUpdateCommand(InconsistentUsersCommand):
     """ List all users store into LinShare."""
 
@@ -171,12 +177,11 @@ class InconsistentUsersUpdateCommand(InconsistentUsersCommand):
             rbu.to_resource())
 
 
-# -----------------------------------------------------------------------------
 def add_parser(subparsers, name, desc, config):
     """Add all user sub commands."""
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
-    api_version = config.server.api_version.value
+    # api_version = config.server.api_version.value
 
     # command : list
     parser = subparsers2.add_parser(
@@ -186,7 +191,7 @@ def add_parser(subparsers, name, desc, config):
         'identifiers', nargs="*",
         help="Filter domains by their identifiers")
     parser.add_argument('-n', '--label', action="store_true",
-                             help="sort by domain label")
+                        help="sort by domain label")
     parsers = add_list_parser_options(parser, delete=True, cdate=False)
     actions = parsers[3]
     actions.add_argument(
@@ -200,7 +205,9 @@ def add_parser(subparsers, name, desc, config):
         'update', help="update inconsistent users.")
     parser.add_argument(
         'identifier', action="store", help="").completer = Completer()
-    parser.add_argument('--domain', action="store", help="").completer = Completer("complete_domain")
+    parser.add_argument(
+        '--domain', action="store",
+        help="").completer = Completer("complete_domain")
     parser.set_defaults(__func__=InconsistentUsersUpdateCommand(config))
 
     # command : delete

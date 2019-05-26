@@ -3,8 +3,6 @@
 # PYTHON_ARGCOMPLETE_OK
 """TODO"""
 
-# -----------------------------------------------------------------------------
-# Imports
 
 import sys
 import os
@@ -57,7 +55,6 @@ class MockServerResults(object):
         return get_data_copy
 
 
-# -----------------------------------------------------------------------------
 class LinShareTestCase(unittest.TestCase):
     """TODO"""
 

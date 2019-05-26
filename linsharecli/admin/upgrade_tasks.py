@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -29,20 +30,18 @@ from __future__ import unicode_literals
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
 from linsharecli.common.core import add_list_parser_options
-from linsharecli.common.actions import CreateAction
 from linsharecli.common.tables import ConsoleTable
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
 from linsharecli.common.filters import Equals
 from linsharecli.common.formatters import Formatter
 from linsharecli.common.formatters import DateFormatter
-from linsharecli.common.formatters import SizeFormatter
 from linsharecli.admin.core import DefaultCommand
-from linsharecli.common.core import add_delete_parser_options
 from argtoolbox import DefaultCompleter as Completer
 
 
 class UpgradeTasksCommand(DefaultCommand):
+    """TODO"""
 
     IDENTIFIER = "identifier"
     DEFAULT_SORT = "taskOrder"
@@ -63,6 +62,7 @@ class UpgradeTasksCommand(DefaultCommand):
 
 class CriticityFormatter(Formatter):
     """TODO"""
+    # pylint: disable=too-few-public-methods
 
     def __init__(self, prop):
         super(CriticityFormatter, self).__init__(prop)
@@ -90,6 +90,7 @@ class UpgradeTasksListCommand(UpgradeTasksCommand):
             filters = [PartialDate("creationDate", args.cdate)]
             if args.run:
                 filters.append(Equals("criticity", args.criticity))
+                # pylint: disable=invalid-name
                 self.DEFAULT_TOTAL = "Console records found : %(count)s"
                 self.IDENTIFIER = "creationDate"
                 self.RESOURCE_IDENTIFIER = "asyncTask"
@@ -114,9 +115,9 @@ class UpgradeTasksListCommand(UpgradeTasksCommand):
             json_obj = cli.list()
         return self._list(args, cli, table, json_obj, formatters, filters)
 
-    # pylint: disable=unused-argument
     def complete_fields(self, args, prefix):
         """TODO"""
+        # pylint: disable=unused-argument
         super(UpgradeTasksListCommand, self).__call__(args)
         cli = self.ls.upgrade_tasks
         return cli.get_rbu().get_keys(True)
@@ -128,7 +129,6 @@ class UpgradeTasksListCommand(UpgradeTasksCommand):
         json_obj = cli.list(args.identifier)
         return (v.get('uuid')
                 for v in json_obj if v.get('uuid').startswith(prefix))
-
 
 
 class UpgradeTasksTriggerCommand(UpgradeTasksCommand):
@@ -148,7 +148,6 @@ class UpgradeTasksTriggerCommand(UpgradeTasksCommand):
             self.log.debug("can trigger upgrade task : %s", args.identifier, exc_info=1)
             self.log.error(ex.args)
         return False
-
 
 
 def add_parser(subparsers, name, desc, config):
