@@ -35,7 +35,7 @@ from linsharecli.common.actions import CreateAction
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_delete_parser_options
-from linsharecli.common.formatters import DateFormatter
+from linsharecli.common.tables import TableBuilder
 
 
 class PublicKeysCommand(DefaultCommand):
@@ -82,14 +82,13 @@ class PublicKeysListCommand(PublicKeysCommand):
     @Time('linsharecli.publickeys', label='Global time : %(time)s')
     def __call__(self, args):
         super(PublicKeysListCommand, self).__call__(args)
-        cli = self.ls.public_keys
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list(args.domain)
-        # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
-        formatters = [DateFormatter('creationDate')]
-        return self._list(args, cli, table, json_obj, formatters=formatters,
-                          filters=filters)
+        endpoint = self.ls.public_keys
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.identifiers, True),
+        )
+        return tbu.build().load_v2(endpoint.list()).render()
 
 
 class PublicKeysCreateCommand(PublicKeysCommand):

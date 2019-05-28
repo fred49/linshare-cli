@@ -38,9 +38,9 @@ from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.actions import CreateAction
 from linsharecli.common.actions import UpdateAction
 from linsharecli.common.filters import PartialOr
-from linsharecli.common.formatters import GenericFormatter
 from linsharecli.common.core import add_delete_parser_options
-from linsharecli.common.formatters import DateFormatter
+from linsharecli.common.tables import TableBuilder
+from linsharecli.common.cell import ComplexCellBuilder
 
 
 class JwtCreateAction(CreateAction):
@@ -151,21 +151,16 @@ class JwtListCommand(JwtCommand):
     @Time('linsharecli.jwt', label='Global time : %(time)s')
     def __call__(self, args):
         super(JwtListCommand, self).__call__(args)
-        cli = self.ls.jwt
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list(args.domain)
-        # Filters
-        filters = [
+        endpoint = self.ls.jwt
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_custom_cell("domain", ComplexCellBuilder('{name} ({uuid:.8})'))
+        tbu.add_custom_cell("actor", ComplexCellBuilder('{name} ({uuid:.8})'))
+        tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
             PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True),
-        ]
-        formatters = [
-            DateFormatter('creationDate'),
-            GenericFormatter("domain"),
-            GenericFormatter("actor")
-        ]
-        return self._list(args, cli, table, json_obj, formatters=formatters,
-                          filters=filters)
+        )
+        return tbu.build().load_v2(endpoint.list(args.domain)).render()
 
 
 class JwtCreateCommand(JwtCommand):

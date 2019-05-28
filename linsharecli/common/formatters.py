@@ -161,36 +161,6 @@ class GenericFormatter(Formatter):
             row[self.prop] = l_format.format(**parameter)
 
 
-class WelcomeMessageFormatter(Formatter):
-    """TODO"""
-
-    def __init__(self, prop):
-        super(WelcomeMessageFormatter, self).__init__(prop)
-
-    def __call__(self, row, context=None):
-        parameter = row.get(self.prop)
-        if parameter:
-            row[self.prop] = '{name} ({uuid:.8})'.format(**parameter)
-
-
-class UserProvidersFormatter(Formatter):
-    """TODO"""
-
-    def __init__(self, prop):
-        super(UserProvidersFormatter, self).__init__(prop)
-
-    def __call__(self, row, context=None):
-        parameter = row.get(self.prop)
-        if parameter:
-            output = []
-            for param in parameter:
-                display = ("{baseDn} (ldap:{ldapConnectionUuid:.8},"
-                           "pattern:{userLdapPatternUuid:.8})"
-                          )
-                output.append(display.format(**param))
-            row[self.prop] = ",".join(output)
-
-
 class LastAuthorFormatter(Formatter):
     """Convert resource owner (user) value to a readable name"""
 

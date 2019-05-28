@@ -31,10 +31,10 @@ import urllib2
 
 from linshareapi.cache import Time
 from linsharecli.common.filters import PartialOr
-from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.admin.core import DefaultCommand
+from linsharecli.common.tables import TableBuilder
 from argtoolbox import DefaultCompleter as Completer
 
 # from argcomplete import warn
@@ -79,27 +79,22 @@ class InconsistentUsersCommand(DefaultCommand):
 class InconsistentUsersListCommand(InconsistentUsersCommand):
     """ List all users store into LinShare."""
 
+    # FIXME: handle custom action : set domain
+    # how to trigger email check.
     ACTIONS = {
-        'delete' : '_delete_all',
-        'count_only' : '_count_only',
         'set_domain' : '_set_domains',
     }
 
     @Time('linsharecli.iusers', label='Global time : %(time)s')
     def __call__(self, args):
         super(InconsistentUsersListCommand, self).__call__(args)
-        cli = self.ls.iusers
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
-        formatters = [
-            DateFormatter('creationDate'),
-            DateFormatter('expirationDate'),
-            DateFormatter('modificationDate')
-        ]
-        return self._list(args, cli, table, json_obj, filters=filters,
-                          formatters=formatters)
+        endpoint = self.ls.iusers
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.identifiers, True),
+        )
+        return tbu.build().load_v2(endpoint.list()).render()
 
     def _set_domains(self, args, cli, uuids):
         count = len(uuids)

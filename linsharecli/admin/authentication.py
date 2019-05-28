@@ -38,7 +38,7 @@ from linshareapi.core import LinShareException
 from argtoolbox import DefaultCompleter as Completer
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options_format
-from linsharecli.common.formatters import DateFormatter
+from linsharecli.common.tables import TableBuilder
 
 
 class AuthenticationCommand(DefaultCommand):
@@ -63,15 +63,10 @@ class AuthenticationListCommand(AuthenticationCommand):
     @Time('linsharecli.jwt', label='Global time : %(time)s')
     def __call__(self, args):
         super(AuthenticationListCommand, self).__call__(args)
-        cli = self.ls.authentication
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        formatters = [
-            DateFormatter('creationDate'),
-            DateFormatter('modificationDate')
-        ]
-        return self._list(args, cli, table, json_obj, formatters=formatters)
+        endpoint = self.ls.authentication
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        return tbu.build().load_v2(endpoint.list()).render()
 
 
 class ChangePasswordCommand(AuthenticationCommand):

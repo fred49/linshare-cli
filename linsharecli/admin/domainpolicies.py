@@ -33,6 +33,8 @@ from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.actions import CreateAction
 from linsharecli.common.core import add_list_parser_options
+from linsharecli.common.tables import TableBuilder
+from linsharecli.common.cell import ComplexCell
 
 
 class DomainPoliciesCommand(DefaultCommand):
@@ -68,18 +70,51 @@ class DomainPoliciesCommand(DefaultCommand):
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
 
+class AccessPolicyCell(ComplexCell):
+    """TODO"""
+
+    def __unicode__(self):
+        if self.raw:
+            return unicode(self.value)
+        if self.value is None:
+            return self.none
+        output = []
+        display = " - {type:<9} : {domain} ({domain_uuid:.8})"
+        if self.vertical:
+            output.append(">---")
+            display = "\t - {type:<9} : {domain} ({domain_uuid})"
+        for rule in self.value['rules']:
+            rule_dct = {}
+            rule_dct['type'] = rule['type']
+            rule_dct['domain'] = None
+            rule_dct['domain_uuid'] = None
+            if rule.get('domain'):
+                rule_dct['domain'] = rule['domain']['label']
+                rule_dct['domain_uuid'] = rule['domain']['identifier']
+            output.append(display.format(**rule_dct))
+        if self.vertical:
+            output.append("\t ---<")
+        else:
+            output.append("      -----------")
+        return "\n".join(output)
+
+
 class DomainPoliciesListCommand(DomainPoliciesCommand):
     """ List all domain policies."""
 
     @Time('linshareadmcli.domainpolicies', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainPoliciesListCommand, self).__call__(args)
-        cli = self.ls.domain_policies
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
-        return self._list(args, cli, table, json_obj, filters=filters)
+        endpoint = self.ls.domain_policies
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_custom_cell("accessPolicy", AccessPolicyCell)
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.identifiers, True),
+        )
+        table = tbu.build()
+        table.align['accessPolicy'] = "l"
+        return table.load_v2(endpoint.list()).render()
 
     def complete_fields(self, args, prefix):
         """TODO"""

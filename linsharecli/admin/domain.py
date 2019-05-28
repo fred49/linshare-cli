@@ -30,13 +30,13 @@ from __future__ import unicode_literals
 from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
 from linsharecli.common.filters import PartialOr
-from linsharecli.common.formatters import NoneFormatter
-from linsharecli.common.formatters import WelcomeMessageFormatter
-from linsharecli.common.formatters import UserProvidersFormatter
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.actions import CreateAction
+from linsharecli.common.tables import TableBuilder
+from linsharecli.common.cell import ComplexCell
+from linsharecli.common.cell import ComplexCellBuilder
 
 
 class DomainsCommand(DefaultCommand):
@@ -97,35 +97,41 @@ class DomainsCommand(DefaultCommand):
                 for v in json_obj if v.get('uuid').startswith(prefix))
 
 
+class ProviderCell(ComplexCell):
+    """TODO"""
+
+    def __unicode__(self):
+        if self.raw:
+            return unicode(self.value)
+        if self.value is None:
+            return self.none
+        output = []
+        for param in self.value:
+            display = (
+                "{baseDn} (ldap:{ldapConnectionUuid:.8}, "
+                "pattern:{userLdapPatternUuid:.8})"
+            )
+            output.append(display.format(**param))
+        return ",".join(output)
+
+
 class DomainsListCommand(DomainsCommand):
     """ List all domains."""
-
-    ACTIONS = {
-        'delete': '_delete_all',
-        'count_only': '_count_only',
-    }
 
     @Time('linsharecli.domains', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainsListCommand, self).__call__(args)
         if self.api_version == 0:
             self.init_old_language_key()
-        cli = self.ls.domains
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
-        formatters = [NoneFormatter("parent"),
-                      WelcomeMessageFormatter("currentWelcomeMessage"),
-                      UserProvidersFormatter("providers")]
-        ignore_exceptions = {
-            "parent": True,
-            "authShowOrder": True,
-        }
-        return self._list(args, cli, table, json_obj,
-                          filters=filters,
-                          formatters=formatters,
-                          ignore_exceptions=ignore_exceptions)
+        endpoint = self.ls.domains
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_custom_cell("currentWelcomeMessage", ComplexCellBuilder('{name} ({uuid:.8})'))
+        tbu.add_custom_cell("providers", ProviderCell)
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.identifiers, True),
+        )
+        return tbu.build().load_v2(endpoint.list()).render()
 
     def complete_fields(self, args, prefix):
         """TODO"""

@@ -34,6 +34,7 @@ from linsharecli.common.actions import CreateAction
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_delete_parser_options
+from linsharecli.common.tables import TableBuilder
 
 
 class LdapConnectionsCommand(DefaultCommand):
@@ -96,19 +97,21 @@ class LdapConnectionsListCommand(LdapConnectionsCommand):
         super(LdapConnectionsListCommand, self).__call__(args)
         if self.api_version == 0:
             self.init_old_language_key()
-        cli = self.ls.ldap_connections
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
-        return self._list(args, cli, table, json_obj, filters=filters)
+        endpoint = self.ls.ldap_connections
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.identifiers, True),
+        )
+        return tbu.build().load_v2(endpoint.list()).render()
 
-    # pylint: disable=unused-argument
     def complete_fields(self, args, prefix):
         """TODO"""
+        # pylint: disable=unused-argument
         super(LdapConnectionsListCommand, self).__call__(args)
         cli = self.ls.ldap_connections
         return cli.get_rbu().get_keys(True)
+
 
 class LdapConnectionsCreateCommand(LdapConnectionsCommand):
     """Create ldap connection."""

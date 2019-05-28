@@ -31,7 +31,7 @@ from linshareapi.cache import Time
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.filters import PartialOr
-from linsharecli.common.formatters import DateFormatter
+from linsharecli.common.tables import TableBuilder
 
 
 class ThreadsListCommand(DefaultCommand):
@@ -41,18 +41,13 @@ class ThreadsListCommand(DefaultCommand):
     @Time('linsharecli.threads', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadsListCommand, self).__call__(args)
-        cli = self.ls.threads
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list()
-        # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
-        # Formatters
-        formatters = [
-            DateFormatter('creationDate'),
-            DateFormatter('modificationDate')
-        ]
-        return self._list(args, cli, table, json_obj,
-                          formatters=formatters, filters=filters)
+        endpoint = self.ls.threads
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.identifiers, True),
+        )
+        return tbu.build().load_v2(endpoint.list()).render()
 
     def complete_fields(self, args, prefix):
         """TODO"""

@@ -33,6 +33,7 @@ from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.actions import CreateAction
+from linsharecli.common.tables import TableBuilder
 from argtoolbox import DefaultCompleter as Completer
 
 
@@ -97,22 +98,18 @@ class DomainPatternsCommand(DefaultCommand):
 class DomainPatternsListCommand(DomainPatternsCommand):
     """ List all domain patterns."""
 
-    ACTIONS = {
-        'delete' : '_delete_all',
-        'count_only' : '_count_only',
-    }
-
     @Time('linsharecli.dpattern', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainPatternsListCommand, self).__call__(args)
         if self.api_version == 0:
             self.init_old_language_key()
-        cli = self.ls.domain_patterns
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list(args.model)
-        # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
-        return self._list(args, cli, table, json_obj, filters=filters)
+        endpoint = self.ls.domain_patterns
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.identifiers, True),
+        )
+        return tbu.build().load_v2(endpoint.list(args.model)).render()
 
     def complete_fields(self, args, prefix):
         """TODO"""
