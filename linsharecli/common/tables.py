@@ -936,6 +936,16 @@ class TableBuilder(object):
         self.formatters = []
         self._pre_render_classes = []
 
+    @property
+    def horizontal_clazz(self):
+        """TODO"""
+        return self._horizontal_clazz
+
+    @horizontal_clazz.setter
+    def horizontal_clazz(self, horizontal_clazz):
+        """TODO"""
+        self._horizontal_clazz = horizontal_clazz
+
     def load_args(self, args):
         """load builder attributes from args."""
         attrs = [
@@ -961,6 +971,12 @@ class TableBuilder(object):
         """Add some formatters."""
         for formatter in formatters:
             self.formatters.append(formatter)
+
+    def add_filter_cond(self, cond, *filters):
+        """Add some filters only if cond is true"""
+        if cond:
+            for filterr in filters:
+                self.filters.append(filterr)
 
     def add_filters(self, *filters):
         """Add some filters."""

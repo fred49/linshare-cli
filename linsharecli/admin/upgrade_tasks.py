@@ -34,10 +34,11 @@ from linsharecli.common.tables import ConsoleTable
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.filters import PartialDate
 from linsharecli.common.filters import Equals
-from linsharecli.common.formatters import Formatter
-from linsharecli.common.formatters import DateFormatter
 from linsharecli.admin.core import DefaultCommand
+from linsharecli.common.tables import TableBuilder
+from linsharecli.common.cell import ComplexCell
 from argtoolbox import DefaultCompleter as Completer
+
 
 
 class UpgradeTasksCommand(DefaultCommand):
@@ -60,17 +61,15 @@ class UpgradeTasksCommand(DefaultCommand):
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
 
-class CriticityFormatter(Formatter):
+class CriticityCell(ComplexCell):
     """TODO"""
-    # pylint: disable=too-few-public-methods
 
-    def __init__(self, prop):
-        super(CriticityFormatter, self).__init__(prop)
-
-    def __call__(self, row, context=None):
-        parameter = row.get(self.prop)
-        if parameter:
-            row[self.prop] = '{v:5s}'.format(v=parameter)
+    def __unicode__(self):
+        if self.raw:
+            return unicode(self.value)
+        if self.value is None:
+            return self.none
+        return '{v:5s}'.format(v=self.value)
 
 
 class UpgradeTasksListCommand(UpgradeTasksCommand):
@@ -79,41 +78,34 @@ class UpgradeTasksListCommand(UpgradeTasksCommand):
     @Time('linsharecli.upgrade_tasks', label='Global time : %(time)s')
     def __call__(self, args):
         super(UpgradeTasksListCommand, self).__call__(args)
-        cli = self.ls.upgrade_tasks
-        # Formatters
-        formatters = [DateFormatter('creationDate'),
-                      DateFormatter('modificationDate')]
-        filters = []
-        table = None
+        endpoint = self.ls.upgrade_tasks
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_custom_cell("criticity", CriticityCell)
+        tbu.add_filters(
+            PartialDate("creationDate", args.cdate),
+        )
+        tbu.add_filter_cond(
+            not args.identifier,
+            PartialOr(self.IDENTIFIER, [args.identifier], True)
+        )
+        tbu.add_filter_cond(
+            args.identifier and args.run,
+            Equals("criticity", args.criticity)
+        )
         json_obj = None
         if args.identifier:
-            filters = [PartialDate("creationDate", args.cdate)]
             if args.run:
-                filters.append(Equals("criticity", args.criticity))
-                # pylint: disable=invalid-name
-                self.DEFAULT_TOTAL = "Console records found : %(count)s"
-                self.IDENTIFIER = "creationDate"
-                self.RESOURCE_IDENTIFIER = "asyncTask"
-                self.DEFAULT_SORT = "creationDate"
-                cli = self.ls.upgrade_tasks.async_tasks.console
-                table = self.get_table(args, cli, None, args.fields, ConsoleTable)
-                json_obj = cli.list(args.identifier, args.run)
-                formatters.append(CriticityFormatter('criticity'))
+                tbu.endpoint = self.ls.upgrade_tasks.async_tasks.console
+                json_obj = tbu.endpoint.list(args.identifier, args.run)
+                tbu.horizontal_clazz = ConsoleTable
             else:
-                self.DEFAULT_TOTAL = "Upgrade task runs found : %(count)s"
-                self.IDENTIFIER = "uuid"
-                self.RESOURCE_IDENTIFIER = "uuid"
-                self.DEFAULT_SORT = "creationDate"
-                cli = self.ls.upgrade_tasks.async_tasks
-                table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-                json_obj = cli.list(args.identifier)
+                tbu.endpoint = self.ls.upgrade_tasks.async_tasks
+                json_obj = tbu.endpoint.list(args.identifier)
         else:
-            table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-            # Filters
-            filters = [PartialOr(self.IDENTIFIER, [args.identifier], True),
-                       PartialDate("creationDate", args.cdate)]
-            json_obj = cli.list()
-        return self._list(args, cli, table, json_obj, formatters, filters)
+            json_obj = endpoint.list()
+        return tbu.build().load_v2(json_obj).render()
+
 
     def complete_fields(self, args, prefix):
         """TODO"""
