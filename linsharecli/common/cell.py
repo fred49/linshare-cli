@@ -128,6 +128,9 @@ class SCell(object):
             return 1
         return -1
 
+    def __eq__(self, item):
+        return self.value == item
+
 
 class DateCell(object):
     """TODO"""
@@ -164,6 +167,9 @@ class DateCell(object):
 
     def __div__(self, value):
         return self.value / value
+
+    def __eq__(self, item):
+        return self.value == item
 
 
 class ICell(int):
@@ -219,10 +225,14 @@ class SizeCell(object):
             return self.none
         return filesize(self.value, system=si)
 
+    def __eq__(self, item):
+        return self.value == item
+
 
 class ComplexCell(object):
     """TODO"""
     # pylint: disable=too-few-public-methods
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, value):
         self.value = value
@@ -259,6 +269,9 @@ class ComplexCell(object):
 
     def __getitem__(self, key):
         return self.value[key]
+
+    def __eq__(self, item):
+        return self.value == item
 
 
 class ComplexCellBuilder(object):
