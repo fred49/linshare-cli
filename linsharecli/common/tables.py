@@ -282,14 +282,6 @@ class VTable(BaseTable):
 
     vertical = True
 
-    @Time('linsharecli.core.show_table', label='time : %(time)s')
-    def show_table(self, json_obj, filters=None, formatters=None,
-                   ignore_exceptions=None):
-        # pylint: disable=unused-argument
-        # Only for compatibility with older lines of code.
-        """TODO"""
-        self.render()
-
     @Time('linsharecli.core.render', label='render time : %(time)s')
     def render(self):
         """TODO"""
@@ -359,14 +351,6 @@ class ConsoleTable(BaseTable):
     """TODO"""
 
     vertical = False
-
-    @Time('linsharecli.core.show_table', label='time : %(time)s')
-    def show_table(self, json_obj, filters=None, formatters=None,
-                   ignore_exceptions=None):
-        # pylint: disable=unused-argument
-        # Only for compatibility with older lines of code.
-        """TODO"""
-        self.render()
 
     @Time('linsharecli.core.render', label='render time : %(time)s')
     def render(self):
@@ -440,14 +424,6 @@ class HTable(VeryPrettyTable, AbstractTable):
             limit = self._pref_limit
             if limit > 0:
                 self.end = self.start + limit
-
-    @Time('linsharecli.core.show_table', label='time : %(time)s')
-    def show_table(self, json_obj, filters=None, formatters=None,
-                   ignore_exceptions=None):
-        # pylint: disable=unused-argument
-        # Only for compatibility with older lines of code.
-        """TODO"""
-        self.render()
 
     @Time('linsharecli.core.render', label='render time : %(time)s')
     def render(self):
