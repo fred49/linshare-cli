@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+"""TODO"""
 
 
 # This file is part of Linshare cli.
@@ -27,6 +28,7 @@
 from __future__ import unicode_literals
 
 from linsharecli.admin.core import DefaultCommand
+from linsharecli.common.core import add_list_parser_options
 from argtoolbox import DefaultCompleter as Completer
 
 
@@ -62,22 +64,14 @@ def add_parser(subparsers, name, desc, config):
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
-    parser_tmp2 = subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'list',
         help="list thread members.")
-    parser_tmp2.add_argument(
+    parser.add_argument(
         '-u',
         '--uuid',
         action="store",
         dest="uuid",
         required=True).completer = Completer()
-    parser_tmp2.add_argument('--extended', action="store_true",
-                             help="extended format")
-    parser_tmp2.add_argument('-r', '--reverse', action="store_true",
-                             help="reverse order while sorting")
-    parser_tmp2.add_argument('-t', '--vertical', action="store_true",
-                             help="use vertical output mode")
-    parser_tmp2.add_argument('--csv', action="store_true", help="Csv output")
-    parser_tmp2.add_argument('--raw', action="store_true",
-                             help="Disable all formatters")
-    parser_tmp2.set_defaults(__func__=ThreadMembersListCommand(config))
+    add_list_parser_options(parser, cdate=True)
+    parser.set_defaults(__func__=ThreadMembersListCommand(config))
