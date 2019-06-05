@@ -38,7 +38,7 @@ from linshareapi.cache import Time
 from linshareapi.core import LinShareException
 from ordereddict import OrderedDict
 from veryprettytable import VeryPrettyTable
-from linsharecli.common.cell import CellBuilder
+from linsharecli.common.cell import CellFactory
 
 class AbstractTable(object):
     """TODO"""
@@ -54,7 +54,7 @@ class AbstractTable(object):
     raw = False
     no_cell = False
     cli_mode = False
-    cbu = CellBuilder(False, False, 0)
+    cfa = CellFactory(False, False, 0)
     keys = []
     args = None
     cli = None
@@ -133,7 +133,7 @@ class AbstractTable(object):
                 self.log.debug("key not found: %s", key)
             data[key] = value
             if not off:
-                data[key] = self.cbu(key, value, data)
+                data[key] = self.cfa(key, value, data)
         if self.debug >= 2:
             self.log.debug("end row")
         return data
@@ -398,7 +398,7 @@ class HTable(VeryPrettyTable, AbstractTable):
                 self.log.debug("key not found: %s", key)
             data[key] = value
             if not off:
-                data[key] = self.cbu(key, value, data)
+                data[key] = self.cfa(key, value, data)
         self.log.debug("end row")
         return data
 
@@ -1017,10 +1017,10 @@ class TableBuilder(object):
         table._pref_no_csv_headers = self.no_headers
         if self._custom_cells:
             for column, clazz in self._custom_cells.items():
-                table.cbu.custom_cells[column] = clazz
-        table.cbu.raw = self.raw
-        table.cbu.vertical = self.vertical
-        table.cbu.debug = self.debug
+                table.cfa.custom_cells[column] = clazz
+        table.cfa.raw = self.raw
+        table.cfa.vertical = self.vertical
+        table.cfa.debug = self.debug
         table._formatters = self.formatters
         table._filters = self.filters
         # compat

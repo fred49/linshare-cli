@@ -34,7 +34,7 @@ from hurry.filesize import size as filesize
 from hurry.filesize import si
 
 
-class CellBuilder(object):
+class CellFactory(object):
     """TODO"""
     # pylint: disable=too-few-public-methods
 
@@ -94,6 +94,7 @@ class SCell(object):
     VeryPrettyTable will call the __str__ method on non-unicode objects.
     It requires that the __str__ output is utf-8 encoded."""
     # pylint: disable=too-few-public-methods
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, value):
         self.value = value
@@ -101,25 +102,48 @@ class SCell(object):
         self.row = {}
         self.vertical = False
         self.name = None
+        self._format = None
+        self._format_vertical = None
         self.none = "-"
+
+    @property
+    def formatt(self):
+        """TODO"""
+        return self._format
+
+    @formatt.setter
+    def formatt(self, formatt):
+        """TODO"""
+        self._format = formatt
+
+    @property
+    def formatv(self):
+        """TODO"""
+        return self._format_vertical
+
+    @formatv.setter
+    def formatv(self, formatv):
+        """TODO"""
+        self._format_vertical = formatv
 
     def __str__(self):
         return self.__unicode__().encode('utf-8')
 
     def __unicode__(self):
         """TODO"""
-        value = None
         if self.raw:
             if self.value is None:
-                value = "None"
-            else:
-                value = self.value
-        else:
-            if self.value is None:
-                value = self.none
-            else:
-                value = unicode(self.value)
-        return value
+                return "None"
+            return unicode(self.value)
+        if self.value is None:
+            return self.none
+        if self.vertical:
+            if self._format_vertical:
+                return self._format_vertical.format(value=self.value)
+        if self._format:
+            return self._format.format(value=self.value)
+
+        return unicode(self.value)
 
     def __cmp__(self, value):
         if self.value == value:
@@ -241,6 +265,7 @@ class ComplexCell(object):
         self.vertical = False
         self.name = None
         self._format = None
+        self._format_vertical = None
         self.none = "-"
 
     @property
@@ -253,12 +278,25 @@ class ComplexCell(object):
         """TODO"""
         self._format = formatt
 
+    @property
+    def formatv(self):
+        """TODO"""
+        return self._format_vertical
+
+    @formatv.setter
+    def formatv(self, formatv):
+        """TODO"""
+        self._format_vertical = formatv
+
     def __str__(self):
         return self.__unicode__().encode('utf-8')
 
     def __unicode__(self):
         if self.raw:
             return unicode(self.value)
+        if self.vertical:
+            if self._format_vertical:
+                return self._format_vertical.format(**self.value)
         if self._format:
             return self._format.format(**self.value)
         return unicode(self.value)
@@ -274,14 +312,27 @@ class ComplexCell(object):
         return self.value == item
 
 
-class ComplexCellBuilder(object):
-    """Helper to build a ComplexCell."""
+class CellBuilder(object):
+    """wrapper to build a Cell with extra parameters."""
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, formatt):
+    def __init__(self, formatt, formatv=None, cell=SCell):
         self._format = formatt
+        self._formatv = formatt
+        if formatv:
+            self._formatv = formatv
+        self.clazz = cell
 
     def __call__(self, value):
-        cell = ComplexCell(value)
+        cell = self.clazz(value)
         cell.formatt = self._format
+        cell.formatv = self._formatv
         return cell
+
+
+class ComplexCellBuilder(CellBuilder):
+    """wrapper to build a ComplexCell with extra parameters."""
+    # pylint: disable=too-few-public-methods
+
+    def __init__(self, formatt, formatv=None):
+        super(ComplexCellBuilder, self).__init__(formatt, formatv, ComplexCell)
