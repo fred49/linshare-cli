@@ -37,7 +37,7 @@ from argtoolbox import SimpleSection
 from argtoolbox import Element
 from argtoolbox import Base64ElementHook
 from argtoolbox import SectionHook
-from linsharecli.admin.thread import add_parser as add_threads_parser
+from linsharecli.admin.threads import add_parser as add_threads_parser
 from linsharecli.admin.tmembers import add_parser as add_thread_members_parser
 from linsharecli.admin.user import add_parser as add_users_parser
 from linsharecli.admin.iuser import add_parser as add_iusers_parser
