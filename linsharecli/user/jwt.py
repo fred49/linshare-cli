@@ -39,8 +39,8 @@ from linsharecli.common.actions import CreateAction
 from linsharecli.common.actions import UpdateAction
 from linsharecli.common.filters import PartialOr
 from linsharecli.common.formatters import Formatter
-from linsharecli.common.formatters import UuidFormatter
 from linsharecli.common.core import add_delete_parser_options
+from linsharecli.common.cell import CellBuilder
 from linsharecli.common.cell import ComplexCellBuilder
 from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.tables import DeleteAction
@@ -194,11 +194,11 @@ class JwtListAuditCommand(JwtCommand):
         )
         tbu.add_formatters(
             ResourceFormatter('resource'),
-            UuidFormatter('uuid'),
         )
-        tbu.add_custom_cell("actor", ComplexCellBuilder('{name} ({uuid})'))
-        tbu.add_custom_cell("authUser", ComplexCellBuilder('{name} ({uuid})'))
-        tbu.add_custom_cell("domain", ComplexCellBuilder('{name} ({uuid})'))
+        ccb = ComplexCellBuilder('{name} ({uuid:.8})', '{name} ({uuid})')
+        tbu.add_custom_cell("actor", ccb)
+        tbu.add_custom_cell("authUser", ccb)
+        tbu.add_custom_cell("uuid", CellBuilder('{value:.8}', '{value}'))
         return tbu.build().load_v2(endpoint.list()).render()
 
 
