@@ -155,6 +155,13 @@ class SCell(object):
     def __eq__(self, item):
         return self.value == item
 
+    def __add__(self, item):
+        return self.value + item
+
+    def lower(self):
+        """return a lower case version of the current value"""
+        return self.value.lower()
+
 
 class DateCell(object):
     """TODO"""

@@ -28,9 +28,9 @@
 from __future__ import unicode_literals
 
 import os
+import copy
 import time
 
-from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
 from linsharecli.user.core import DefaultCommand
@@ -38,11 +38,10 @@ from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.actions import CreateAction
 from linsharecli.common.actions import UpdateAction
 from linsharecli.common.filters import PartialOr
-from linsharecli.common.formatters import Formatter
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.cell import CellBuilder
+from linsharecli.common.cell import ComplexCell
 from linsharecli.common.cell import ComplexCellBuilder
-from linsharecli.common.formatters import DateFormatter
 from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import TableBuilder
 
@@ -105,20 +104,20 @@ class JwtCreateAction(CreateAction):
         return False
 
 
-class ResourceFormatter(Formatter):
+class ResourceCell(ComplexCell):
     """TODO"""
 
-    def __init__(self, prop, full=False):
-        super(ResourceFormatter, self).__init__(prop)
-        self.full = full
-
-    def __call__(self, row, context=None):
-        parameter = row.get(self.prop)
-        if parameter:
-            l_format = '{label} ({uuid:.8})'
-            if context.args.vertical:
-                l_format = '{label} ({uuid})'
-            row[self.prop] = l_format.format(**parameter)
+    def __unicode__(self):
+        if self.raw:
+            return unicode(self.value)
+        if self.value is None:
+            return self.none
+        data = copy.deepcopy(self.value)
+        data['action'] = self.row['action'].lower() + "d"
+        l_format = 'Jwt token {action}: {label} ({uuid:.8})'
+        if self.vertical:
+            l_format = 'A jwt token named {label} was created for {subject} ({uuid})'
+        return l_format.format(**data)
 
 
 class JwtCommand(DefaultCommand):
@@ -192,13 +191,11 @@ class JwtListAuditCommand(JwtCommand):
             PartialOr(self.IDENTIFIER, args.identifiers, True),
             PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True),
         )
-        tbu.add_formatters(
-            ResourceFormatter('resource'),
-        )
         ccb = ComplexCellBuilder('{name} ({uuid:.8})', '{name} ({uuid})')
         tbu.add_custom_cell("actor", ccb)
         tbu.add_custom_cell("authUser", ccb)
         tbu.add_custom_cell("uuid", CellBuilder('{value:.8}', '{value}'))
+        tbu.add_custom_cell("resource", ResourceCell)
         return tbu.build().load_v2(endpoint.list()).render()
 
 
