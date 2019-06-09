@@ -89,7 +89,10 @@ class CellFactory(object):
         return cell
 
 
-class SCell(object):
+class BaseCell(object):
+    pass
+
+class SCell(BaseCell):
     """This class is used to emulate str type for veryprettytable.
     VeryPrettyTable will call the __str__ method on non-unicode objects.
     It requires that the __str__ output is utf-8 encoded."""
@@ -163,7 +166,7 @@ class SCell(object):
         return self.value.lower()
 
 
-class DateCell(object):
+class DateCell(BaseCell):
     """TODO"""
 
     # pylint: disable=too-few-public-methods
@@ -203,7 +206,7 @@ class DateCell(object):
         return self.value == item
 
 
-class ICell(int):
+class ICell(int, BaseCell):
     """TODO"""
     # pylint: disable=too-few-public-methods
 
@@ -224,7 +227,7 @@ class ICell(int):
         return unicode(self.value)
 
 
-class SizeCell(object):
+class SizeCell(BaseCell):
     """TODO"""
     # pylint: disable=too-few-public-methods
 
@@ -260,7 +263,7 @@ class SizeCell(object):
         return self.value == item
 
 
-class ComplexCell(object):
+class ComplexCell(BaseCell):
     """TODO"""
     # pylint: disable=too-few-public-methods
     # pylint: disable=too-many-instance-attributes

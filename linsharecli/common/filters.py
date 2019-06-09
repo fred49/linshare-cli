@@ -32,6 +32,7 @@ import types
 import datetime
 import re
 import logging
+from linsharecli.common.cell import BaseCell
 
 
 class Filter(object):
@@ -81,8 +82,9 @@ class PartialOr(Filter):
     """Get the current property into the current row, and match the result with
      a list of values"""
 
-    def __init__(self, prop, values, ignorecase=False):
+    def __init__(self, prop, values, ignorecase=False, match_raw=True):
         super(PartialOr, self).__init__(prop, values)
+        self.match_raw = match_raw
         if self.is_enable():
             if not isinstance(values, list):
                 raise ValueError("input values should be a list")
@@ -102,11 +104,20 @@ class PartialOr(Filter):
                     return True
         else:
             if isinstance(vals, types.UnicodeType):
-                if self.regex.match(unicode(vals)):
+                if self.regex.match(vals):
                     return True
             else:
-                if self.regex.match(unicode(vals)):
-                    return True
+                if isinstance(vals, BaseCell):
+                    self.log.debug("it is a cell")
+                    if self.match_raw:
+                        if self.regex.match(vals.value):
+                            return True
+                    else:
+                        if self.regex.match(unicode(vals)):
+                            return True
+                else:
+                    if self.regex.match(vals):
+                        return True
         return False
 
 
