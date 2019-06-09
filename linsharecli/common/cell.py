@@ -145,7 +145,6 @@ class SCell(BaseCell):
                 return self._format_vertical.format(value=self.value)
         if self._format:
             return self._format.format(value=self.value)
-
         return unicode(self.value)
 
     def __cmp__(self, value):

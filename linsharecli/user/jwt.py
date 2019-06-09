@@ -120,6 +120,34 @@ class ResourceCell(ComplexCell):
         return l_format.format(**data)
 
 
+class AuthUserCell(ComplexCell):
+    """TODO"""
+
+    def __init__(self, value):
+        super(AuthUserCell, self).__init__(value)
+        self._format = '{name}\n({uuid:.8})'
+        self._format_vertical = '{name} ({uuid})'
+
+    def __unicode__(self):
+        """TODO"""
+        # pylint: disable=too-many-return-statements
+        if self.raw:
+            if self.value is None:
+                return "None"
+            return unicode(self.value)
+        if self.value is None:
+            return self.none
+        if self.vertical:
+            if self._format_vertical:
+                return self._format_vertical.format(**self.value)
+        if self._format:
+            auth_user = self.row['actor']
+            if self.value['uuid'] == auth_user['uuid']:
+                return "*"
+            return self._format.format(**self.value)
+        return unicode(self.value)
+
+
 class JwtCommand(DefaultCommand):
     """TODO"""
 
@@ -191,9 +219,10 @@ class JwtListAuditCommand(JwtCommand):
             PartialOr(self.IDENTIFIER, args.identifiers, True),
             PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True),
         )
-        ccb = ComplexCellBuilder('{name} ({uuid:.8})', '{name} ({uuid})')
-        tbu.add_custom_cell("actor", ccb)
-        tbu.add_custom_cell("authUser", ccb)
+        tbu.add_custom_cell(
+            "actor",
+            ComplexCellBuilder('{name}\n({uuid:.8})', '{name} ({uuid})'))
+        tbu.add_custom_cell("authUser", AuthUserCell)
         tbu.add_custom_cell("uuid", CellBuilder('{value:.8}', '{value}'))
         tbu.add_custom_cell("resource", ResourceCell)
         return tbu.build().load_v2(endpoint.list()).render()
