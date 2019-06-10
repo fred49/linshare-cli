@@ -27,8 +27,10 @@
 
 from __future__ import unicode_literals
 
-from linsharecli.admin.core import DefaultCommand
 from argtoolbox import DefaultCompleter as Completer
+from linsharecli.admin.core import DefaultCommand
+from linsharecli.common.cell import CellBuilder
+from linsharecli.common.tables import TableBuilder
 
 
 class UsersListCommand(DefaultCommand):
@@ -37,14 +39,14 @@ class UsersListCommand(DefaultCommand):
 
     def __call__(self, args):
         super(UsersListCommand, self).__call__(args)
-        cli = self.ls.users
         if not  (args.firstname or args.lastname or args.mail):
             raise ValueError('You should use at leat one option among : --firstname, --lastname or --mail')
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.search(args.firstname, args.lastname, args.mail)
-        table.load(json_obj)
-        table.render()
-        return True
+        endpoint = self.ls.users
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_custom_cell("domain", CellBuilder('{value:.8}', '{value}'))
+        json_obj = endpoint.search(args.firstname, args.lastname, args.mail)
+        return tbu.build().load_v2(json_obj).render()
 
     def complete_fields(self, args, prefix):
         """TODO"""
