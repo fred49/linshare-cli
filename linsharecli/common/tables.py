@@ -122,21 +122,31 @@ class AbstractTable(object):
             return json_row
         if self.debug >= 2:
             self.log.debug("begin row")
-        data = dict()
-        for key in self.keys:
-            if self.debug >= 2:
-                self.log.debug("key: %s ", key)
+        row_full = OrderedDict()
+        row_light = OrderedDict()
+        keys = list(self.keys)
+        keys += json_row.keys()
+        keys = list(OrderedDict.fromkeys(keys))
+        if self.debug >= 2:
+            self.log.debug("all keys: %s ", keys)
+        for key in keys:
             value = None
             if key in json_row:
                 value = json_row[key]
             else:
                 self.log.debug("key not found: %s", key)
-            data[key] = value
-            if not off:
-                data[key] = self.cfa(key, value, data)
+            if self.debug >= 2:
+                self.log.debug("key: %s ", key)
+            cell = self.cfa(key, value, row_full)
+            cell.hidden = False
+            row_full[key] = cell
+            if key in self.keys:
+                row_light[key] = cell
+            else:
+                cell.hidden = True
         if self.debug >= 2:
             self.log.debug("end row")
-        return data
+        return row_light
 
     @Time('linsharecli.core.render', label='render time : %(time)s')
     def render(self):
@@ -166,6 +176,7 @@ class AbstractTable(object):
     def add_pre_render_class(self, clazz):
         """TODO"""
         self._pre_render_classes.append(clazz)
+
 
 class BaseTable(AbstractTable):
     """TODO"""
@@ -388,6 +399,8 @@ class HTable(VeryPrettyTable, AbstractTable):
     def _transform_to_cell(self, json_row, off=False):
         """TODO"""
         self.log.debug("begin row")
+        if not off:
+            return super(HTable, self)._transform_to_cell(json_row, off)
         data = OrderedDict()
         for key in self.keys:
             self.log.debug("key: %s", key)
@@ -397,8 +410,6 @@ class HTable(VeryPrettyTable, AbstractTable):
             else:
                 self.log.debug("key not found: %s", key)
             data[key] = value
-            if not off:
-                data[key] = self.cfa(key, value, data)
         self.log.debug("end row")
         return data
 
