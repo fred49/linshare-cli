@@ -90,24 +90,18 @@ class CellFactory(object):
 
 
 class BaseCell(object):
-    pass
+    """TODO"""
 
-class SCell(BaseCell):
-    """This class is used to emulate str type for veryprettytable.
-    VeryPrettyTable will call the __str__ method on non-unicode objects.
-    It requires that the __str__ output is utf-8 encoded."""
-    # pylint: disable=too-few-public-methods
-    # pylint: disable=too-many-instance-attributes
-
-    def __init__(self, value):
-        self.value = value
-        self.raw = False
-        self.row = {}
-        self.vertical = False
-        self.name = None
-        self._format = None
-        self._format_vertical = None
-        self.none = "-"
+    value = None
+    raw = False
+    row = {}
+    vertical = False
+    hidden = False
+    name = None
+    _format = None
+    _format_vertical = None
+    _format_filter = None
+    none = "-"
 
     @property
     def formatt(self):
@@ -129,8 +123,46 @@ class SCell(BaseCell):
         """TODO"""
         self._format_vertical = formatv
 
+    @property
+    def formatf(self):
+        """TODO"""
+        return self._format_filter
+
+    @formatf.setter
+    def formatf(self, formatf):
+        """TODO"""
+        self._format_filter = formatf
+
+    def match(self, regex):
+        """Apply the input regext to the current object"""
+        if self._format_filter:
+            if regex.match(self._format_filter.format(**self.value)):
+                return True
+        if regex.match(unicode(self)):
+            return True
+        return False
+
+    def __unicode__(self):
+        if self.raw:
+            return unicode(self.value)
+        return unicode(self.value)
+
     def __str__(self):
         return self.__unicode__().encode('utf-8')
+
+    def __eq__(self, item):
+        return self.value == item
+
+
+class SCell(BaseCell):
+    """This class is used to emulate str type for veryprettytable.
+    VeryPrettyTable will call the __str__ method on non-unicode objects.
+    It requires that the __str__ output is utf-8 encoded."""
+    # pylint: disable=too-few-public-methods
+    # pylint: disable=too-many-instance-attributes
+
+    def __init__(self, value):
+        self.value = value
 
     def __unicode__(self):
         """TODO"""
@@ -154,9 +186,6 @@ class SCell(BaseCell):
             return 1
         return -1
 
-    def __eq__(self, item):
-        return self.value == item
-
     def __add__(self, item):
         return self.value + item
 
@@ -171,15 +200,7 @@ class DateCell(BaseCell):
     # pylint: disable=too-few-public-methods
     def __init__(self, value):
         self.value = value
-        self.raw = False
-        self.row = {}
-        self.vertical = False
         self._d_formatt = "{da:%Y-%m-%d %H:%M:%S}"
-        self.name = None
-        self.none = "-"
-
-    def __str__(self):
-        return self.__unicode__().encode('utf-8')
 
     def __unicode__(self):
         if self.raw:
@@ -201,9 +222,6 @@ class DateCell(BaseCell):
     def __div__(self, value):
         return self.value / value
 
-    def __eq__(self, item):
-        return self.value == item
-
 
 class ICell(int, BaseCell):
     """TODO"""
@@ -212,13 +230,6 @@ class ICell(int, BaseCell):
     def __init__(self, value):
         super(ICell, self).__init__(value)
         self.value = value
-        self.raw = False
-        self.row = {}
-        self.vertical = False
-        self.name = None
-
-    def __str__(self):
-        return self.__unicode__().encode('utf-8')
 
     def __unicode__(self):
         if self.raw:
@@ -232,11 +243,6 @@ class SizeCell(BaseCell):
 
     def __init__(self, value):
         self.value = value
-        self.raw = False
-        self.row = {}
-        self.vertical = False
-        self.name = None
-        self.none = "-"
 
     def __cmp__(self, value):
         if self.value == value:
@@ -248,18 +254,12 @@ class SizeCell(BaseCell):
     def __div__(self, value):
         return self.value / value
 
-    def __str__(self):
-        return self.__unicode__().encode('utf-8')
-
     def __unicode__(self):
         if self.raw:
             return unicode(self.value)
         if self.value is None:
             return self.none
         return filesize(self.value, system=si)
-
-    def __eq__(self, item):
-        return self.value == item
 
 
 class ComplexCell(BaseCell):
@@ -269,36 +269,6 @@ class ComplexCell(BaseCell):
 
     def __init__(self, value):
         self.value = value
-        self.raw = False
-        self.row = {}
-        self.vertical = False
-        self.name = None
-        self._format = None
-        self._format_vertical = None
-        self.none = "-"
-
-    @property
-    def formatt(self):
-        """TODO"""
-        return self._format
-
-    @formatt.setter
-    def formatt(self, formatt):
-        """TODO"""
-        self._format = formatt
-
-    @property
-    def formatv(self):
-        """TODO"""
-        return self._format_vertical
-
-    @formatv.setter
-    def formatv(self, formatv):
-        """TODO"""
-        self._format_vertical = formatv
-
-    def __str__(self):
-        return self.__unicode__().encode('utf-8')
 
     def __unicode__(self):
         if self.raw:
@@ -317,25 +287,26 @@ class ComplexCell(BaseCell):
     def __getitem__(self, key):
         return self.value[key]
 
-    def __eq__(self, item):
-        return self.value == item
-
 
 class CellBuilder(object):
     """wrapper to build a Cell with extra parameters."""
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, formatt, formatv=None, cell=SCell):
+    def __init__(self, formatt, formatv=None, formatf=None, cell=SCell):
         self._format = formatt
         self._formatv = formatt
+        self._formatf = None
         if formatv:
             self._formatv = formatv
+        if formatf:
+            self._formatf = formatf
         self.clazz = cell
 
     def __call__(self, value):
         cell = self.clazz(value)
         cell.formatt = self._format
         cell.formatv = self._formatv
+        cell.formatf = self._formatf
         return cell
 
 
@@ -343,5 +314,5 @@ class ComplexCellBuilder(CellBuilder):
     """wrapper to build a ComplexCell with extra parameters."""
     # pylint: disable=too-few-public-methods
 
-    def __init__(self, formatt, formatv=None):
-        super(ComplexCellBuilder, self).__init__(formatt, formatv, ComplexCell)
+    def __init__(self, formatt, formatv=None, formatf=None):
+        super(ComplexCellBuilder, self).__init__(formatt, formatv, formatf, cell=ComplexCell)

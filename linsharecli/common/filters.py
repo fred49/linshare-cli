@@ -88,36 +88,40 @@ class PartialOr(Filter):
         if self.is_enable():
             if not isinstance(values, list):
                 raise ValueError("input values should be a list")
+            self.log.debug("values: %s", self.values)
             pattern = r"^.*(" + "|".join(self.values) + ").*$"
+            self.log.debug("raw pattern: %s", pattern)
             if ignorecase:
                 self.regex = re.compile(pattern, re.IGNORECASE)
             else:
                 self.regex = re.compile(pattern)
 
     def __call__(self, row):
+        # pylint: disable=too-many-return-statements
         if not self.is_enable():
             return True
         vals = self.get_val(row)
         if isinstance(vals, dict):
             for val in vals.values():
-                if self.regex.match(unicode(val)):
-                    return True
+                return self.__match(val)
         else:
-            if isinstance(vals, types.UnicodeType):
-                if self.regex.match(vals):
+            return self.__match(vals)
+
+    def __match(self, val):
+        if isinstance(val, types.UnicodeType):
+            if self.regex.match(val):
+                return True
+        elif isinstance(val, BaseCell):
+            self.log.debug("it is a cell")
+            if self.match_raw:
+                if self.regex.match(val.value):
                     return True
             else:
-                if isinstance(vals, BaseCell):
-                    self.log.debug("it is a cell")
-                    if self.match_raw:
-                        if self.regex.match(vals.value):
-                            return True
-                    else:
-                        if self.regex.match(unicode(vals)):
-                            return True
-                else:
-                    if self.regex.match(vals):
-                        return True
+                if val.match(self.regex):
+                    return True
+        else:
+            if self.regex.match(val):
+                return True
         return False
 
 
