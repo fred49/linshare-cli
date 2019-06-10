@@ -39,6 +39,8 @@ from argtoolbox import Base64ElementHook
 from argtoolbox import SectionHook
 from linsharecli.admin.threads import add_parser as add_threads_parser
 from linsharecli.admin.tmembers import add_parser as add_thread_members_parser
+from linsharecli.admin.shared_spaces import add_parser as add_shared_spaces_parser
+from linsharecli.admin.shared_space_members import add_parser as add_shared_space_members_parser
 from linsharecli.admin.user import add_parser as add_users_parser
 from linsharecli.admin.iuser import add_parser as add_iusers_parser
 from linsharecli.admin.domain import add_parser as add_domains_parser
@@ -212,6 +214,9 @@ section 'server-4'""")
         add_threads_parser(subparsers, "threads", "threads management", self.config)
         add_thread_members_parser(subparsers, "tmembers",
                                   "thread member management", self.config)
+        add_shared_spaces_parser(subparsers, "shared_spaces", "shared spaces", self.config)
+        add_shared_space_members_parser(subparsers, "shared_space_members",
+                                        "shared spaces members", self.config)
         add_users_parser(subparsers, "users", "users", self.config)
         add_iusers_parser(subparsers, "iusers", "inconsistent users", self.config)
         add_domains_parser(subparsers, "domains", "domains", self.config)
