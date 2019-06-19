@@ -107,16 +107,15 @@ class DPDeleteAction(DeleteAction):
 
     MSG_RS_DELETED = (
         "%(position)s/%(count)s: "
-        "The resource '%(label)s' (%(identifier)s) was deleted. (%(time)s s)"
+        "The domain policy '%(label)s' (%(identifier)s) was deleted. (%(time)s s)"
     )
-    MSG_RS_CAN_NOT_BE_DELETED = "The resource '%(identifier)s' can not be deleted."
+    MSG_RS_CAN_NOT_BE_DELETED = "The domain policy '%(identifier)s' can not be deleted."
 
     def __init__(self):
         super(DPDeleteAction, self).__init__(
             mode=0,
             identifier="label",
             resource_identifier="identifier",
-            parent_identifier="parent_uuid"
         )
 
 

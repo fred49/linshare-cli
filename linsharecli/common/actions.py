@@ -47,6 +47,7 @@ class AbstractAction(object):
         self.cli_mode = False
         self.err_suffix = "unknown error"
         self.rbu = None
+        self.result = None
 
     def add_hook(self, key, hook):
         """Add a hook to transform input data beforce sending it to the server"""
@@ -83,6 +84,7 @@ class AbstractAction(object):
         try:
             start = time.time()
             json_obj = self._execute(data)
+            self.result = json_obj
             end = time.time()
             json_obj['_time'] = end - start
             if json_obj is None:

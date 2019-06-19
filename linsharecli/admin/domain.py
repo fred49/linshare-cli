@@ -27,6 +27,8 @@
 
 from __future__ import unicode_literals
 
+import json
+
 from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
 from linsharecli.common.filters import PartialOr
@@ -170,8 +172,38 @@ class DomainsCreateCommand(DomainsCommand):
             self.init_old_language_key()
         if not args.description:
             args.description = args.identifier
+
         act = CreateAction(self, self.ls.domains)
-        return act.load(args).execute()
+        if act.load(args).execute():
+            if not args.domain_policy_auto:
+                return True
+            else:
+                domain_uuid = act.result.get('identifier')
+                policy = {
+                    "accessPolicy": {
+                        "rules": [
+                            {
+                                "domain": {
+                                    "identifier": domain_uuid,
+                                },
+                                "type": "ALLOW"
+                            },
+                            {
+                                "type": "DENY_ALL"
+                            }
+                        ]
+                    },
+                    "label": args.identifier,
+                }
+                self.log.debug(json.dumps(policy, sort_keys=True, indent=2))
+                policy = self.ls.domain_policies.create(policy)
+                self.log.debug(json.dumps(policy, sort_keys=True, indent=2))
+                domain = self.ls.domains.get(domain_uuid)
+                domain['policy'] = policy
+                self.ls.domains.update(domain)
+            return True
+        else:
+            return False
 
     def complete(self, args, prefix):
         super(DomainsCreateCommand, self).__call__(args)
@@ -449,6 +481,9 @@ def add_parser(subparsers, name, desc, config):
     parser_tmp2.add_argument(
         '--domain-policy', dest="domain_policy", action="store",
         help="TODO").completer = Completer("complete_policy")
+    parser_tmp2.add_argument(
+        '--domain-policy-auto', dest="domain_policy_auto", action="store_true",
+        help="TODO")
     parser_tmp2.add_argument(
         '--mail-config', dest="mail_config", action="store",
         help="TODO").completer = Completer("complete_mail")
