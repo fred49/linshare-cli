@@ -37,6 +37,7 @@ from hurry.filesize import si
 class CellFactory(object):
     """TODO"""
     # pylint: disable=too-few-public-methods
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, raw=False, vertical=False, debug=0):
         self.raw = raw
@@ -96,6 +97,7 @@ class BaseCell(object):
     raw = False
     row = {}
     vertical = False
+    extended = False
     hidden = False
     name = None
     _format = None
@@ -273,6 +275,8 @@ class ComplexCell(BaseCell):
     def __unicode__(self):
         if self.raw:
             return unicode(self.value)
+        if self.value is None:
+            return self.none
         if self.vertical:
             if self._format_vertical:
                 return self._format_vertical.format(**self.value)
@@ -316,3 +320,60 @@ class ComplexCellBuilder(CellBuilder):
 
     def __init__(self, formatt, formatv=None, formatf=None):
         super(ComplexCellBuilder, self).__init__(formatt, formatv, formatf, cell=ComplexCell)
+
+
+class AuthUserCell(ComplexCell):
+    """TODO"""
+
+    def __init__(self, value):
+        super(AuthUserCell, self).__init__(value)
+        self._format = '{name}\n({uuid:.8})'
+        self._format_vertical = '{name} ({uuid})'
+
+    def __unicode__(self):
+        """TODO"""
+        # pylint: disable=too-many-return-statements
+        if self.raw:
+            if self.value is None:
+                return "None"
+            return unicode(self.value)
+        if self.value is None:
+            return self.none
+        if self.vertical:
+            if self._format_vertical:
+                return self._format_vertical.format(**self.value)
+        if self._format:
+            actor = self.row['actor']
+            if self.value['uuid'] == actor['uuid'] and not actor.hidden:
+                return "- idem -"
+            return self._format.format(**self.value)
+        return unicode(self.value)
+
+
+class ActorCell(ComplexCell):
+    """TODO"""
+
+    def __init__(self, value):
+        super(ActorCell, self).__init__(value)
+        self._format = '{name} \n({uuid:.8})'
+        self._format_vertical = '{name} ({uuid})'
+
+    def __unicode__(self):
+        """TODO"""
+        # pylint: disable=too-many-return-statements
+        if self.raw:
+            if self.value is None:
+                return "None"
+            return unicode(self.value)
+        if self.value is None:
+            return self.none
+        auth_user = self.row['authUser']
+        _format = self._format
+        _format_vertical = self._format_vertical
+        if auth_user.hidden:
+            if self.value['uuid'] != auth_user['uuid']:
+                _format = '{name} \033[91m*\033[0m\n({uuid:.8})'
+                _format_vertical = '{name} \033[91m*\033[0m ({uuid})'
+        if self.vertical:
+            return _format_vertical.format(**self.value)
+        return _format.format(**self.value)

@@ -45,8 +45,8 @@ from linsharecli.common.actions import UpdateAction
 class DefaultCommand(Command):
     """TODO"""
 
-    IDENTIFIER = "name"
-    DEFAULT_SORT = "name"
+    IDENTIFIER = "creationDate"
+    DEFAULT_SORT = "creationDate"
 
     MSG_RS_UPDATED = "The shared space member '%(account)s' (%(uuid)s) was successfully updated."
     MSG_RS_CREATED = "The shared space member '%(account)s' (%(uuid)s) was successfully created."
@@ -118,7 +118,8 @@ class ListCommand(DefaultCommand):
             "account",
             ComplexCellBuilder(
                 '{name}\n({uuid:.8})',
-                '{name} <{mail}> ({uuid})'
+                '{name} <{mail}> ({uuid})',
+                '{name}',
             )
         )
         tbu.add_custom_cell("node", ComplexCellBuilder('{nodeType}: {name} ({uuid:.8})'))
@@ -127,9 +128,9 @@ class ListCommand(DefaultCommand):
             parent_identifier=self.CFG_DELETE_ARG_ATTR
         ))
         tbu.add_filters(
-            PartialOr(self.IDENTIFIER, args.names, True),
+            PartialOr("account", args.accounts, True),
             PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True),
-            PartialOr("role", args.roles, True, match_raw=False)
+            PartialOr("role", args.roles, True)
         )
         return tbu.build().load_v2(endpoint.list(args.ss_uuid)).render()
 
@@ -201,8 +202,8 @@ def add_parser(subparsers, name, desc, config):
         formatter_class=RawTextHelpFormatter,
         help="list shared space from linshare")
     parser.add_argument(
-        'names', nargs="*",
-        help="Filter documents by their names")
+        'accounts', nargs="*",
+        help="Filter documents by their account names")
     parser.add_argument('-u', '--uuid', dest="uuids", action="append", help="")
     parser.add_argument('-o', '--role', dest="roles", action="append",
                         choices=['ADMIN', 'WRITER', 'CONTRIBUTOR', 'READER'],

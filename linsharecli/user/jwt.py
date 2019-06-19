@@ -41,6 +41,8 @@ from linsharecli.common.filters import PartialOr
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.cell import CellBuilder
 from linsharecli.common.cell import ComplexCell
+from linsharecli.common.cell import ActorCell
+from linsharecli.common.cell import AuthUserCell
 from linsharecli.common.cell import ComplexCellBuilder
 from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import TableBuilder
@@ -107,6 +109,8 @@ class JwtCreateAction(CreateAction):
 class ResourceCell(ComplexCell):
     """TODO"""
 
+    _format_filter = '{uuid}'
+
     def __unicode__(self):
         if self.raw:
             return unicode(self.value)
@@ -118,63 +122,6 @@ class ResourceCell(ComplexCell):
         if self.vertical:
             l_format = 'A jwt token named {label} was created for {subject} ({uuid})'
         return l_format.format(**data)
-
-
-class AuthUserCell(ComplexCell):
-    """TODO"""
-
-    def __init__(self, value):
-        super(AuthUserCell, self).__init__(value)
-        self._format = '{name}\n({uuid:.8})'
-        self._format_vertical = '{name} ({uuid})'
-
-    def __unicode__(self):
-        """TODO"""
-        # pylint: disable=too-many-return-statements
-        if self.raw:
-            if self.value is None:
-                return "None"
-            return unicode(self.value)
-        if self.value is None:
-            return self.none
-        if self.vertical:
-            if self._format_vertical:
-                return self._format_vertical.format(**self.value)
-        if self._format:
-            actor = self.row['actor']
-            if self.value['uuid'] == actor['uuid'] and not actor.hidden:
-                return "*"
-            return self._format.format(**self.value)
-        return unicode(self.value)
-
-
-class ActorCell(ComplexCell):
-    """TODO"""
-
-    def __init__(self, value):
-        super(ActorCell, self).__init__(value)
-        self._format = '{name}\n({uuid:.8})'
-        self._format_vertical = '{name} ({uuid})'
-
-    def __unicode__(self):
-        """TODO"""
-        # pylint: disable=too-many-return-statements
-        if self.raw:
-            if self.value is None:
-                return "None"
-            return unicode(self.value)
-        if self.value is None:
-            return self.none
-        auth_user = self.row['authUser']
-        _format = self._format
-        _format_vertical = self._format_vertical
-        if auth_user.hidden:
-            if self.value['uuid'] != auth_user['uuid']:
-                _format = '{name} !!!\n({uuid:.8})'
-                _format_vertical = '{name} !!! ({uuid})'
-        if self.vertical:
-            return _format_vertical.format(**self.value)
-        return _format.format(**self.value)
 
 
 class JwtCommand(DefaultCommand):
@@ -246,7 +193,8 @@ class JwtListAuditCommand(JwtCommand):
         tbu.load_args(args)
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
-            PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True),
+            PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True, match_raw=True),
+            PartialOr("resource", [args.resource], True, match_raw=False),
         )
         tbu.add_custom_cell("actor", ActorCell)
         tbu.add_custom_cell("authUser", AuthUserCell)
@@ -315,6 +263,8 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('identifiers', nargs="*", help="")
     parser.add_argument('-u', '--uuid', dest="uuids", action="append",
                         help="Filter by uuid fragments.")
+    parser.add_argument('-e', '--resource', action="store",
+                        help="Filter by resource uuid")
     add_list_parser_options(parser)
     parser.set_defaults(__func__=JwtListAuditCommand(config))
 

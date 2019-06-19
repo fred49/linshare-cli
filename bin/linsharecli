@@ -46,12 +46,14 @@ from linsharecli.user.wg_members import add_parser as add_wg_members_parser
 from linsharecli.user.wg_documents import add_parser as add_wg_documents_parser
 from linsharecli.user.shared_spaces import add_parser as add_shared_spaces_parser
 from linsharecli.user.shared_space_members import add_parser as add_shared_space_members_parser
+from linsharecli.user.shared_space_audit import add_parser as add_shared_space_audit_parser
 from linsharecli.user.users import add_parser as add_users_parser
 from linsharecli.user.guests import add_parser as add_guests_parser
 from linsharecli.user.contactslists import add_parser as add_contactslists_parser
 from linsharecli.user.contactslistscontacts import add_parser as add_contactslistscontacts_parser
 from linsharecli.user.core import add_parser as add_core_parser
-from linsharecli.user.jwt import add_parser as add_jwt
+from linsharecli.user.jwt import add_parser as add_jwt_parser
+from linsharecli.user.audit import add_parser as add_audit_parser
 import linsharecli
 
 # if you want to debug argcomplete completion,
@@ -234,6 +236,9 @@ section 'server-4'""")
             cmd_desc = "workgroup content management"
         add_wg_documents_parser(subparsers, cmd_name, cmd_desc, self.config)
         add_shared_spaces_parser(subparsers, "shared_spaces", "shared spaces", self.config)
+        add_shared_space_audit_parser(subparsers, "shared_space_audit",
+                                        "shared spaces audit", self.config)
+
         add_shared_space_members_parser(subparsers, "shared_space_members",
                                         "shared spaces members", self.config)
 
@@ -256,7 +261,8 @@ section 'server-4'""")
             subparsers, "lists-contacts",
             "Manage contacts within a list of contacts",
             self.config)
-        add_jwt(subparsers, "jwts", "JWT Persistent Token", self.config)
+        add_jwt_parser(subparsers, "jwts", "JWT Persistent Token", self.config)
+        add_audit_parser(subparsers, "audit", "audit", self.config)
         add_core_parser(subparsers, self.config)
 
 

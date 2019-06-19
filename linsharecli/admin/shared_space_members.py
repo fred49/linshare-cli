@@ -129,7 +129,7 @@ class ListCommand(DefaultCommand):
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.names, True),
             PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True),
-            PartialOr("role", args.roles, True, match_raw=False)
+            PartialOr("role", args.roles, True)
         )
         return tbu.build().load_v2(endpoint.list(args.ss_uuid)).render()
 

@@ -82,7 +82,7 @@ class PartialOr(Filter):
     """Get the current property into the current row, and match the result with
      a list of values"""
 
-    def __init__(self, prop, values, ignorecase=False, match_raw=True):
+    def __init__(self, prop, values, ignorecase=False, match_raw=False):
         super(PartialOr, self).__init__(prop, values)
         self.match_raw = match_raw
         if self.is_enable():
@@ -112,7 +112,7 @@ class PartialOr(Filter):
             if self.regex.match(val):
                 return True
         elif isinstance(val, BaseCell):
-            self.log.debug("it is a cell")
+            self.log.debug("cell type: %s", type(val))
             if self.match_raw:
                 if self.regex.match(val.value):
                     return True

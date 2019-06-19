@@ -51,6 +51,7 @@ class AbstractTable(object):
     json = False
     debug = 0
     verbose = False
+    extended = False
     raw = False
     no_cell = False
     cli_mode = False
@@ -138,7 +139,9 @@ class AbstractTable(object):
             if self.debug >= 2:
                 self.log.debug("key: %s ", key)
             cell = self.cfa(key, value, row_full)
+            # FIXME
             cell.hidden = False
+            cell.extended = self.extended
             row_full[key] = cell
             if key in self.keys:
                 row_light[key] = cell
@@ -398,9 +401,10 @@ class HTable(VeryPrettyTable, AbstractTable):
 
     def _transform_to_cell(self, json_row, off=False):
         """TODO"""
-        self.log.debug("begin row")
         if not off:
             return super(HTable, self)._transform_to_cell(json_row, off)
+        if self.debug >= 2:
+            self.log.debug("begin row")
         data = OrderedDict()
         for key in self.keys:
             self.log.debug("key: %s", key)
@@ -410,7 +414,8 @@ class HTable(VeryPrettyTable, AbstractTable):
             else:
                 self.log.debug("key not found: %s", key)
             data[key] = value
-        self.log.debug("end row")
+        if self.debug >= 2:
+            self.log.debug("end row")
         return data
 
     def load(self, json_obj, filters=None, formatters=None):
