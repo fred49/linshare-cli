@@ -32,7 +32,9 @@ from argtoolbox import DefaultCompleter as Completer
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.actions import CreateAction
+from linsharecli.common.actions import UpdateAction
 from linsharecli.common.core import add_list_parser_options
+from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.cell import ComplexCell
 
@@ -40,7 +42,7 @@ from linsharecli.common.cell import ComplexCell
 class DomainPoliciesCommand(DefaultCommand):
     """ List all domain policies store into LinShare."""
 
-    IDENTIFIER = "identifier"
+    IDENTIFIER = "label"
     DEFAULT_SORT = "identifier"
     DEFAULT_SORT_NAME = "identifier"
     RESOURCE_IDENTIFIER = "identifier"
@@ -48,20 +50,21 @@ class DomainPoliciesCommand(DefaultCommand):
     MSG_RS_NOT_FOUND = "No domain policies could be found."
     MSG_RS_DELETED = (
         "%(position)s/%(count)s: "
-        "The domain policy '%(uuid)s' was deleted. (%(time)s s)"
+        "The domain policy '%(identifier)s' was deleted. (%(time)s s)"
     )
-    MSG_RS_CAN_NOT_BE_DELETED = "The domain policy '%(uuid)s' can not be deleted."
+    MSG_RS_CAN_NOT_BE_DELETED = "The domain policy '%(identifier)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%s domain policy(s) can not be deleted."
     MSG_RS_DOWNLOADED = (
         "%(position)s/%(count)s: "
-        "The domain policy '%(name)s' (%(uuid)s) was downloaded. (%(time)s s)"
+        "The domain policy '%(label)s' (%(identifier)s) was downloaded. (%(time)s s)"
     )
     MSG_RS_CAN_NOT_BE_DOWNLOADED = "One domain policy can not be downloaded."
     MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%s domain policies can not be downloaded."
     MSG_RS_CREATED = (
-        "The domain policy '%(identifier)s' (%(uuid)s) was "
+        "The domain policy '%(label)s' (%(identifier)s) was "
         "successfully created. (%(_time)s s)"
     )
+    MSG_RS_UPDATED = "The resource '%(label)s' (%(identifier)s) was successfully updated."
 
     def complete(self, args, prefix):
         super(DomainPoliciesCommand, self).__call__(args)
@@ -99,6 +102,24 @@ class AccessPolicyCell(ComplexCell):
         return "\n".join(output)
 
 
+class DPDeleteAction(DeleteAction):
+    """TODO"""
+
+    MSG_RS_DELETED = (
+        "%(position)s/%(count)s: "
+        "The resource '%(label)s' (%(identifier)s) was deleted. (%(time)s s)"
+    )
+    MSG_RS_CAN_NOT_BE_DELETED = "The resource '%(identifier)s' can not be deleted."
+
+    def __init__(self):
+        super(DPDeleteAction, self).__init__(
+            mode=0,
+            identifier="label",
+            resource_identifier="identifier",
+            parent_identifier="parent_uuid"
+        )
+
+
 class DomainPoliciesListCommand(DomainPoliciesCommand):
     """ List all domain policies."""
 
@@ -112,6 +133,7 @@ class DomainPoliciesListCommand(DomainPoliciesCommand):
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
         )
+        tbu.add_action('delete', DPDeleteAction())
         table = tbu.build()
         table.align['accessPolicy'] = "l"
         return table.load_v2(endpoint.list()).render()
@@ -140,18 +162,19 @@ class DomainPoliciesUpdateCommand(DomainPoliciesCommand):
     @Time('linshareadmcli.domain_policies', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainPoliciesUpdateCommand, self).__call__(args)
-        resource = self.ls.domain_policies.get(args.identifier)
+        self.check_required_options(
+            args,
+            ['description', 'label'],
+            ["--description", "--label"])
+        endpoint = self.ls.domain_policies
+        resource = endpoint.get(args.identifier)
         if resource is None:
             raise ValueError("Domain policy idenfier not found")
-        rbu = self.ls.domain_policies.get_rbu()
+        act = UpdateAction(self, endpoint)
+        rbu = endpoint.get_rbu()
         rbu.copy(resource)
         rbu.load_from_args(args)
-        return self._run(
-            self.ls.domain_policies.update,
-            "The following domain policy '%(identifier)s' was successfully \
-updated",
-            args.identifier,
-            rbu.to_resource())
+        return act.load(args).execute(rbu.to_resource())
 
 
 class DomainPoliciesDeleteCommand(DomainPoliciesCommand):
@@ -160,8 +183,9 @@ class DomainPoliciesDeleteCommand(DomainPoliciesCommand):
     @Time('linshareadmcli.domain_policies', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainPoliciesDeleteCommand, self).__call__(args)
-        cli = self.ls.domain_policies
-        return self._delete_all(args, cli, args.identifiers)
+        act = DPDeleteAction()
+        act.init(args, self.ls, self.ls.domain_policies)
+        return act.delete(args.identifiers)
 
 
 def add_parser(subparsers, name, desc, config):
@@ -176,7 +200,7 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument(
         'identifiers', nargs="*",
         help="Filter domain policies by their identifiers")
-    add_list_parser_options(parser)
+    add_list_parser_options(parser, delete=True, cdate=False)
     parser.set_defaults(__func__=DomainPoliciesListCommand(config))
 
     # command : delete
@@ -191,7 +215,7 @@ def add_parser(subparsers, name, desc, config):
     # command : create
     parser_tmp2 = subparsers2.add_parser(
         'create', help="create domain policies.")
-    parser_tmp2.add_argument('identifier', action="store", help="")
+    parser_tmp2.add_argument('label', action="store", help="")
     parser_tmp2.add_argument('--description', action="store", help="")
     parser_tmp2.add_argument('--cli-mode', action="store_true", help="")
     parser_tmp2.set_defaults(__func__=DomainPoliciesCreateCommand(config))
@@ -202,4 +226,6 @@ def add_parser(subparsers, name, desc, config):
     parser_tmp2.add_argument(
         'identifier', action="store", help="").completer = Completer()
     parser_tmp2.add_argument('--description', action="store", help="")
+    parser_tmp2.add_argument('--label', action="store", help="")
+    parser_tmp2.add_argument('--cli-mode', action="store_true", help="")
     parser_tmp2.set_defaults(__func__=DomainPoliciesUpdateCommand(config))
