@@ -34,6 +34,7 @@ from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.actions import CreateAction
+from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.cell import ComplexCell
 from linsharecli.common.cell import ComplexCellBuilder
@@ -115,6 +116,23 @@ class ProviderCell(ComplexCell):
         return ",".join(output)
 
 
+class DDeleteAction(DeleteAction):
+    """TODO"""
+
+    MSG_RS_DELETED = (
+        "%(position)s/%(count)s: "
+        "The domain '%(label)s' (%(identifier)s) was deleted. (%(time)s s)"
+    )
+    MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(identifier)s' can not be deleted."
+
+    def __init__(self):
+        super(DDeleteAction, self).__init__(
+            mode=0,
+            identifier="label",
+            resource_identifier="identifier",
+        )
+
+
 class DomainsListCommand(DomainsCommand):
     """ List all domains."""
 
@@ -125,6 +143,7 @@ class DomainsListCommand(DomainsCommand):
             self.init_old_language_key()
         endpoint = self.ls.domains
         tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.add_action('delete', DDeleteAction())
         tbu.load_args(args)
         tbu.add_custom_cell("currentWelcomeMessage", ComplexCellBuilder('{name} ({uuid:.8})'))
         tbu.add_custom_cell("providers", ProviderCell)
