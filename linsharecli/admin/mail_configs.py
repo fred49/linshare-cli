@@ -31,8 +31,8 @@ from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.filters import PartialOr
+from linsharecli.common.tables import TableBuilder
 from linsharecli.admin.core import DefaultCommand
-from linsharecli.common.formatters import DateFormatter
 
 
 class MailConfigsCommand(DefaultCommand):
@@ -79,17 +79,14 @@ class MailConfigsListCommand(MailConfigsCommand):
     @Time('linsharecli.publickeys', label='Global time : %(time)s')
     def __call__(self, args):
         super(MailConfigsListCommand, self).__call__(args)
-        cli = self.ls.mail_configs
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list(args.domain, args.parent)
-        # Filters
-        filters = [PartialOr(self.IDENTIFIER, args.identifiers, True)]
-        formatters = [
-            DateFormatter('creationDate'),
-            DateFormatter('modificationDate')
-        ]
-        return self._list(args, cli, table, json_obj, formatters=formatters,
-                          filters=filters)
+        endpoint = self.ls.mail_configs
+        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu.load_args(args)
+        tbu.add_filters(
+            PartialOr(self.IDENTIFIER, args.identifiers, True),
+        )
+        json_obj = endpoint.list(args.domain, args.parent)
+        return tbu.build().load_v2(json_obj).render()
 
 
 def add_parser(subparsers, name, desc, config):
