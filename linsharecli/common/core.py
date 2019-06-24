@@ -710,6 +710,20 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             msg += " or ".join(options)
             raise ArgumentError(None, msg)
 
+    def check_required_options_v2(self, args, parser):
+        """TODO"""
+        options = []
+        one_set = False
+        for i in getattr(parser, '_group_actions'):
+            options += i.option_strings
+            if getattr(args, i.dest, None) is not None:
+                one_set = True
+                break
+        if not one_set:
+            msg = "You need to choose at least one option among:"
+            msg += " or ".join(options)
+            raise ArgumentError(None, msg)
+
 
 def add_list_parser_options(parser, download=False, delete=False, cdate=False,
                             ssize=False):
