@@ -285,7 +285,7 @@ class BaseTable(AbstractTable):
                 if isinstance(data, str):
                     record.append(data)
                 else:
-                    data_str = str(data).decode('utf-8')
+                    data_str = str(data)
                     record.append(data_str)
             records.append(";".join(record))
         return "\n".join(records)
@@ -327,7 +327,7 @@ class VTable(BaseTable):
                     if isinstance(column_data, str):
                         dataa = {"key": k, "value": column_data}
                     else:
-                        column_data_str = str(column_data).decode('utf-8')
+                        column_data_str = str(column_data)
                         dataa = {"key": k, "value": column_data_str}
                     t_record = (t_format).format(**dataa)
                     record.append(t_record)
@@ -335,7 +335,6 @@ class VTable(BaseTable):
                 except UnicodeEncodeError as ex:
                     self.log.error("UnicodeEncodeError: %s", ex)
                     dataa = {"key": k, "value": "UnicodeEncodeError"}
-                    # msg = ex.msg.decode('unicode-escape').strip('"')
                     t_record = str(t_format).format(**dataa)
                     record.append(t_record)
             records.append("\n".join(record))

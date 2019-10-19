@@ -85,7 +85,7 @@ class CellFactory(object):
         if self.debug >= 3:
             self.log.debug("cell type: %s", type(cell))
             # str method from all cell must return encoded strings
-            self.log.debug("cell rendering: %s", str(cell).decode('utf-8'))
+            self.log.debug("cell rendering: %s", str(cell))
             self.log.debug("cell built.")
         return cell
 
@@ -104,6 +104,9 @@ class BaseCell(object):
     _format_vertical = None
     _format_filter = None
     none = "-"
+
+    def __init__(self, value):
+        self.value = value
 
     @property
     def formatt(self):
@@ -145,12 +148,14 @@ class BaseCell(object):
         return False
 
     def __unicode__(self):
+        """TODO"""
         if self.raw:
             return str(self.value)
         return str(self.value)
 
     def __str__(self):
-        return self.__unicode__().encode('utf-8')
+        """TODO"""
+        return self.__unicode__()
 
     def __eq__(self, item):
         return self.value == item
@@ -201,7 +206,7 @@ class DateCell(BaseCell):
 
     # pylint: disable=too-few-public-methods
     def __init__(self, value):
-        self.value = value
+        super(DateCell, self).__init__(value)
         self._d_formatt = "{da:%Y-%m-%d %H:%M:%S}"
 
     def __unicode__(self):
