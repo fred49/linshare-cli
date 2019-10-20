@@ -246,6 +246,8 @@ class BaseTable(AbstractTable):
 
     def get_raw(self):
         """TODO"""
+        # FIXME:Python3: Fix sorting
+        self.sortby = False
         if self.sortby:
             try:
                 self._rows = sorted(self._rows, reverse=self.reversesort,
