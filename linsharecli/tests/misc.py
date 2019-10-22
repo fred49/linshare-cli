@@ -95,7 +95,7 @@ class AdminGenericTestList(LinShareTestCase):
 
     def check_if_enable(self, kind):
         """check if a test 'kind' is enable"""
-        if self.test_config.has_key(kind):
+        if kind in self.test_config:
             return self.test_config.get(kind)
         else:
             return True

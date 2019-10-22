@@ -25,7 +25,7 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
+
 
 import datetime
 import logging
@@ -55,7 +55,7 @@ class CellFactory(object):
         self.custom_cells = {}
 
     def __call__(self, name, value, row=None):
-        if name in self.custom_cells.keys():
+        if name in list(self.custom_cells.keys()):
             clazz = self.custom_cells.get(name)
         elif name in self.date_cells:
             clazz = DateCell
@@ -140,14 +140,14 @@ class BaseCell(object):
         if self._format_filter:
             if regex.match(self._format_filter.format(**self.value)):
                 return True
-        if regex.match(unicode(self)):
+        if regex.match(str(self)):
             return True
         return False
 
     def __unicode__(self):
         if self.raw:
-            return unicode(self.value)
-        return unicode(self.value)
+            return str(self.value)
+        return str(self.value)
 
     def __str__(self):
         return self.__unicode__().encode('utf-8')
@@ -171,7 +171,7 @@ class SCell(BaseCell):
         if self.raw:
             if self.value is None:
                 return "None"
-            return unicode(self.value)
+            return str(self.value)
         if self.value is None:
             return self.none
         if self.vertical:
@@ -179,7 +179,7 @@ class SCell(BaseCell):
                 return self._format_vertical.format(value=self.value)
         if self._format:
             return self._format.format(value=self.value)
-        return unicode(self.value)
+        return str(self.value)
 
     def __cmp__(self, value):
         if self.value == value:
@@ -206,7 +206,7 @@ class DateCell(BaseCell):
 
     def __unicode__(self):
         if self.raw:
-            return unicode(self.value)
+            return str(self.value)
         if self.value is not None:
             # if self.vertical:
             #     self._d_formatt = "{da:%Y-%m-%d}"
@@ -235,8 +235,8 @@ class ICell(int, BaseCell):
 
     def __unicode__(self):
         if self.raw:
-            return unicode(self.value)
-        return unicode(self.value)
+            return str(self.value)
+        return str(self.value)
 
 
 class SizeCell(BaseCell):
@@ -258,7 +258,7 @@ class SizeCell(BaseCell):
 
     def __unicode__(self):
         if self.raw:
-            return unicode(self.value)
+            return str(self.value)
         if self.value is None:
             return self.none
         return filesize(self.value, system=si)
@@ -274,7 +274,7 @@ class ComplexCell(BaseCell):
 
     def __unicode__(self):
         if self.raw:
-            return unicode(self.value)
+            return str(self.value)
         if self.value is None:
             return self.none
         if self.vertical:
@@ -282,11 +282,11 @@ class ComplexCell(BaseCell):
                 return self._format_vertical.format(**self.value)
         if self._format:
             return self._format.format(**self.value)
-        return unicode(self.value)
+        return str(self.value)
 
     def keys(self):
         """TODO"""
-        return self.value.keys()
+        return list(self.value.keys())
 
     def __getitem__(self, key):
         return self.value[key]
@@ -336,7 +336,7 @@ class AuthUserCell(ComplexCell):
         if self.raw:
             if self.value is None:
                 return "None"
-            return unicode(self.value)
+            return str(self.value)
         if self.value is None:
             return self.none
         if self.vertical:
@@ -347,7 +347,7 @@ class AuthUserCell(ComplexCell):
             if self.value['uuid'] == actor['uuid'] and not actor.hidden:
                 return "- idem -"
             return self._format.format(**self.value)
-        return unicode(self.value)
+        return str(self.value)
 
 
 class ActorCell(ComplexCell):
@@ -364,7 +364,7 @@ class ActorCell(ComplexCell):
         if self.raw:
             if self.value is None:
                 return "None"
-            return unicode(self.value)
+            return str(self.value)
         if self.value is None:
             return self.none
         auth_user = self.row['authUser']

@@ -24,7 +24,7 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
+
 
 import re
 

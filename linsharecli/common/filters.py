@@ -27,7 +27,7 @@ of a Vertical or Horizotal table."""
 #
 
 
-from __future__ import unicode_literals
+
 import types
 import datetime
 import re
@@ -102,13 +102,13 @@ class PartialOr(Filter):
             return True
         vals = self.get_val(row)
         if isinstance(vals, dict):
-            for val in vals.values():
+            for val in list(vals.values()):
                 return self.__match(val)
         else:
             return self.__match(vals)
 
     def __match(self, val):
-        if isinstance(val, types.UnicodeType):
+        if isinstance(val, str):
             if self.regex.match(val):
                 return True
         elif isinstance(val, BaseCell):
@@ -130,11 +130,11 @@ class PartialMultipleAnd(Filter):
      a list of values"""
 
     def __init__(self, propvalues, ignorecase=False):
-        super(PartialMultipleAnd, self).__init__(propvalues.keys(), propvalues.values())
+        super(PartialMultipleAnd, self).__init__(list(propvalues.keys()), list(propvalues.values()))
         self.regex = {}
         self.propvalues = propvalues
         if self.is_enable():
-            for key, value in propvalues.items():
+            for key, value in list(propvalues.items()):
                 self.regex[key] = None
                 if value is not None:
                     pattern = r"^.*" + value + ".*$"
@@ -147,7 +147,7 @@ class PartialMultipleAnd(Filter):
         if not self.is_enable():
             return True
         vals = self.get_val(row)
-        for key, val in vals.items():
+        for key, val in list(vals.items()):
             if self.regex[key]:
                 if not self.regex[key].match(val):
                     return False
@@ -169,7 +169,7 @@ class PartialDate(Filter):
             return True
         vals = self.get_val(row)
         if isinstance(vals, dict):
-            for val in vals.values():
+            for val in list(vals.values()):
                 if self.regex.match(val):
                     return True
         else:

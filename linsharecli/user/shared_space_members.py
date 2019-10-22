@@ -26,7 +26,7 @@
 #
 
 
-from __future__ import unicode_literals
+
 
 from argparse import RawTextHelpFormatter
 from linshareapi.cache import Time
@@ -81,7 +81,7 @@ class SharedSpaceCompleter(object):
         try:
             debug("\n------------ SharedSpaceCompleter -----------------")
             debug("Kwargs content :")
-            for i, j in kwargs.items():
+            for i, j in list(kwargs.items()):
                 debug("key : " + str(i))
                 debug("\t - " + str(j))
             debug("\n------------ SharedSpaceCompleter -----------------\n")

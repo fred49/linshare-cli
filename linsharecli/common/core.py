@@ -35,7 +35,7 @@
 #
 
 
-from __future__ import unicode_literals
+
 
 import sys
 import os
@@ -44,7 +44,7 @@ import json
 import getpass
 import datetime
 import locale
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import types
 import copy
 from argparse import ArgumentError
@@ -115,7 +115,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         self.debug = args.debug
 
         if self.verbose:
-            print "\nAPI VERSION:", self.api_version, "(See env variable LS_API.)\n"
+            print(("\nAPI VERSION:", self.api_version, "(See env variable LS_API.)\n"))
 
         if args.env_password:
             args.password = os.getenv('LS_PASSWORD')
@@ -125,8 +125,8 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             try:
                 args.password = getpass.getpass("Please enter your password :")
             except KeyboardInterrupt:
-                print """\nKeyboardInterrupt exception was caught.
-                Program terminated."""
+                print("""\nKeyboardInterrupt exception was caught.
+                Program terminated.""")
                 sys.exit(1)
 
         if not args.password:
@@ -205,11 +205,11 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 meta['name'] = file_name
                 meta['time'] = req_time
             if getattr(args, 'cli_mode', False):
-                print uuid
+                print(uuid)
             else:
                 self.pprint(self.MSG_RS_DOWNLOADED, meta)
             return True
-        except urllib2.HTTPError as ex:
+        except urllib.error.HTTPError as ex:
             meta['code'] = ex.code
             meta['ex'] = str(ex)
             if ex.code == 404:
@@ -240,7 +240,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 meta['time'] = req_time
             self.pprint(self.MSG_RS_DOWNLOADED, meta)
             return True
-        except urllib2.HTTPError as ex:
+        except urllib.error.HTTPError as ex:
             self.log.debug("http error : %s", ex.code)
             meta['code'] = ex.code
             meta['ex'] = str(ex)
@@ -301,7 +301,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 return self._download_with_parent(args, cli, uuid, position, count)
             else:
                 return False
-        except urllib2.HTTPError as ex:
+        except urllib.error.HTTPError as ex:
             self.log.debug("http error : %s", ex.code)
             meta['code'] = ex.code
             meta['ex'] = str(ex)
@@ -356,12 +356,12 @@ class DefaultCommand(argtoolbox.DefaultCommand):
                 self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
                 return False
             if cli_mode:
-                print json_obj.get(self.RESOURCE_IDENTIFIER)
+                print((json_obj.get(self.RESOURCE_IDENTIFIER)))
             else:
                 meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
                 self.pprint(self.MSG_RS_DELETED, meta)
             return True
-        except (urllib2.HTTPError, LinShareException) as ex:
+        except (urllib.error.HTTPError, LinShareException) as ex:
             self.log.error("Delete error : %s", ex)
             return False
 
@@ -390,7 +390,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
             self.pprint(self.MSG_RS_DELETED, meta)
             return True
-        except (urllib2.HTTPError, LinShareException) as ex:
+        except (urllib.error.HTTPError, LinShareException) as ex:
             self.log.error("Delete error : %s", ex)
             return False
 
@@ -417,7 +417,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
             self.pprint(self.MSG_RS_UPDATED, meta)
             return True
-        except (urllib2.HTTPError, LinShareException) as ex:
+        except (urllib.error.HTTPError, LinShareException) as ex:
             self.log.error("Update error : %s", ex)
             return False
 
@@ -437,24 +437,24 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         """TODO"""
         msg = msg % meta
         self.log.debug(msg)
-        print msg
+        print(msg)
 
     def pprint_warn(self, msg, meta={}):
         """TODO"""
         msg = "WARN: " + msg % meta
         self.log.warn(msg)
-        print msg
+        print(msg)
 
     def pprint_error(self, msg, meta={}):
         """TODO"""
         msg = "ERROR: " + msg % meta
         self.log.error(msg)
-        print msg
+        print(msg)
 
     #pylint: disable=R0201
     def pretty_json(self, obj):
         """Just a pretty printer for a json object."""
-        print json.dumps(obj, sort_keys=True, indent=2)
+        print((json.dumps(obj, sort_keys=True, indent=2)))
 
     def get_legend(self, data):
         """Extract the key of the first row of the input dict. Then it
@@ -477,7 +477,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
 
         for row in data:
             date = "{da:" + dformat + "}"
-            row[attr + u"_raw"] = row[attr]
+            row[attr + "_raw"] = row[attr]
             ldate = row.get(attr)
             if not  ldate:
                 row[attr] = ""
@@ -489,14 +489,14 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         """The current fied is replaced by a formatted date. The previous
         field is saved to a new field called 'field_raw'."""
         for row in data:
-            row[attr + u"_raw"] = row[attr]
+            row[attr + "_raw"] = row[attr]
             row[attr] = filesize(row[attr])
 
     def getmaxlength(self, data):
         """TODO"""
         maxlength = {}
         for row in data:
-            for key, val in row.items():
+            for key, val in list(row.items()):
                 if not  maxlength.get(key, False):
                     maxlength[key] = len(repr(val))
                 else:
@@ -510,23 +510,23 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         fields = self.get_legend(data)
         if fields:
             row = data[0]
-            for field in row.keys():
+            for field in list(row.keys()):
                 res[field] = type(row[field])
         return res
 
     def build_on_field(self, name, maxlength, datatype, factor=1.3,
-                       suffix=u"s}  "):
+                       suffix="s}  "):
         """TODO"""
         if datatype[name] == int:
-            return u"{" + name + u"!s:" + str(int(maxlength[name] *
+            return "{" + name + "!s:" + str(int(maxlength[name] *
                                                   factor)) + suffix
-        elif datatype[name] == long:
-            return u"{" + name + u"!s:" + str(int(maxlength[name] *
+        elif datatype[name] == int:
+            return "{" + name + "!s:" + str(int(maxlength[name] *
                                                   factor)) + suffix
         elif datatype[name] == bool:
-            return u"{" + name + u"!s:" + str(int(maxlength[name] *
+            return "{" + name + "!s:" + str(int(maxlength[name] *
                                                   factor)) + suffix
-        return u"{" + name + u":" + str(int(maxlength[name] *
+        return "{" + name + ":" + str(int(maxlength[name] *
                                             factor)) + suffix
 
     def print_fields(self, data):
@@ -534,34 +534,33 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         fields = self.get_legend(data)
         if fields:
             _title = "Available returned fields :"
-            print "\n" + _title
-            print self.get_underline(_title)
+            print(("\n" + _title))
+            print((self.get_underline(_title)))
             if data:
                 row = data[0]
-                keys = row.keys()
-                keys.sort()
+                keys = sorted(list(row.keys()))
                 maxlengh = int(max([len(x) for x in keys]) * 1.3)
-                d_format = u"{field:" + str(maxlengh) + u"s}{typ:^10s}"
+                d_format = "{field:" + str(maxlengh) + "s}{typ:^10s}"
                 for field in keys:
-                    print unicode(d_format).format(**{
+                    print((str(d_format).format(**{
                         'field': field,
                         'typ': type(row[field]),
-                    })
+                    })))
 
     def get_underline(self, title):
         """Return a string with the '-' character, used to underline a title.
         the first argument is the title to underline."""
         sub = ""
         # pylint: disable=unused-variable
-        for i in xrange(0, len(title)):
+        for i in range(0, len(title)):
             sub += "-"
         return sub
 
     def print_title(self, data, title):
         """Just print to stdout a list of data with its title."""
         _title = title.strip() + " : (" + str(len(data)) + ")"
-        print "\n" + _title
-        print self.get_underline(_title)
+        print(("\n" + _title))
+        print((self.get_underline(_title)))
 
     def print_list(self, data, d_format, title=None, t_format=None,
                    no_legend=False):
@@ -575,11 +574,11 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         if not  no_legend:
             legend = self.get_legend(data)
             if legend:
-                print t_format.format(**legend)
+                print((t_format.format(**legend)))
         for row in data:
-            print unicode(d_format).format(**row)
+            print((str(d_format).format(**row)))
         if title:
-            print ""
+            print("")
 
     def print_test(self, data):
         """Just for test"""
@@ -589,7 +588,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         for i in data:
             for j in i:
                 res[j] = max([len(str(i.get((j)))), res.get(j, 0)])
-        print res
+        print(res)
 
     def print_table_test_1(self, json_obj, sortby, reverse=False, keys=[],
                            output_format=None, no_title=False,

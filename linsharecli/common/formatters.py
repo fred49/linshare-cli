@@ -26,7 +26,7 @@
 #
 
 
-from __future__ import unicode_literals
+
 
 import logging
 import datetime
@@ -105,7 +105,7 @@ class NoneFormatter(Formatter):
     def __call__(self, row, context=None):
         # do not create/format a property that does not already exist.
         # Because Htable does not support it
-        if self.prop not in row.keys():
+        if self.prop not in list(row.keys()):
             return
         parameter = row.get(self.prop)
         if parameter is None:
@@ -224,11 +224,11 @@ class DebugFormatter(Formatter):
     """Just print row and cell types and content"""
 
     def __call__(self, row, context=None):
-        print ">---"
-        print "prop:", self.prop
-        print "row :", type(row)
+        print(">---")
+        print(("prop:", self.prop))
+        print(("row :", type(row)))
         ldate = row.get(self.prop)
-        print "type:", type(ldate)
-        print "raw :", ldate.value
-        print "val :", ldate
-        print "---<"
+        print(("type:", type(ldate)))
+        print(("raw :", ldate.value))
+        print(("val :", ldate))
+        print("---<")

@@ -24,7 +24,7 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
+
 
 import os
 import sys
@@ -62,7 +62,7 @@ import linsharecli
 # you just need to export _ARC_DEBUG=True
 
 
-sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
+#sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
 # Not use full ?
 #sys.stdin = codecs.getreader(locale.getpreferredencoding())(sys.stdin)
 

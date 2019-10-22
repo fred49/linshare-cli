@@ -25,10 +25,10 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
+
 
 import json
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 
 from linshareapi.admin import AdminCli
@@ -70,7 +70,7 @@ class NotYetImplementedCommand(argtoolbox.DefaultCommand):
     # pylint: disable=too-few-public-methods
 
     def __call__(self, args):
-        print "Not Yet Implemented."
+        print("Not Yet Implemented.")
 
 
 class TestCommand(argtoolbox.DefaultCommand):
@@ -85,9 +85,9 @@ class TestCommand(argtoolbox.DefaultCommand):
     def __call__(self, args):
         self.verbose = args.verbose
         self.debug = args.debug
-        print "Test"
-        print unicode(self.config)
-        print args
+        print("Test")
+        print((str(self.config)))
+        print(args)
         self.log.info("End of test command.")
 
 
@@ -100,8 +100,8 @@ class RawCommand(DefaultCommand):
         self.verbose = args.verbose
         self.debug = args.debug
         self.log.info("Begin of raw command.")
-        print unicode(self.config)
-        print args
+        print((str(self.config)))
+        print(args)
         if args.url:
             core = self.ls.raw.core
             for i in range(1, args.repeat + 1):
@@ -111,9 +111,9 @@ class RawCommand(DefaultCommand):
                     post_data = json.loads(args.data)
                     post_data = json.dumps(post_data)
                     post_data = post_data.encode("UTF-8")
-                    request = urllib2.Request(url, post_data)
+                    request = urllib.request.Request(url, post_data)
                 else:
-                    request = urllib2.Request(url)
+                    request = urllib.request.Request(url)
                 request.add_header('Content-Type', 'application/json; charset=UTF-8')
                 request.add_header('Accept', 'application/json')
                 request.get_method = lambda: 'GET'
@@ -146,14 +146,14 @@ class ListConfigCommand(DefaultCommand):
         self.verbose = args.verbose
         self.debug = args.debug
         seclist = self.config.file_parser.sections()
-        print
-        print "Available sections:"
-        print "==================="
-        print
+        print()
+        print("Available sections:")
+        print("===================")
+        print()
         for i in seclist:
             if i.startswith("server-"):
-                print " - " + "-".join(i.split('-')[1:])
-        print ""
+                print((" - " + "-".join(i.split('-')[1:])))
+        print("")
 
 
 def add_parser(subparsers, config):

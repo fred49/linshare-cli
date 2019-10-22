@@ -25,7 +25,7 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
+
 
 import argparse
 from linshareapi.cache import Time
@@ -131,7 +131,7 @@ class WorkgroupCompleter(object):
         try:
             debug("\n------------ ThreadCompleter -----------------")
             debug("Kwargs content :")
-            for i, j in kwargs.items():
+            for i, j in list(kwargs.items()):
                 debug("key : " + str(i))
                 debug("\t - " + str(j))
             debug("\n------------ ThreadCompleter -----------------\n")
@@ -242,13 +242,13 @@ class TreeCell(ComplexCell):
     """TODO"""
     def __str__(self):
         if self.raw:
-            return unicode(self.value).encode('utf-8')
+            return str(self.value).encode('utf-8')
         breadcrumb = []
         for path in self.value:
             breadcrumb.append(path.get('name'))
         if self.row:
             cell_name = self.row.get('name')
-            breadcrumb.append(unicode(cell_name))
+            breadcrumb.append(str(cell_name))
         breadcrumb = " > ".join(breadcrumb)
         return breadcrumb.encode('utf-8')
 
@@ -300,9 +300,9 @@ class Breadcrumb(Action):
                 for path in node.get('treePath'):
                     breadcrumb.append(path.get('name'))
                 breadcrumb.append(node.get('name'))
-                print
-                print "###>", " > ".join(breadcrumb)
-                print
+                print()
+                print(("###>", " > ".join(breadcrumb)))
+                print()
 
     def get_last_valid_node(self, args):
         """TODO"""

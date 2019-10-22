@@ -25,18 +25,18 @@
 #
 
 
-from __future__ import unicode_literals
+
 
 
 import os
 import json
 import types
 import logging
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
-from ordereddict import OrderedDict
+from collections import OrderedDict
 from veryprettytable import VeryPrettyTable
 from linsharecli.common.cell import CellFactory
 
@@ -126,7 +126,7 @@ class AbstractTable(object):
         row_full = OrderedDict()
         row_light = OrderedDict()
         keys = list(self.keys)
-        keys += json_row.keys()
+        keys += list(json_row.keys())
         keys = list(OrderedDict.fromkeys(keys))
         if self.debug >= 2:
             self.log.debug("all keys: %s ", keys)
@@ -161,7 +161,7 @@ class AbstractTable(object):
         if meta:
             msg = msg % meta
         self.log.debug(msg)
-        print msg
+        print(msg)
 
     def _display_nb_elts(self):
         """TODO"""
@@ -282,7 +282,7 @@ class BaseTable(AbstractTable):
             record = []
             for k in self.keys:
                 data = row.get(k)
-                if isinstance(data, types.UnicodeType):
+                if isinstance(data, str):
                     record.append(data)
                 else:
                     data_str = str(data).decode('utf-8')
@@ -300,14 +300,14 @@ class VTable(BaseTable):
     def render(self):
         """TODO"""
         if self.json:
-            print self.get_json()
+            print((self.get_json()))
             return True
         if self.csv:
-            print self.get_csv()
+            print((self.get_csv()))
             return True
         out = self.get_string()
         self._pre_render()
-        print unicode(out)
+        print((str(out)))
         self._display_nb_elts()
         return True
 
@@ -321,10 +321,10 @@ class VTable(BaseTable):
             record = []
             for k in self.keys:
                 try:
-                    t_format = u"{key:" + str(self._maxlengthkey) + u"s} | {value:s}"
+                    t_format = "{key:" + str(self._maxlengthkey) + "s} | {value:s}"
                     dataa = None
                     column_data = row.get(k)
-                    if isinstance(column_data, types.UnicodeType):
+                    if isinstance(column_data, str):
                         dataa = {"key": k, "value": column_data}
                     else:
                         column_data_str = str(column_data).decode('utf-8')
@@ -336,7 +336,7 @@ class VTable(BaseTable):
                     self.log.error("UnicodeEncodeError: %s", ex)
                     dataa = {"key": k, "value": "UnicodeEncodeError"}
                     # msg = ex.msg.decode('unicode-escape').strip('"')
-                    t_record = unicode(t_format).format(**dataa)
+                    t_record = str(t_format).format(**dataa)
                     record.append(t_record)
             records.append("\n".join(record))
         out = []
@@ -345,7 +345,7 @@ class VTable(BaseTable):
             cptline += 1
             header = "-[ RECORD " + str(cptline) + " ]-"
             # pylint: disable=unused-variable
-            header += "".join(["-" for i in xrange(max_length_line - len(header))])
+            header += "".join(["-" for i in range(max_length_line - len(header))])
             out.append(header)
             out.append(record)
         return "\n".join(out)
@@ -370,19 +370,19 @@ class ConsoleTable(BaseTable):
     def render(self):
         """TODO"""
         if self.json:
-            print self.get_json()
+            print((self.get_json()))
             return True
         if self.csv:
-            print self.get_csv()
+            print((self.get_csv()))
             return True
         self._pre_render()
         for row in self.get_raw():
             record = []
             for k in self.keys:
                 try:
-                    t_format = u"{value:s}"
+                    t_format = "{value:s}"
                     column_data = row.get(k)
-                    if isinstance(column_data, types.UnicodeType):
+                    if isinstance(column_data, str):
                         t_record = t_format.format(value=column_data)
                     else:
                         t_record = t_format.format(value=column_data)
@@ -390,7 +390,7 @@ class ConsoleTable(BaseTable):
                 except UnicodeEncodeError as ex:
                     self.log.error("UnicodeEncodeError: %s", ex)
                     record.append("UnicodeEncodeError")
-            print unicode(" ".join(record))
+            print((str(" ".join(record))))
         self._display_nb_elts()
         return True
 
@@ -429,7 +429,7 @@ class HTable(VeryPrettyTable, AbstractTable):
             if self.filters(data, filters):
                 if not self.raw:
                     self.formatters(data, formatters)
-                self.add_row(data.values())
+                self.add_row(list(data.values()))
         if self._pref_start > 0:
             self.start = self._pref_start
             limit = self._pref_limit
@@ -446,7 +446,7 @@ class HTable(VeryPrettyTable, AbstractTable):
         """TODO"""
         self._pre_render()
         out = self.get_string(fields=self.keys)
-        print unicode(out)
+        print((str(out)))
         self._display_nb_elts()
         return True
 
@@ -490,7 +490,7 @@ class Action(object):
         if meta:
             msg = msg % meta
         self.log.debug(msg)
-        print msg
+        print(msg)
 
     def pprint_warn(self, msg, meta=None):
         """TODO"""
@@ -498,7 +498,7 @@ class Action(object):
             meta = {}
         msg = "WARN: " + msg % meta
         self.log.warn(msg)
-        print msg
+        print(msg)
 
     def pprint_error(self, msg, meta=None):
         """TODO"""
@@ -506,12 +506,12 @@ class Action(object):
             meta = {}
         msg = "ERROR: " + msg % meta
         self.log.error(msg)
-        print msg
+        print(msg)
 
     def pretty_json(self, obj):
         """Just a pretty printer for a json object."""
         # pylint: disable=no-self-use
-        print json.dumps(obj, sort_keys=True, indent=2)
+        print((json.dumps(obj, sort_keys=True, indent=2)))
 
     def __call__(self, args, cli, endpoint, data):
         raise NotImplementedError()
@@ -527,7 +527,7 @@ class CountAction(Action):
         """TODO"""
         self.init(args, cli, endpoint)
         if self.cli_mode:
-            print len(data)
+            print((len(data)))
         else:
             meta = {'count': len(data)}
             self.pprint(self.DEFAULT_TOTAL, meta)
@@ -546,7 +546,7 @@ class CliModeAction(Action):
         """TODO"""
         self.init(args, cli, endpoint)
         for row in data:
-            print unicode(row.get(self.identifier))
+            print((str(row.get(self.identifier))))
         return True
 
 
@@ -561,13 +561,13 @@ class SampleAction(Action):
     def __call__(self, args, cli, endpoint, data):
         """TODO"""
         self.init(args, cli, endpoint)
-        print "ACTION:", self.name
-        print cli
-        print endpoint
-        print ">--- Filtered data ----"
+        print(("ACTION:", self.name))
+        print(cli)
+        print(endpoint)
+        print(">--- Filtered data ----")
         for row in data:
-            print row
-        print "---- Filtered data ---<"
+            print(row)
+        print("---- Filtered data ---<")
         return True
 
 
@@ -649,12 +649,12 @@ class DeleteAction(Action):
                 self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
                 return False
             if self.cli_mode:
-                print json_obj.get(self.resource_identifier)
+                print((json_obj.get(self.resource_identifier)))
             else:
                 meta[self.identifier] = json_obj.get(self.identifier)
                 self.pprint(self.MSG_RS_DELETED, meta)
             return True
-        except (urllib2.HTTPError, LinShareException) as ex:
+        except (urllib.error.HTTPError, LinShareException) as ex:
             self.log.error("Delete error : %s", ex)
             return False
 
@@ -680,7 +680,7 @@ class DeleteAction(Action):
             meta[self.identifier] = json_obj.get(self.identifier)
             self.pprint(self.MSG_RS_DELETED, meta)
             return True
-        except (urllib2.HTTPError, LinShareException) as ex:
+        except (urllib.error.HTTPError, LinShareException) as ex:
             self.log.error("Delete error : %s", ex)
             return False
 
@@ -713,7 +713,7 @@ class DownloadAction(Action):
         super(DownloadAction, self).init(args, cli, endpoint)
         if self.cfg_mode == 1 or self.cfg_mode == 2:
             self.parent_uuid = getattr(args, self.parent_identifier_attr, None)
-            print self.parent_uuid
+            print((self.parent_uuid))
             if not self.parent_uuid:
                 raise ValueError("missing required arg : " + self.parent_identifier_attr)
         self.directory = getattr(args, "directory", None)
@@ -770,11 +770,11 @@ class DownloadAction(Action):
                 meta['name'] = file_name
                 meta['time'] = req_time
             if self.cli_mode:
-                print uuid
+                print(uuid)
             else:
                 self.pprint(self.MSG_RS_DOWNLOADED, meta)
             return True
-        except urllib2.HTTPError as ex:
+        except urllib.error.HTTPError as ex:
             meta['code'] = ex.code
             meta['ex'] = str(ex)
             if ex.code == 404:
@@ -804,7 +804,7 @@ class DownloadAction(Action):
                 meta['time'] = req_time
             self.pprint(self.MSG_RS_DOWNLOADED, meta)
             return True
-        except urllib2.HTTPError as ex:
+        except urllib.error.HTTPError as ex:
             self.log.debug("http error : %s", ex.code)
             meta['code'] = ex.code
             meta['ex'] = str(ex)
@@ -861,7 +861,7 @@ class DownloadAction(Action):
                 return self._download_with_parent(uuid, position, count, directory=directory)
             else:
                 return False
-        except urllib2.HTTPError as ex:
+        except urllib.error.HTTPError as ex:
             self.log.debug("http error : %s", ex.code)
             meta['code'] = ex.code
             meta['ex'] = str(ex)
@@ -995,7 +995,7 @@ class TableBuilder(object):
         table = None
         action_classes = OrderedDict(self._action_classes)
         action_classes['cli_mode'] = CliModeAction(self.cli_mode_identifier)
-        for flag, action in action_classes.items():
+        for flag, action in list(action_classes.items()):
             if getattr(self.args, flag, False):
                 table = self._action_table(self.columns)
                 # a little bit ugly. :(
@@ -1032,7 +1032,7 @@ class TableBuilder(object):
         table._pref_limit = self.limit
         table._pref_no_csv_headers = self.no_headers
         if self._custom_cells:
-            for column, clazz in self._custom_cells.items():
+            for column, clazz in list(self._custom_cells.items()):
                 table.cfa.custom_cells[column] = clazz
         table.cfa.raw = self.raw
         table.cfa.vertical = self.vertical

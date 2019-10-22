@@ -25,9 +25,9 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
 
-import urllib2
+
+import urllib.request, urllib.error, urllib.parse
 
 from linshareapi.cache import Time
 from linsharecli.common.filters import PartialOr
@@ -132,7 +132,7 @@ class InconsistentUsersListCommand(InconsistentUsersCommand):
             meta[self.IDENTIFIER] = json_obj.get(self.IDENTIFIER)
             self.pprint(self.MSG_RS_UPDATED, meta)
             return 0
-        except urllib2.HTTPError as ex:
+        except urllib.error.HTTPError as ex:
             self.log.error("Delete error : %s", ex)
             return 1
 

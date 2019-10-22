@@ -25,7 +25,7 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
+
 
 from argparse import RawTextHelpFormatter
 from argtoolbox import DefaultCompleter as Completer
@@ -49,7 +49,7 @@ class ContactListsCompleter(object):
         try:
             debug("\n------------ ContactListsCompleter -----------------")
             debug("Kwargs content :")
-            for i, j in kwargs.items():
+            for i, j in list(kwargs.items()):
                 debug("key : " + str(i))
                 debug("\t - " + str(j))
             debug("\n------------ ContactListsCompleter -----------------\n")

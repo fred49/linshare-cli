@@ -25,9 +25,9 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
 
-import urllib2
+
+import urllib.request, urllib.error, urllib.parse
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
 from argtoolbox import DefaultCompleter as Completer
@@ -53,7 +53,7 @@ class ThreadCompleter(object):
         try:
             debug("\n------------ ThreadCompleter -----------------")
             debug("Kwargs content :")
-            for i, j in kwargs.items():
+            for i, j in list(kwargs.items()):
                 debug("key : " + str(i))
                 debug("\t - " + str(j))
             debug("\n------------ ThreadCompleter -----------------\n")
@@ -104,7 +104,7 @@ class ThreadMembersCommand(DefaultCommand):
             meta['name'] = json_obj.get('name')
             self.pprint(self.MSG_RS_DELETED, meta)
             return True
-        except urllib2.HTTPError as ex:
+        except urllib.error.HTTPError as ex:
             self.log.error("Delete error : %s", ex)
             return False
 

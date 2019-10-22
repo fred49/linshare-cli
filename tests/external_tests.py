@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
 
-from __future__ import unicode_literals
+
 
 from linsharecli.tests.misc import AdminGenericTestList
 import unittest
 import logging
 import json
-from StringIO import StringIO
+from io import StringIO
 from argtoolbox import DefaultCommand
 from argtoolbox import BasicProgram
 from argtoolbox import Element
@@ -33,7 +33,7 @@ class LaunchTestsCommand(DefaultCommand):
     def load_tests(self, loader, commands, version):
         """Create all tests"""
         suites = unittest.TestSuite()
-        for key, val in commands.items():
+        for key, val in list(commands.items()):
             if val.get('skip'):
                 continue
             suites.addTest(self.load_tests_by_version(
@@ -135,7 +135,7 @@ class LaunchAllTestsCommand(LaunchTestsCommand):
         super(LaunchAllTestsCommand, self).__call__(args)
         AdminGenericTestList.host = args.server
         suite = self.get_all_tests()
-        print "Detected testcases : " + str(suite.countTestCases())
+        print("Detected testcases : " + str(suite.countTestCases()))
         if query_yes_no("Do you want to continue ?"):
             unittest.TextTestRunner(verbosity=2).run(suite)
 
@@ -151,14 +151,14 @@ class ListCommandTestsCommand(LaunchTestsCommand):
             version0 = version0[args.command]
             version1 = version1[args.command]
         elif not args.all_details:
-            version0 = version0.keys()
-            version1 = version1.keys()
-        print "Version : 0"
-        print json.dumps(version0, sort_keys=True, indent=2)
-        print
-        print "Version : 1"
-        print json.dumps(version1, sort_keys=True, indent=2)
-        print
+            version0 = list(version0.keys())
+            version1 = list(version1.keys())
+        print("Version : 0")
+        print(json.dumps(version0, sort_keys=True, indent=2))
+        print()
+        print("Version : 1")
+        print(json.dumps(version1, sort_keys=True, indent=2))
+        print()
 
 
 class LaunchOneCommandTestsCommand(LaunchTestsCommand):
@@ -170,14 +170,14 @@ class LaunchOneCommandTestsCommand(LaunchTestsCommand):
         loader = unittest.TestLoader()
         AdminGenericTestList.host = args.server
         options = {}
-        print args.options
+        print(args.options)
         if args.options:
             options = json.load(StringIO(args.options))
         for testcase in loader.loadTestsFromTestCase(AdminGenericTestList):
             testcase.api_version = int(args.api_version)
             testcase.set_command_to_test(args.command, options)
             suite.addTest(testcase)
-        print "Detected testcases : " + str(suite.countTestCases())
+        print("Detected testcases : " + str(suite.countTestCases()))
         if query_yes_no("Do you want to continue ?"):
             unittest.TextTestRunner(verbosity=2).run(suite)
 
@@ -188,10 +188,10 @@ class ListMethodTestsCommand(LaunchTestsCommand):
     def __call__(self, args):
         super(ListMethodTestsCommand, self).__call__(args)
         loader = unittest.TestLoader()
-        print
+        print()
         for testcase in loader.loadTestsFromTestCase(AdminGenericTestList):
-            print " - ", testcase
-        print
+            print(" - ", testcase)
+        print()
 
 
 class LaunchOneMethodTestsCommand(LaunchTestsCommand):
@@ -203,16 +203,16 @@ class LaunchOneMethodTestsCommand(LaunchTestsCommand):
         loader = unittest.TestLoader()
         AdminGenericTestList.host = args.server
         options = {}
-        print args.options
+        print(args.options)
         if args.options:
             options = json.load(StringIO(args.options))
         for testcase in loader.loadTestsFromTestCase(AdminGenericTestList):
             if testcase._testMethodName in args.method:
-                print "Found : ", testcase
+                print("Found : ", testcase)
                 testcase.api_version = int(args.api_version)
                 testcase.set_command_to_test(args.command, options)
                 suite.addTest(testcase)
-        print "Detected testcases : " + str(suite.countTestCases())
+        print("Detected testcases : " + str(suite.countTestCases()))
         if query_yes_no("Do you want to continue ?"):
             unittest.TextTestRunner(verbosity=2).run(suite)
 

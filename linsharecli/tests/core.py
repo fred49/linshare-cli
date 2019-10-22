@@ -127,7 +127,7 @@ class LinShareTestCase(unittest.TestCase):
         # pylint: disable=broad-except
         except Exception as ex:
             sys.stdout = sys.stdout2
-            print ex
+            print(ex)
             return False
 
 
@@ -136,7 +136,7 @@ class LinShareTestCase(unittest.TestCase):
         """TODO"""
         dest = os.path.join(
             tempfile.gettempdir(),
-            unicode(uuid.uuid4()).replace("-", "") + ".tmp")
+            str(uuid.uuid4()).replace("-", "") + ".tmp")
         return dest
 
     def run_default_sub1(self, command):
@@ -187,7 +187,7 @@ class LinShareTestCase(unittest.TestCase):
                 os.remove(file_path)
             return output
         except Exception as ex:
-            print ex
+            print(ex)
             sys.stdout = sys.stdout2
             stdout.close()
             raise ex
@@ -195,4 +195,4 @@ class LinShareTestCase(unittest.TestCase):
     def debug_arg(self, args):
         """TODO"""
         for i in args.__dict__:
-            print i + " : " + str(getattr(args, i))
+            print((i + " : " + str(getattr(args, i))))

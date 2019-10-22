@@ -27,7 +27,7 @@
 #
 
 
-from __future__ import unicode_literals
+
 
 import json
 import time
@@ -69,7 +69,7 @@ class AbstractAction(object):
         """TODO"""
         msg = msg % meta
         self.log.debug(msg)
-        print msg
+        print(msg)
 
     def pretty_json(self, obj, title=None):
         """Just a pretty printer for a json object."""
@@ -93,7 +93,7 @@ class AbstractAction(object):
             if self.debug:
                 self.pretty_json(json_obj, "Json object returned by the server")
             if self.cli_mode:
-                print json_obj.get(self.command.RESOURCE_IDENTIFIER)
+                print((json_obj.get(self.command.RESOURCE_IDENTIFIER)))
                 return True
             msg = getattr(self.command, self.MESSAGE_CONFIRM_KEY)
             self.pprint(msg, json_obj)

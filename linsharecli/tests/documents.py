@@ -7,7 +7,7 @@ TODO
 
 
 import logging
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from copy import deepcopy
 from mock import patch
@@ -71,7 +71,7 @@ class TestDocumentsList(LinShareTestCase):
         output = self.run_default0(command)
         self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
         self.assertEqual(len(output[0]), self.DATA_DOCUMENTS_WIDTH)
-        self.assertRegexpMatches(output[-4], r"^\| file5.*")
+        self.assertRegex(output[-4], r"^\| file5.*")
 
     def test_documents_list3(self, *args):
         """retrieve documents list reversed sorted by name"""
@@ -79,7 +79,7 @@ class TestDocumentsList(LinShareTestCase):
         output = self.run_default0(command)
         self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
         self.assertEqual(len(output[0]), self.DATA_DOCUMENTS_WIDTH)
-        self.assertRegexpMatches(output[-4], r"^\| file0.*")
+        self.assertRegex(output[-4], r"^\| file0.*")
 
     def test_documents_list4(self, *args):
         """retrieve documents list with csv output"""
@@ -90,8 +90,8 @@ class TestDocumentsList(LinShareTestCase):
         self.assertEqual(len(output[0]), 45)
         self.assertEqual(len(output[1]), 86)
         # first file
-        self.assertRegexpMatches(output[1], "file5.*")
-        self.assertRegexpMatches(output[-5], "file1.*")
+        self.assertRegex(output[1], "file5.*")
+        self.assertRegex(output[-5], "file1.*")
 
     def test_documents_list4b(self, *args):
         """retrieve documents list with csv output and no headers"""
@@ -100,7 +100,7 @@ class TestDocumentsList(LinShareTestCase):
         # documents + header + footer = 6 + 0 + 2
         self.assertEqual(len(output), 8)
         self.assertEqual(len(output[0]), 86)
-        self.assertRegexpMatches(output[-3], "file3.*")
+        self.assertRegex(output[-3], "file3.*")
 
     def test_documents_list4c(self, *args):
         """retrieve documents list with csv output and no headers"""
@@ -109,8 +109,8 @@ class TestDocumentsList(LinShareTestCase):
         # documents + header + footer = 6 + 3 + 3
         self.assertEqual(len(output), 12)
         self.assertEqual(len(output[0]), 94)
-        self.assertRegexpMatches(output[-4], "file3.*")
-        self.assertRegexpMatches(output[-5], "2097152.*1423939308912.*")
+        self.assertRegex(output[-4], "file3.*")
+        self.assertRegex(output[-5], "2097152.*1423939308912.*")
 
     def test_documents_list5(self, *args):
         """retrieve documents with vertical list"""
@@ -126,8 +126,8 @@ class TestDocumentsList(LinShareTestCase):
         # time shift ?
         # self.assertRegexpMatches(output[-3], ".*2015-02-14 19:41:49$")
         # self.assertRegexpMatches(output[-3], ".*2015-02-14.18:41:49*")
-        self.assertRegexpMatches(output[-3], ".*2015-02-14.*")
-        self.assertRegexpMatches(output[-8], ".*RECORD 6.*")
+        self.assertRegex(output[-3], ".*2015-02-14.*")
+        self.assertRegex(output[-8], ".*RECORD 6.*")
 
     def test_documents_list6(self, *args):
         """retrieve documents list with extened mode"""
@@ -152,7 +152,7 @@ class TestDocumentsList(LinShareTestCase):
         self.assertEqual(len(output), 7)
 
     @patch('linshareapi.user.documents.Documents.download',
-           side_effect=urllib2.HTTPError(404, 'Boom!', None, None, None))
+           side_effect=urllib.error.HTTPError(404, 'Boom!', None, None, None))
     def test_documents_list9(self, *args):
         """retrieve documents list and try to download them (all failed)"""
         command = "documents list --download "
@@ -182,7 +182,7 @@ class TestDocumentsList(LinShareTestCase):
         self.assertEqual(len(output), 7)
 
     @patch('linshareapi.user.documents.Documents.delete',
-           side_effect=urllib2.HTTPError(404, 'Boom!', None, None, None))
+           side_effect=urllib.error.HTTPError(404, 'Boom!', None, None, None))
     def test_documents_list11(self, *args):
         """retrieve documents list and try to download them (all failed)"""
         command = "documents list --delete "
@@ -201,40 +201,40 @@ class TestDocumentsList(LinShareTestCase):
         command = "documents list --start 2"
         output = self.run_default0(command)
         self.assertEqual(len(output), 10)
-        self.assertRegexpMatches(output[first_line], r"^\| file4.*")
-        self.assertRegexpMatches(output[last_line], r"^\| file3.*")
+        self.assertRegex(output[first_line], r"^\| file4.*")
+        self.assertRegex(output[last_line], r"^\| file3.*")
         # start and sort by name
         command = "documents list --start 2 --sort-name"
         output = self.run_default0(command)
         self.assertEqual(len(output), 10)
-        self.assertRegexpMatches(output[first_line], r"^\| file2.*")
-        self.assertRegexpMatches(output[last_line], r"^\| file5.*")
+        self.assertRegex(output[first_line], r"^\| file2.*")
+        self.assertRegex(output[last_line], r"^\| file5.*")
 
         # end
         command = "documents list --end 2"
         output = self.run_default0(command)
         self.assertEqual(len(output), 8)
-        self.assertRegexpMatches(output[first_line], r"^\| file2.*")
-        self.assertRegexpMatches(output[last_line], r"^\| file3.*")
+        self.assertRegex(output[first_line], r"^\| file2.*")
+        self.assertRegex(output[last_line], r"^\| file3.*")
         # end and sort by name
         command = "documents list --end 2 --sort-name"
         output = self.run_default0(command)
         self.assertEqual(len(output), 8)
-        self.assertRegexpMatches(output[first_line], r"^\| file4.*")
-        self.assertRegexpMatches(output[last_line], r"^\| file5.*")
+        self.assertRegex(output[first_line], r"^\| file4.*")
+        self.assertRegex(output[last_line], r"^\| file5.*")
 
         # limit and start
         command = "documents list --start 2 --limit 2"
         output = self.run_default0(command)
         self.assertEqual(len(output), 8)
-        self.assertRegexpMatches(output[first_line], r"^\| file4.*")
-        self.assertRegexpMatches(output[last_line], r"^\| file1.*")
+        self.assertRegex(output[first_line], r"^\| file4.*")
+        self.assertRegex(output[last_line], r"^\| file1.*")
         # limit and  end
         command = "documents list --end 3 --limit 2"
         output = self.run_default0(command)
         self.assertEqual(len(output), 8)
-        self.assertRegexpMatches(output[first_line], r"^\| file1.*")
-        self.assertRegexpMatches(output[last_line], r"^\| file2.*")
+        self.assertRegex(output[first_line], r"^\| file1.*")
+        self.assertRegex(output[last_line], r"^\| file2.*")
 
     @patch('linshareapi.user.shares.Shares.share',
            return_value=(204, "coucou", 2))
@@ -254,8 +254,8 @@ class TestDocumentsList(LinShareTestCase):
         if self.api_version == 0:
             return True
         output = self.run_default0(command)
-        self.assertRegexpMatches("".join(output), ".*Bart Simpson.*")
-        self.assertRegexpMatches("".join(output),
+        self.assertRegex("".join(output), ".*Bart Simpson.*")
+        self.assertRegex("".join(output),
                                  ".*The following documents :.*")
         if self.debug >= 2:
             self.assertEqual(len(output), 45)
@@ -301,10 +301,10 @@ class TestDocumentsDelete(LinShareTestCase):
         command = "documents delete bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810"
         output = self.run_default0(command)
         self.assertEqual(len(output), 2)
-        self.assertRegexpMatches(
+        self.assertRegex(
             "".join(output),
             ".*'test-key-bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810'.*")
-        self.assertRegexpMatches(
+        self.assertRegex(
             "".join(output),
             ".*was deleted.*")
 
@@ -315,10 +315,10 @@ class TestDocumentsDelete(LinShareTestCase):
         command = "documents delete bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810"
         output = self.run_default0(command)
         self.assertEqual(len(output), 3)
-        self.assertRegexpMatches(
+        self.assertRegex(
             "".join(output),
             ".*'bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810'.*")
-        self.assertRegexpMatches(
+        self.assertRegex(
             "".join(output),
             ".*can not be deleted.*")
 
@@ -334,12 +334,12 @@ class TestDocumentsDelete(LinShareTestCase):
         command = " ".join(['documents', 'delete'] + uuids)
         output = self.run_default0(command)
         self.assertEqual(len(output), 3)
-        self.assertRegexpMatches(
+        self.assertRegex(
             "".join(output),
             ".*'test-key-bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810'.*")
-        self.assertRegexpMatches(
+        self.assertRegex(
             "".join(output),
             ".*'test-key-aa1c3d54-5f84-4b6d-8c84-62f5b230135e'.*")
-        self.assertRegexpMatches(
+        self.assertRegex(
             "".join(output),
             ".*was deleted.*")

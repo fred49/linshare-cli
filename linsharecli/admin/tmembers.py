@@ -25,7 +25,7 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
+
 
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options

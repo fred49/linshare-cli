@@ -25,7 +25,7 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
+
 
 import os
 import time
@@ -90,7 +90,7 @@ class JwtCreateAction(CreateAction):
                     fde.write(json_obj['token'])
                     fde.write("\n")
             if self.cli_mode:
-                print json_obj.get(self.command.RESOURCE_IDENTIFIER)
+                print((json_obj.get(self.command.RESOURCE_IDENTIFIER)))
                 return True
             msg = getattr(self.command, self.MESSAGE_CONFIRM_KEY)
             self.pprint(msg, json_obj)

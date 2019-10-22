@@ -25,7 +25,7 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
+
 
 from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
@@ -78,7 +78,7 @@ class AccessPolicyCell(ComplexCell):
 
     def __unicode__(self):
         if self.raw:
-            return unicode(self.value)
+            return str(self.value)
         if self.value is None:
             return self.none
         output = []

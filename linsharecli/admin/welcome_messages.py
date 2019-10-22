@@ -25,7 +25,7 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
+
 
 from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
@@ -83,13 +83,13 @@ class WelcomeEntriesCell(ComplexCell):
 
     def __unicode__(self):
         if self.raw:
-            return unicode(self.value)
+            return str(self.value)
         if self.value is None:
             return self.none
-        keys = (v[0:2] for v in self.value.keys())
+        keys = (v[0:2] for v in list(self.value.keys()))
         res = " ".join(keys)
         res += ". See --detail."
-        return unicode(res)
+        return str(res)
 
 
 class WelcomeMessagesListCommand(WelcomeMessagesCommand):

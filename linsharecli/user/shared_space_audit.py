@@ -26,7 +26,7 @@
 #
 
 
-from __future__ import unicode_literals
+
 
 import copy
 import json
@@ -83,7 +83,7 @@ class SharedSpaceCompleter(object):
         try:
             debug("\n------------ SharedSpaceCompleter -----------------")
             debug("Kwargs content :")
-            for i, j in kwargs.items():
+            for i, j in list(kwargs.items()):
                 debug("key : " + str(i))
                 debug("\t - " + str(j))
             debug("\n------------ SharedSpaceCompleter -----------------\n")
@@ -106,7 +106,7 @@ class ResourceCell(ComplexCell):
 
     def __unicode__(self):
         if self.raw:
-            return unicode(self.value)
+            return str(self.value)
         if self.value is None:
             return self.none
 

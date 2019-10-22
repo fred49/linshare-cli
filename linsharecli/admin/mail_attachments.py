@@ -25,7 +25,7 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
+
 
 from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer

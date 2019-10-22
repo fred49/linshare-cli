@@ -25,11 +25,11 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
+
 
 import getpass
 import time
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import os
 
 from argparse import ArgumentError
@@ -89,8 +89,8 @@ class ChangePasswordCommand(AuthenticationCommand):
                     self.log.error("The provided passwords do not match!")
                     return False
             except KeyboardInterrupt:
-                print "\nKeyboardInterrupt exception was caught."
-                print "Program terminated."
+                print("\nKeyboardInterrupt exception was caught.")
+                print("Program terminated.")
                 return False
         if args.new_password_from_env:
             args.new_password = os.getenv(args.new_password_from_env.upper())
@@ -101,10 +101,10 @@ class ChangePasswordCommand(AuthenticationCommand):
         if not self.ls.auth(quiet=True):
             self.log.warn("Current password is not valid.")
             self.log.info("Trying to authenticate with the new provided password")
-            auth_handler = urllib2.HTTPBasicAuthHandler()
+            auth_handler = urllib.request.HTTPBasicAuthHandler()
             try:
                 auth_handler.add_password(
-                    realm=u"Name Of Your LinShare Realm",
+                    realm="Name Of Your LinShare Realm",
                     uri=self.ls.host.encode('utf8'),
                     user=self.ls.user.encode('utf8'),
                     passwd=args.new_password.encode('utf8'))
@@ -113,7 +113,7 @@ class ChangePasswordCommand(AuthenticationCommand):
                     "the program was not able to compute "
                     + "the basic authentication token.")
                 return False
-            urllib2.install_opener(urllib2.build_opener(auth_handler))
+            urllib.request.install_opener(urllib.request.build_opener(auth_handler))
             if self.ls.auth(quiet=True):
                 self.log.info("New password is already defined.")
                 return True
