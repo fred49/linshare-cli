@@ -47,7 +47,7 @@ class DefaultCommand(common.DefaultCommand):
     def __get_cli_object(self, args):
         api_version = self.config.server.api_version.value
         cli = UserCli(args.host, args.user, args.password, args.verbose,
-                      args.debug, api_version=api_version)
+                      args.debug, api_version=api_version, verify=getattr(args, 'verify', True))
         if args.base_url:
             cli.base_url = args.base_url
         return cli

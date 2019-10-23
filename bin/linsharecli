@@ -25,13 +25,10 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-from __future__ import unicode_literals
 
 import os
 import sys
 import argparse
-import codecs
-import locale
 
 from argtoolbox import BasicProgram
 from argtoolbox import SimpleSection
@@ -60,12 +57,6 @@ import linsharecli
 # you just need to export _ARC_DEBUG=True
 
 
-sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
-
-
-# Not use full ?
-# sys.stdin = codecs.getreader(locale.getpreferredencoding())(sys.stdin)
-
 class LinShareCliProgram(BasicProgram):
     """Main program."""
 
@@ -79,6 +70,7 @@ class LinShareCliProgram(BasicProgram):
             required=True))
         section_server.add_element(Element(
             'api_version',
+            required=True,
             default=float(os.getenv('LS_API', 2.2)),
             e_type=float,
             desc="""The linshare api version to be used. Default '2'.
@@ -102,6 +94,12 @@ overriden by this parameter."""))
             desc="""This parameter is dynamically computed according api_version value.
 For api_version=2, its default value will be 'linshare/webservice/rest/user/v2'.
 You can also override it according your environment."""))
+
+        section_server.add_element(Element(
+            'verify',
+            e_type=bool,
+            default=True,
+            desc="Disable SSL certificate verification"))
 
         section_server.add_element(Element(
             'nocache',
@@ -201,6 +199,11 @@ section 'server-4'""")
             '--nocache',
             action="store_true",
             **self.config.server.nocache.get_arg_parse_arguments())
+
+        self.parser.add_argument(
+            '--no-verify',
+            action="store_false",
+            **self.config.server.verify.get_arg_parse_arguments())
 
         self.parser.add_argument(
             '--base-url',

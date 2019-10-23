@@ -29,8 +29,6 @@
 import os
 import sys
 import argparse
-import codecs
-import locale
 
 from argtoolbox import BasicProgram
 from argtoolbox import SimpleSection
@@ -60,11 +58,6 @@ import linsharecli
 
 # if you want to debug argcomplete completion,
 # you just need to export _ARC_DEBUG=True
-
-
-#sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
-# Not use full ?
-#sys.stdin = codecs.getreader(locale.getpreferredencoding())(sys.stdin)
 
 
 class LinShareCliProgram(BasicProgram):
@@ -102,6 +95,12 @@ overriden by this parameter."""))
         section_server.add_element(Element(
             'base_url',
             desc="Default value is 'linshare/webservice/rest/admin'"))
+
+        section_server.add_element(Element(
+            'verify',
+            e_type=bool,
+            default=True,
+            desc="Disable SSL certificate verification"))
 
         section_server.add_element(Element(
             'nocache',
@@ -201,6 +200,11 @@ section 'server-4'""")
             '--nocache',
             action="store_true",
             **self.config.server.nocache.get_arg_parse_arguments())
+
+        self.parser.add_argument(
+            '--no-verify',
+            action="store_false",
+            **self.config.server.verify.get_arg_parse_arguments())
 
         self.parser.add_argument(
             '--base-url',
