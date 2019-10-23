@@ -160,6 +160,18 @@ class BaseCell(object):
     def __eq__(self, item):
         return self.value == item
 
+    def __lt__(self, value):
+        return self.value < value
+
+    def __le__(self, value):
+        return self.value <= value
+
+    def __gt__(self, value):
+        return self.value > value
+
+    def __ge__(self, value):
+        return self.value >= value
+
 
 class SCell(BaseCell):
     """This class is used to emulate str type for veryprettytable.
@@ -186,12 +198,6 @@ class SCell(BaseCell):
             return self._format.format(value=self.value)
         return str(self.value)
 
-    def __cmp__(self, value):
-        if self.value == value:
-            return 0
-        if self.value > value:
-            return 1
-        return -1
 
     def __add__(self, item):
         return self.value + item
@@ -219,13 +225,6 @@ class DateCell(BaseCell):
                 da=datetime.datetime.fromtimestamp(self.value / 1000))
         return self.none
 
-    def __cmp__(self, value):
-        if self.value == value:
-            return 0
-        if self.value > value:
-            return 1
-        return -1
-
     def __div__(self, value):
         return self.value / value
 
@@ -251,12 +250,6 @@ class SizeCell(BaseCell):
     def __init__(self, value):
         self.value = value
 
-    def __cmp__(self, value):
-        if self.value == value:
-            return 0
-        if self.value > value:
-            return 1
-        return -1
 
     def __div__(self, value):
         return self.value / value
