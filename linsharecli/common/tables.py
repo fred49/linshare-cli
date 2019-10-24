@@ -156,6 +156,10 @@ class AbstractTable(object):
         """TODO"""
         raise NotImplementedError()
 
+    def get_string(self):
+        """TODO"""
+        raise NotImplementedError()
+
     def pprint(self, msg, meta=None):
         """TODO"""
         if meta:
@@ -183,7 +187,7 @@ class AbstractTable(object):
 
 class BaseTable(AbstractTable):
     """TODO"""
-
+    # pylint: disable=too-many-instance-attributes
     vertical = True
     start = 0
     end = 0
@@ -246,8 +250,6 @@ class BaseTable(AbstractTable):
 
     def get_raw(self):
         """TODO"""
-        # FIXME:Python3: Fix sorting
-        self.sortby = False
         if self.sortby:
             try:
                 self._rows = sorted(self._rows, reverse=self.reversesort,
@@ -292,26 +294,26 @@ class BaseTable(AbstractTable):
             records.append(";".join(record))
         return "\n".join(records)
 
+    @Time('linsharecli.core.render', label='render time : %(time)s')
+    def render(self):
+        """TODO"""
+        if self.json:
+            print(self.get_json())
+            return True
+        if self.csv:
+            print(self.get_csv())
+            return True
+        out = self.get_string()
+        self._pre_render()
+        print(str(out))
+        self._display_nb_elts()
+        return True
+
 
 class VTable(BaseTable):
     """TODO"""
 
     vertical = True
-
-    @Time('linsharecli.core.render', label='render time : %(time)s')
-    def render(self):
-        """TODO"""
-        if self.json:
-            print((self.get_json()))
-            return True
-        if self.csv:
-            print((self.get_csv()))
-            return True
-        out = self.get_string()
-        self._pre_render()
-        print((str(out)))
-        self._display_nb_elts()
-        return True
 
     def get_string(self):
         """TODO"""
@@ -371,10 +373,10 @@ class ConsoleTable(BaseTable):
     def render(self):
         """TODO"""
         if self.json:
-            print((self.get_json()))
+            print(self.get_json())
             return True
         if self.csv:
-            print((self.get_csv()))
+            print(self.get_csv())
             return True
         self._pre_render()
         for row in self.get_raw():
@@ -391,78 +393,26 @@ class ConsoleTable(BaseTable):
                 except UnicodeEncodeError as ex:
                     self.log.error("UnicodeEncodeError: %s", ex)
                     record.append("UnicodeEncodeError")
-            print((str(" ".join(record))))
+            print(str(" ".join(record)))
         self._display_nb_elts()
         return True
 
 
-class HTable(VeryPrettyTable, AbstractTable):
+class HTable(BaseTable):
     """TODO"""
     # pylint: disable=too-many-instance-attributes
 
-    def _transform_to_cell(self, json_row, off=False):
+    def get_string(self):
         """TODO"""
-        if not off:
-            return super(HTable, self)._transform_to_cell(json_row, off)
-        if self.debug >= 2:
-            self.log.debug("begin row")
-        data = OrderedDict()
-        for key in self.keys:
-            self.log.debug("key: %s", key)
-            value = None
-            if key in json_row:
-                value = json_row[key]
-            else:
-                self.log.debug("key not found: %s", key)
-            data[key] = value
-        if self.debug >= 2:
-            self.log.debug("end row")
-        return data
-
-    def load(self, json_obj, filters=None, formatters=None):
-        """TODO"""
-        classname = str(self.__class__.__name__.lower())
-        self.log = logging.getLogger(classname)
-        self.log.debug("json_obj size: %s", len(json_obj))
-        self.log.debug("keys: %s", self.keys)
-        for json_row in json_obj:
-            data = self._transform_to_cell(json_row, self.no_cell)
-            if self.filters(data, filters):
-                if not self.raw:
-                    self.formatters(data, formatters)
-                self.add_row(list(data.values()))
-        if self._pref_start > 0:
-            self.start = self._pref_start
-            limit = self._pref_limit
-            if limit > 0:
-                self.end = self.start + limit
-        elif self._pref_end > 0:
-            self.start = len(self._rows) - self._pref_end
-            limit = self._pref_limit
-            if limit > 0:
-                self.end = self.start + limit
-
-    @Time('linsharecli.core.render', label='render time : %(time)s')
-    def render(self):
-        """TODO"""
-        self._pre_render()
-        out = self.get_string(fields=self.keys)
-        print((str(out)))
-        self._display_nb_elts()
-        return True
-
-    def get_raw(self):
-        """TODO"""
-        options = self._get_options({'fields': self.keys})
-        return self._get_rows(options)
-
-    def get_json(self):
-        """TODO"""
-        raise NotImplementedError()
-
-    def get_csv(self):
-        """TODO"""
-        raise NotImplementedError()
+        table = VeryPrettyTable()
+        table.field_names = self.keys
+        table.align = 'l'
+        for row in self.get_raw():
+            data = []
+            for colum in self.keys:
+                data.append(row.get(colum))
+            table.add_row(data)
+        return table.get_string()
 
 
 class Action(object):
