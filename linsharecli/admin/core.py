@@ -29,7 +29,6 @@
 
 import json
 import datetime
-import click
 import argtoolbox
 from requests import Request
 
