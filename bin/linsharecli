@@ -248,7 +248,8 @@ Advanced debug:
 * If you need debug during class construction, config file loading,
 you just need to export _LINSHARE_CLI_USER_DEBUG=True
 * To debug auto completion, you need to export _ARC_DEBUG=1.
-* Disable SSL verification : export PYTHONHTTPSVERIFY=0
+    * Disable warning about SSL verification : export PYTHONWARNINGS="ignore:Unverified HTTPS request"
+
 
 ================================================================
 """)
