@@ -28,14 +28,15 @@
 
 
 import json
-import urllib.request, urllib.error, urllib.parse
-
+import datetime
+import click
+import argtoolbox
+from requests import Request
 
 from linshareapi.admin import AdminCli
 from linshareapi.core import LinShareException
 import linsharecli.common.core as common
 
-import argtoolbox
 
 
 class DefaultCommand(common.DefaultCommand):
@@ -100,36 +101,34 @@ class RawCommand(DefaultCommand):
         self.verbose = args.verbose
         self.debug = args.debug
         self.log.info("Begin of raw command.")
-        print((str(self.config)))
-        print(args)
-        if args.url:
-            core = self.ls.raw.core
-            for i in range(1, args.repeat + 1):
-                url = core.get_full_url(args.url)
-                self.log.debug("list url:%s: %s", i, url)
-                if args.data:
-                    post_data = json.loads(args.data)
-                    post_data = json.dumps(post_data)
-                    post_data = post_data.encode("UTF-8")
-                    request = urllib.request.Request(url, post_data)
-                else:
-                    request = urllib.request.Request(url)
-                request.add_header('Content-Type', 'application/json; charset=UTF-8')
-                request.add_header('Accept', 'application/json')
-                request.get_method = lambda: 'GET'
-                if args.method:
-                    request.get_method = lambda: args.method
-                res = core.do_request(request)
-                self.log.info(
-                    "list url:%(cpt)s: %(url)s : request time : %(time)s",
-                    {
-                        "cpt": i,
-                        "url": url,
-                        "time": core.last_req_time
-                    }
-                )
-                self.log.info("result:")
-                self.log.info(json.dumps(res, sort_keys=True, indent=2))
+        method = 'GET'
+        if args.method:
+            method = args.method
+        core = self.ls.raw.core
+        url = core.get_full_url(args.url)
+        for i in range(1, args.repeat + 1):
+            self.log.debug("list url:%s: %s", i, url)
+            if args.data:
+                request = Request(method, url, data=args.data)
+            else:
+                request = Request(method, url)
+            prepped = core.session.prepare_request(request)
+            starttime = datetime.datetime.now()
+            request = core.session.send(prepped)
+            endtime = datetime.datetime.now()
+            last_req_time = str(endtime - starttime)
+            res = core.process_request(request, url)
+            self.log.debug("res: %s", res)
+            self.log.info("result: %s",
+                          json.dumps(res, sort_keys=True, indent=2))
+            self.log.info(
+                "url:%(cpt)s:%(url)s:request time: %(time)s",
+                {
+                    "cpt": i,
+                    "url": url,
+                    "time": last_req_time
+                }
+            )
         self.log.info("End of raw command.")
         return True
 
@@ -152,7 +151,7 @@ class ListConfigCommand(DefaultCommand):
         print()
         for i in seclist:
             if i.startswith("server-"):
-                print((" - " + "-".join(i.split('-')[1:])))
+                print(" - " + "-".join(i.split('-')[1:]))
         print("")
 
 
