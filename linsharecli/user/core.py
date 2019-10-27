@@ -136,7 +136,7 @@ class ListConfigCommand(DefaultCommand):
         print("")
 
 
-def add_parser(subparsers, config):
+def add_parser(subparsers, name, desc, config):
     """TODO"""
     parser = subparsers.add_parser('test', add_help=False)
     parser.add_argument('files', nargs='*')
