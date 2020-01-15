@@ -754,9 +754,6 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False,
     sort_group.add_argument(
         '--sort-by', action="store", default=None,
         help="Sort by column.")
-    sort_group.add_argument(
-        '--sort-name', action="store_true",
-        help="Sort by name")
     if ssize:
         sort_group.add_argument(
             '--sort-size', action="store_true",
