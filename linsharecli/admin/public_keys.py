@@ -43,7 +43,6 @@ class PublicKeysCommand(DefaultCommand):
 
     IDENTIFIER = "issuer"
     DEFAULT_SORT = "issuer"
-    DEFAULT_SORT_NAME = "issuer"
     RESOURCE_IDENTIFIER = "uuid"
 
     # pylint: disable=line-too-long

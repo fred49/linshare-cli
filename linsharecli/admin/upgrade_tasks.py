@@ -46,7 +46,6 @@ class UpgradeTasksCommand(DefaultCommand):
 
     IDENTIFIER = "identifier"
     DEFAULT_SORT = "taskOrder"
-    DEFAULT_SORT_NAME = "taskOrder"
     RESOURCE_IDENTIFIER = "identifier"
 
     DEFAULT_TOTAL = "Upgrade task found : %(count)s"

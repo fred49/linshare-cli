@@ -44,7 +44,6 @@ class DomainPoliciesCommand(DefaultCommand):
 
     IDENTIFIER = "label"
     DEFAULT_SORT = "identifier"
-    DEFAULT_SORT_NAME = "identifier"
     RESOURCE_IDENTIFIER = "identifier"
     DEFAULT_TOTAL = "Domain policies found : %(count)s"
     MSG_RS_NOT_FOUND = "No domain policies could be found."

@@ -107,7 +107,6 @@ class JwtCommand(DefaultCommand):
 
     IDENTIFIER = "label"
     DEFAULT_SORT = "label"
-    DEFAULT_SORT_NAME = "label"
     RESOURCE_IDENTIFIER = "uuid"
 
     DEFAULT_TOTAL = "Jwt found : %(count)s"

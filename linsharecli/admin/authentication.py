@@ -46,7 +46,6 @@ class AuthenticationCommand(DefaultCommand):
 
     IDENTIFIER = "mail"
     DEFAULT_SORT = "mail"
-    DEFAULT_SORT_NAME = "mail"
     RESOURCE_IDENTIFIER = "uuid"
 
     # pylint: disable=unused-argument

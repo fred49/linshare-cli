@@ -72,7 +72,6 @@ class DefaultCommand(argtoolbox.DefaultCommand):
     IDENTIFIER = "name"
     DEFAULT_SORT = "creationDate"
     DEFAULT_SORT_SIZE = "size"
-    DEFAULT_SORT_NAME = "name"
     DEFAULT_TOTAL = "Ressources found : %(count)s"
     RESOURCE_IDENTIFIER = "uuid"
     MSG_RS_NOT_FOUND = "No resources could be found."

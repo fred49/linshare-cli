@@ -157,7 +157,6 @@ class ListCommand(Command):
     """ List all Jwt token."""
 
     IDENTIFIER = "creationDate"
-    DEFAULT_SORT_NAME = "creationDate"
     RESOURCE_IDENTIFIER = "uuid"
 
     @Time('linsharecli.shared_spaces.audit', label='Global time : %(time)s')

@@ -43,7 +43,6 @@ class DefaultCommand(common.DefaultCommand):
     """
 
     IDENTIFIER = "name"
-    DEFAULT_SORT_NAME = "name"
     RESOURCE_IDENTIFIER = "uuid"
 
     def __get_cli_object(self, args):

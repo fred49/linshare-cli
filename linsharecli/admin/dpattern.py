@@ -42,7 +42,6 @@ class DomainPatternsCommand(DefaultCommand):
     # pylint: disable=too-many-instance-attributes
     IDENTIFIER = "label"
     DEFAULT_SORT = "label"
-    DEFAULT_SORT_NAME = "label"
     RESOURCE_IDENTIFIER = "uuid"
 
     DEFAULT_TOTAL = "Domain pattern found : %(count)s"
@@ -65,7 +64,6 @@ class DomainPatternsCommand(DefaultCommand):
         self.IDENTIFIER = "identifier"
         self.DEFAULT_SORT = "identifier"
         self.RESOURCE_IDENTIFIER = "identifier"
-        self.DEFAULT_SORT_NAME = "identifier"
 
         self.DEFAULT_TOTAL = "Domain pattern found : %(count)s"
         self.MSG_RS_NOT_FOUND = "No domain pattern could be found."

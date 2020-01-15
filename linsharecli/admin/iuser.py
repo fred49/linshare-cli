@@ -44,7 +44,6 @@ class InconsistentUsersCommand(DefaultCommand):
     """For  api >= 1.9"""
     IDENTIFIER = "mail"
     DEFAULT_SORT = "mail"
-    DEFAULT_SORT_NAME = "mail"
     RESOURCE_IDENTIFIER = "uuid"
 
     DEFAULT_TOTAL = "Inconsistent user found : %(count)s"

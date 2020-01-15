@@ -44,7 +44,6 @@ class WelcomeMessagesCommand(DefaultCommand):
 
     IDENTIFIER = "name"
     DEFAULT_SORT = "name"
-    DEFAULT_SORT_NAME = "name"
     RESOURCE_IDENTIFIER = "uuid"
 
     DEFAULT_TOTAL = "Welcome message found : %(count)s"

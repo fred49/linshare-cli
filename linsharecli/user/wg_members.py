@@ -71,7 +71,6 @@ class ThreadMembersCommand(DefaultCommand):
     IDENTIFIER = "userMail"
     RESOURCE_IDENTIFIER = "userUuid"
     DEFAULT_SORT = "userMail"
-    DEFAULT_SORT_NAME = "userMail"
 
     MSG_RS_CREATED = (
         "The thread member '%(firstName)s %(lastName)s' "

@@ -80,7 +80,6 @@ class MailAttachmentsCommand(DefaultCommand):
 
     IDENTIFIER = "cid"
     DEFAULT_SORT = "cid"
-    DEFAULT_SORT_NAME = "cid"
     RESOURCE_IDENTIFIER = "uuid"
 
     # pylint: disable=line-too-long

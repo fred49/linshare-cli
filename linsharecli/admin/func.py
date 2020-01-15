@@ -85,7 +85,6 @@ class FunctionalityCommand(DefaultCommand):
     """TODO"""
     IDENTIFIER = "identifier"
     DEFAULT_SORT = "identifier"
-    DEFAULT_SORT_NAME = "identifier"
     RESOURCE_IDENTIFIER = "identifier"
 
     DEFAULT_TOTAL = "Functionality found : %(count)s"

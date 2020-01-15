@@ -40,7 +40,6 @@ class MailConfigsCommand(DefaultCommand):
 
     IDENTIFIER = "name"
     DEFAULT_SORT = "name"
-    DEFAULT_SORT_NAME = "name"
     RESOURCE_IDENTIFIER = "uuid"
 
     # pylint: disable=line-too-long

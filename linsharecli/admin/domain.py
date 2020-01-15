@@ -47,7 +47,6 @@ class DomainsCommand(DefaultCommand):
     # pylint: disable=too-many-instance-attributes
     IDENTIFIER = "label"
     DEFAULT_SORT = "label"
-    DEFAULT_SORT_NAME = "label"
     RESOURCE_IDENTIFIER = "identifier"
 
     DEFAULT_TOTAL = "Domain found : %(count)s"
@@ -70,7 +69,6 @@ class DomainsCommand(DefaultCommand):
         DomainsCommand.IDENTIFIER = "identifier"
         DomainsCommand.DEFAULT_SORT = "identifier"
         DomainsCommand.RESOURCE_IDENTIFIER = "identifier"
-        DomainsCommand.DEFAULT_SORT_NAME = "identifier"
 
         DomainsCommand.DEFAULT_TOTAL = "Domain found : %(count)s"
         DomainsCommand.MSG_RS_NOT_FOUND = "No domain could be found."

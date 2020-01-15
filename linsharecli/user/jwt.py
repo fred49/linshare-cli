@@ -128,7 +128,6 @@ class JwtCommand(DefaultCommand):
     """TODO"""
 
     IDENTIFIER = "label"
-    DEFAULT_SORT_NAME = "label"
     RESOURCE_IDENTIFIER = "uuid"
 
     MSG_RS_UPDATED = "The Jwt '%(label)s' (%(uuid)s) was successfully updated."
@@ -180,7 +179,6 @@ class JwtListAuditCommand(JwtCommand):
     """ List all Jwt token."""
 
     IDENTIFIER = "creationDate"
-    DEFAULT_SORT_NAME = "creationDate"
     RESOURCE_IDENTIFIER = "uuid"
 
     @Time('linsharecli.jwt', label='Global time : %(time)s')
