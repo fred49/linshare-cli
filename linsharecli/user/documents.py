@@ -138,7 +138,7 @@ class DocumentsListCommand(DocumentsCommand):
     def __call__(self, args):
         super(DocumentsListCommand, self).__call__(args)
         endpoint = self.ls.documents
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_action('share', ShareAction(self.api_version))
         tbu.add_filters(

@@ -67,7 +67,7 @@ class ListCommand(DefaultCommand):
     def __call__(self, args):
         super(ListCommand, self).__call__(args)
         endpoint = self.ls.contactslists
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_custom_cell("owner", ComplexCellBuilder('{firstName} {lastName} <{mail}>'))
         tbu.add_filters(

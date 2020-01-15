@@ -325,7 +325,7 @@ class WgNodeContentListCommand(WgNodesCommand):
         parent = None
         if args.folders:
             parent = get_uuid_from(args.folders[-1])
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_custom_cell("lastAuthor", ComplexCellBuilder('{name} <{mail}>'))
         tbu.add_action('download', DownloadAction(
@@ -362,7 +362,7 @@ class WgNodeContentDisplayCommand(WgNodesCommand):
     def __call__(self, args):
         super(WgNodeContentDisplayCommand, self).__call__(args)
         endpoint = self.ls.workgroup_nodes
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.vertical = True
         tbu.load_args(args)
         tbu.add_custom_cell("lastAuthor", ComplexCellBuilder('{name} <{mail}>'))

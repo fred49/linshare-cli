@@ -42,7 +42,7 @@ class UsersListCommand(DefaultCommand):
         if not  (args.firstname or args.lastname or args.mail):
             raise ValueError('You should use at leat one option among : --firstname, --lastname or --mail')
         endpoint = self.ls.users
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_custom_cell("domain", CellBuilder('{value:.8}', '{value}'))
         json_obj = endpoint.search(args.firstname, args.lastname, args.mail)

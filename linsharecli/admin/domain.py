@@ -144,7 +144,7 @@ class DomainsListCommand(DomainsCommand):
         if self.api_version == 0:
             self.init_old_language_key()
         endpoint = self.ls.domains
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.add_action('delete', DDeleteAction())
         tbu.load_args(args)
         tbu.add_custom_cell("currentWelcomeMessage", ComplexCellBuilder('{name} ({uuid:.8})'))

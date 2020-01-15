@@ -48,7 +48,6 @@ class DefaultCommand(Command):
     """TODO"""
 
     IDENTIFIER = "name"
-    DEFAULT_SORT = "name"
 
     def complete(self, args, prefix):
         super(DefaultCommand, self).__call__(args)
@@ -125,7 +124,7 @@ class ListCommand(DefaultCommand):
     def __call__(self, args):
         super(ListCommand, self).__call__(args)
         endpoint = self.ls.audit
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),

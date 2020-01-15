@@ -213,6 +213,7 @@ class BaseTable(AbstractTable):
         for k in keys:
             self.sortby = k
             break
+        self.log.debug("sortby(first column): %s", self.sortby)
 
     def load(self, data, filters=None, formatters=None,
              ignore_exceptions=None):
@@ -840,10 +841,12 @@ class TableBuilder(object):
     """TODO"""
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, cli, endpoint, first_column=None,
+    def __init__(self, cli, endpoint, default_sort_column=None,
                  default_actions=True, cli_mode_identifier="uuid"):
         """TODO"""
         # pylint: disable=too-many-arguments
+        classname = str(self.__class__.__name__.lower())
+        self.log = logging.getLogger('linsharecli.' + classname)
         self.cli = cli
         self.endpoint = endpoint
         self.args = None
@@ -851,7 +854,7 @@ class TableBuilder(object):
         self.fields = None
         self.cli_mode = False
         self.cli_mode_identifier = cli_mode_identifier
-        self.first_column = first_column
+        self.default_sort_column = default_sort_column
         self.vertical = False
         self.json = False
         self.raw = False
@@ -959,9 +962,6 @@ class TableBuilder(object):
                 table = self._vertical_clazz(self.columns)
             else:
                 table = self._horizontal_clazz(self.columns)
-                # styles
-                if self.first_column and self.first_column in self.columns:
-                    table.align[self.first_column] = "l"
                 table.padding_width = 1
             for clazz in self._pre_render_classes:
                 table.add_pre_render_class(clazz)
@@ -972,10 +972,14 @@ class TableBuilder(object):
         for attr in attrs:
             setattr(table, attr, getattr(self, attr))
         if self.sort_by is None:
-            if self.first_column and self.first_column in self.columns:
-                table.sortby = self.first_column
+            if self.default_sort_column and self.default_sort_column in self.columns:
+                table.sortby = self.default_sort_column
         else:
-            table.sortby = self.sort_by
+            if self.sort_by in self.columns:
+                table.sortby = self.sort_by
+        self.log.debug("default_sort_column: %s", self.default_sort_column)
+        self.log.debug("sort_by: %s", self.sort_by)
+        self.log.debug("final sortby: %s", table.sortby)
         # very ugly. need big refactoring of all tables.
         table.reversesort = self.reverse
         table._pref_start = self.start

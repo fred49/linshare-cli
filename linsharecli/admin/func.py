@@ -159,7 +159,7 @@ class FunctionalityListCommand(FunctionalityCommand):
     def __call__(self, args):
         super(FunctionalityListCommand, self).__call__(args)
         endpoint = self.ls.funcs
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_custom_cell("parameters", ParameterCell)
         tbu.add_custom_cell("activationPolicy", PolicyCell)

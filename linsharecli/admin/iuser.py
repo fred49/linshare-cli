@@ -89,7 +89,7 @@ class InconsistentUsersListCommand(InconsistentUsersCommand):
     def __call__(self, args):
         super(InconsistentUsersListCommand, self).__call__(args)
         endpoint = self.ls.iusers
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),

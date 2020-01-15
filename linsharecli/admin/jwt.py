@@ -152,7 +152,7 @@ class JwtListCommand(JwtCommand):
     def __call__(self, args):
         super(JwtListCommand, self).__call__(args)
         endpoint = self.ls.jwt
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_custom_cell("domain", ComplexCellBuilder('{name} ({uuid:.8})'))
         tbu.add_custom_cell("actor", ComplexCellBuilder('{name} ({uuid:.8})'))

@@ -64,7 +64,7 @@ class AuthenticationListCommand(AuthenticationCommand):
     def __call__(self, args):
         super(AuthenticationListCommand, self).__call__(args)
         endpoint = self.ls.authentication
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         return tbu.build().load_v2(endpoint.list()).render()
 

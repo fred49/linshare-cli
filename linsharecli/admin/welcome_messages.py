@@ -99,7 +99,7 @@ class WelcomeMessagesListCommand(WelcomeMessagesCommand):
     def __call__(self, args):
         super(WelcomeMessagesListCommand, self).__call__(args)
         endpoint = self.ls.welcome_messages
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_custom_cell("welcomeMessagesEntries", WelcomeEntriesCell)
         tbu.add_custom_cell("myDomain", ComplexCellBuilder('{label} <{identifier}>'))

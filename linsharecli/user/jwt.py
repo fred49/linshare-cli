@@ -128,7 +128,6 @@ class JwtCommand(DefaultCommand):
     """TODO"""
 
     IDENTIFIER = "label"
-    DEFAULT_SORT = "label"
     DEFAULT_SORT_NAME = "label"
     RESOURCE_IDENTIFIER = "uuid"
 
@@ -166,7 +165,7 @@ class JwtListCommand(JwtCommand):
     def __call__(self, args):
         super(JwtListCommand, self).__call__(args)
         endpoint = self.ls.jwt
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
@@ -181,7 +180,6 @@ class JwtListAuditCommand(JwtCommand):
     """ List all Jwt token."""
 
     IDENTIFIER = "creationDate"
-    DEFAULT_SORT = "creationDate"
     DEFAULT_SORT_NAME = "creationDate"
     RESOURCE_IDENTIFIER = "uuid"
 
@@ -189,7 +187,7 @@ class JwtListAuditCommand(JwtCommand):
     def __call__(self, args):
         super(JwtListAuditCommand, self).__call__(args)
         endpoint = self.ls.jwt.audit
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),

@@ -62,7 +62,7 @@ class ListCommand(DefaultCommand):
     def __call__(self, args):
         super(ListCommand, self).__call__(args)
         endpoint = self.ls.shared_spaces
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.names, True),
@@ -85,7 +85,7 @@ class DetailCommand(DefaultCommand):
     def __call__(self, args):
         super(DetailCommand, self).__call__(args)
         endpoint = self.ls.shared_spaces
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         json_obj = []
         for uuid in args.uuids:

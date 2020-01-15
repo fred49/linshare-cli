@@ -60,7 +60,7 @@ class GuestsListCommand(GuestsCommand):
     def __call__(self, args):
         super(GuestsListCommand, self).__call__(args)
         endpoint = self.ls.guests
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_filters(
             PartialMultipleAnd(
@@ -93,7 +93,7 @@ class GuestsInfoCommand(GuestsCommand):
     def __call__(self, args):
         super(GuestsInfoCommand, self).__call__(args)
         endpoint = self.ls.guests
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.vertical = True
         tbu.extended = True

@@ -104,7 +104,7 @@ class DomainPatternsListCommand(DomainPatternsCommand):
         if self.api_version == 0:
             self.init_old_language_key()
         endpoint = self.ls.domain_patterns
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),

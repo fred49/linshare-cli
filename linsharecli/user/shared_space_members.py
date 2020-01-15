@@ -46,7 +46,6 @@ class DefaultCommand(Command):
     """TODO"""
 
     IDENTIFIER = "creationDate"
-    DEFAULT_SORT = "creationDate"
 
     MSG_RS_UPDATED = "The shared space member '%(account)s' (%(uuid)s) was successfully updated."
     MSG_RS_CREATED = "The shared space member '%(account)s' (%(uuid)s) was successfully created."
@@ -104,7 +103,7 @@ class ListCommand(DefaultCommand):
     def __call__(self, args):
         super(ListCommand, self).__call__(args)
         endpoint = self.ls.shared_spaces.members
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_custom_cell(
             "role",

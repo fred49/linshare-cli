@@ -126,7 +126,7 @@ class DomainPoliciesListCommand(DomainPoliciesCommand):
     def __call__(self, args):
         super(DomainPoliciesListCommand, self).__call__(args)
         endpoint = self.ls.domain_policies
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_custom_cell("accessPolicy", AccessPolicyCell)
         tbu.add_filters(

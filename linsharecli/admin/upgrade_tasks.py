@@ -79,7 +79,7 @@ class UpgradeTasksListCommand(UpgradeTasksCommand):
     def __call__(self, args):
         super(UpgradeTasksListCommand, self).__call__(args)
         endpoint = self.ls.upgrade_tasks
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_custom_cell("criticity", CriticityCell)
         tbu.add_filters(

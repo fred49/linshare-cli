@@ -53,13 +53,12 @@ class ThreadsCommand(DefaultCommand):
 class ThreadsListCommand(ThreadsCommand):
     """ List all threads store."""
     IDENTIFIER = "name"
-    DEFAULT_SORT = "name"
 
     @Time('linsharecli.threads', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadsListCommand, self).__call__(args)
         endpoint = self.ls.threads
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),

@@ -44,7 +44,7 @@ class UsersListCommand(DefaultCommand):
     def __call__(self, args):
         super(UsersListCommand, self).__call__(args)
         endpoint = self.ls.users
-        tbu = TableBuilder(self.ls, endpoint, self.IDENTIFIER)
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
         tbu.add_filters(
             PartialMultipleAnd(
