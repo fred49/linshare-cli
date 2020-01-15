@@ -71,7 +71,6 @@ class DefaultCommand(argtoolbox.DefaultCommand):
     # pylint: disable=line-too-long
     IDENTIFIER = "name"
     DEFAULT_SORT = "creationDate"
-    DEFAULT_SORT_SIZE = "size"
     DEFAULT_TOTAL = "Ressources found : %(count)s"
     RESOURCE_IDENTIFIER = "uuid"
     MSG_RS_NOT_FOUND = "No resources could be found."
@@ -723,8 +722,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             raise ArgumentError(None, msg)
 
 
-def add_list_parser_options(parser, download=False, delete=False, cdate=False,
-                            ssize=False):
+def add_list_parser_options(parser, download=False, delete=False, cdate=False):
     """Add default argparse options for all ListCommands."""
     # filters
     filter_group = parser.add_argument_group('Filters')
@@ -753,10 +751,6 @@ def add_list_parser_options(parser, download=False, delete=False, cdate=False,
     sort_group.add_argument(
         '--sort-by', action="store", default=None,
         help="Sort by column.")
-    if ssize:
-        sort_group.add_argument(
-            '--sort-size', action="store_true",
-            help="Sort by size")
 
     format_group = add_list_parser_options_format(parser)
 
