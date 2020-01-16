@@ -103,7 +103,7 @@ def convert_to_list(json_obj, parent, prefix):
     debug("RAW", json_obj)
     json_obj = list(
         format_record_for_autocomplete(row)
-        for row in json_obj if row.get('type') == "FOLDER"
+        for row in json_obj if row.get('type') in ["FOLDER", "DOCUMENT"]
     )
     debug("UUIDS", json_obj)
     debug("------------ convert_to_list - 1 ----------------<\n")
