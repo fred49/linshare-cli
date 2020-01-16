@@ -260,35 +260,58 @@ class WorkgroupDocumentsUploadCommand(WgNodesCommand):
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(WorkgroupDocumentsUploadCommand, self).__call__(args)
-        count = len(args.files)
-        position = 0
         parent = None
         if args.folders:
             parent = get_uuid_from(args.folders[-1])
             self.ls.workgroup_nodes.get(args.wg_uuid, parent)
+        return self.upload_files_recursif(
+            args.wg_uuid,
+            args.files,
+            args.description,
+            parent)
+
+    def upload_files_recursif(self, wg_uuid, files, description, parent):
+        count = len(files)
+        position = 0
         cli = self.ls.workgroup_folders
-        for file_path in args.files:
+        for file_path in files:
             position += 1
+            self.log.info("file_path: %s", file_path)
             if os.path.isdir(file_path):
                 rbu = cli.get_rbu()
                 rbu.set_value('name', file_path.split('/')[-1])
-                rbu.set_value('workGroup', args.wg_uuid)
+                rbu.set_value('workGroup', wg_uuid)
+                # folder in folder ???
                 # if args.folders:
                     # parent = get_uuid_from(args.folders[-1])
                     # rbu.set_value('parent', parent)
-                folder_uuid = self.ls.workgroup_folders.create(rbu.to_resource())
-            json_obj = self.ls.workgroup_nodes.upload(
-                args.wg_uuid, file_path, args.description, parent)
-            if json_obj:
-                json_obj['time'] = self.ls.last_req_time
-                json_obj['position'] = position
-                json_obj['count'] = count
-                self.log.info(
-                    ("%(position)s/%(count)s: "
-                     "The file '%(name)s' (%(uuid)s) was uploaded. "
-                     "(%(time)ss)"),
-                    json_obj)
-
+                new_folder = self.ls.workgroup_folders.create(rbu.to_resource())
+                folder_uuid = new_folder['uuid']
+                self.log.info("folder_uuid: %s", folder_uuid)
+                files2 = []
+                for a in os.listdir(file_path):
+                    files2.append(file_path + "/" + a)
+                print("fred")
+                print(files2)
+                # continue
+                self.upload_files_recursif(
+                    wg_uuid,
+                    files2,
+                    description,
+                    folder_uuid)
+            else:
+                json_obj = self.ls.workgroup_nodes.upload(
+                    wg_uuid, file_path, description, parent)
+                if json_obj:
+                    json_obj['time'] = self.ls.last_req_time
+                    json_obj['position'] = position
+                    json_obj['count'] = count
+                    self.log.info(
+                        ("%(position)s/%(count)s: "
+                        "The file '%(name)s' (%(uuid)s) was uploaded. "
+                        "(%(time)ss)"),
+                        json_obj)
+        return True
 
 
     def upload_files(self, args, parent):
