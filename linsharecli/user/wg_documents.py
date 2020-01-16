@@ -301,7 +301,7 @@ class Breadcrumb(Action):
                     breadcrumb.append(path.get('name'))
                 breadcrumb.append(node.get('name'))
                 print()
-                print(("###>", " > ".join(breadcrumb)))
+                print("###>", " > ".join(breadcrumb))
                 print()
 
     def get_last_valid_node(self, args):
