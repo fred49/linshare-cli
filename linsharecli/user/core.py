@@ -69,7 +69,7 @@ class TestCommand(argtoolbox.DefaultCommand):
         print("Test")
         print((str(self.config)))
         print(args)
-        print("")
+        self.log.info("End of test command.")
 
 
 class RawCommand(DefaultCommand):
@@ -95,12 +95,24 @@ class RawCommand(DefaultCommand):
             prepped = core.session.prepare_request(request)
             starttime = datetime.datetime.now()
             request = core.session.send(prepped)
+            for header in request.headers.items():
+                self.log.debug("request.header: %s", header)
             endtime = datetime.datetime.now()
             last_req_time = str(endtime - starttime)
-            res = core.process_request(request, url)
-            self.log.debug("res: %s", res)
-            self.log.info("result: %s",
-                          json.dumps(res, sort_keys=True, indent=2))
+            content_type = request.headers['Content-Type']
+            if content_type == 'application/json' and not args.output:
+                res = core.process_request(request, url)
+                self.log.debug("res: %s", res)
+                self.log.info("result: %s",
+                              json.dumps(res, sort_keys=True, indent=2))
+            else:
+                if args.output:
+                    with open(args.output, 'wb') as file_stream:
+                        for line in request.iter_content(chunk_size=256):
+                            if line:
+                                file_stream.write(line)
+                else:
+                    self.log.error("Can not process this query, unhandled result content type: %s", content_type)
             self.log.info(
                 "url:%(cpt)s:%(url)s:request time: %(time)s",
                 {
@@ -148,6 +160,7 @@ def add_parser(subparsers, name, desc, config):
         '-m', '--method',
         choices=["GET", "POST", "DELETE", "HEAD", "OPTIONS", "PUT"])
     parser.add_argument('--data')
+    parser.add_argument('--output')
     parser.set_defaults(__func__=RawCommand(config))
 
     parser = subparsers.add_parser('list')
