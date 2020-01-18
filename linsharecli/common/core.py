@@ -829,5 +829,5 @@ def add_download_parser_options(parser, method=None):
         parser.add_argument('uuids', nargs='+').completer = Completer()
     parser.add_argument('--dry-run', action="store_true")
     parser.add_argument('-o', '--output-dir', action="store", dest="directory")
-
-
+    parser.add_argument('--no-progress', action="store_true",
+                        help="Do not display progress bar.")
