@@ -289,6 +289,8 @@ class Breadcrumb(Action):
     def init(self, args, cli, endpoint):
         super(Breadcrumb, self).init(args, cli, endpoint)
         self.display = not getattr(args, 'no_breadcrumb', False)
+        if getattr(args, 'flat_mode', False):
+            self.display = False
 
     def __call__(self, args, cli, endpoint, data):
         self.init(args, cli, endpoint)
@@ -327,7 +329,9 @@ class WgNodeContentListCommand(WgNodesCommand):
             parent = get_uuid_from(args.folders[-1])
         tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
-        tbu.add_custom_cell("lastAuthor", ComplexCellBuilder('{name} <{mail}>'))
+        tbu.add_custom_cell(
+            "lastAuthor",
+            ComplexCellBuilder('{name}\n<{mail}>', '{name} <{mail}>'))
         tbu.add_action('download', DownloadAction(
             mode=self.CFG_DOWNLOAD_MODE,
             parent_identifier=self.CFG_DOWNLOAD_ARG_ATTR
