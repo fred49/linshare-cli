@@ -334,7 +334,7 @@ class VTable(BaseTable):
                     else:
                         column_data_str = str(column_data)
                         dataa = {"key": k, "value": column_data_str}
-                    t_record = (t_format).format(**dataa)
+                    t_record = t_format.format(**dataa)
                     record.append(t_record)
                     max_length_line = max(max_length_line, len(t_record))
                 except UnicodeEncodeError as ex:
@@ -665,7 +665,6 @@ class DownloadAction(Action):
         super(DownloadAction, self).init(args, cli, endpoint)
         if self.cfg_mode == 1 or self.cfg_mode == 2:
             self.parent_uuid = getattr(args, self.parent_identifier_attr, None)
-            print((self.parent_uuid))
             if not self.parent_uuid:
                 raise ValueError("missing required arg : " + self.parent_identifier_attr)
         self.directory = getattr(args, "directory", None)
