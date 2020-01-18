@@ -27,6 +27,7 @@
 
 
 
+import os
 import argparse
 from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
@@ -259,25 +260,63 @@ class WorkgroupDocumentsUploadCommand(WgNodesCommand):
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(WorkgroupDocumentsUploadCommand, self).__call__(args)
-        count = len(args.files)
-        position = 0
         parent = None
         if args.folders:
             parent = get_uuid_from(args.folders[-1])
             self.ls.workgroup_nodes.get(args.wg_uuid, parent)
-        for file_path in args.files:
+        return self.upload_files_recursif(
+            args.wg_uuid,
+            args.files,
+            args.description,
+            parent)
+
+    def upload_files_recursif(self, wg_uuid, files, description, parent):
+        """Upload a file or a folder recursivily."""
+        count = len(files)
+        position = 0
+        cli = self.ls.workgroup_folders
+        for file_path in files:
             position += 1
-            json_obj = self.ls.workgroup_nodes.upload(
-                args.wg_uuid, file_path, args.description, parent)
-            if json_obj:
-                json_obj['time'] = self.ls.last_req_time
-                json_obj['position'] = position
-                json_obj['count'] = count
-                self.log.info(
-                    ("%(position)s/%(count)s: "
-                     "The file '%(name)s' (%(uuid)s) was uploaded. "
-                     "(%(time)ss)"),
-                    json_obj)
+            self.log.debug("file_path: %s", file_path)
+            if os.path.isdir(file_path):
+                self.log.debug("file_path %s is a folder", file_path)
+                rbu = cli.get_rbu()
+                folder_name = file_path
+                if folder_name[-1] == '/':
+                    folder_name = folder_name[:-1]
+                folder_name = folder_name.split('/')[-1]
+                rbu.set_value('name', folder_name)
+                rbu.set_value('workGroup', wg_uuid)
+                if parent:
+                    rbu.set_value('parent', parent)
+                new_folder = self.ls.workgroup_folders.create(rbu.to_resource())
+                folder_uuid = new_folder['uuid']
+                self.log.debug("folder_uuid: %s", folder_uuid)
+                files2 = []
+                for path in os.listdir(file_path):
+                    files2.append(file_path + "/" + path)
+                self.upload_files_recursif(
+                    wg_uuid,
+                    files2,
+                    description,
+                    folder_uuid)
+            else:
+                file_size = os.path.getsize(file_path)
+                if file_size == 0:
+                    self.log.warn("this file '%s' is empty. skipped.", file_path)
+                    continue
+                json_obj = self.ls.workgroup_nodes.upload(
+                    wg_uuid, file_path, description, parent)
+                if json_obj:
+                    json_obj['time'] = self.ls.last_req_time
+                    json_obj['position'] = position
+                    json_obj['count'] = count
+                    json_obj['file_path'] = file_path
+                    self.log.info(
+                        ("%(position)s/%(count)s: "
+                         "The file '%(file_path)s' (%(uuid)s) was uploaded. "
+                         "(%(time)ss)"),
+                        json_obj)
         return True
 
 
@@ -523,7 +562,7 @@ def add_parser(subparsers, name, desc, config):
         help="upload documents to linshare")
     parser.add_argument('--desc', action="store", dest="description",
                         required=False, help="Optional description.")
-    parser.add_argument('files', nargs='+')
+    parser.add_argument('files', nargs='+', help="upload files or folders")
     parser.add_argument(
         '-f', '--folders', action="append",
         help="""The new files will be uploaded in the last folder in the list.
