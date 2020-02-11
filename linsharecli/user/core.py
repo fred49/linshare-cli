@@ -100,11 +100,15 @@ class RawCommand(DefaultCommand):
             endtime = datetime.datetime.now()
             last_req_time = str(endtime - starttime)
             content_type = request.headers['Content-Type']
-            if content_type == 'application/json' and not args.output:
+            if content_type == 'application/json':
                 res = core.process_request(request, url)
                 self.log.debug("res: %s", res)
-                self.log.info("result: %s",
-                              json.dumps(res, sort_keys=True, indent=2))
+                if args.output:
+                    with open(args.output, 'w') as file_stream:
+                        json.dump(res, file_stream, sort_keys=True, indent=2, ensure_ascii=False)
+                else:
+                    self.log.info("result: %s",
+                                  json.dumps(res, sort_keys=True, indent=2, ensure_ascii=False))
             else:
                 if args.output:
                     with open(args.output, 'wb') as file_stream:
