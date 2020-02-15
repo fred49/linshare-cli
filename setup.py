@@ -72,6 +72,14 @@ setup(
 
     test_suite='tests.get_all_tests',
 
+    entry_points={
+        'console_scripts': [
+            'linshareadmcli=linsharecli.admin:CLI',
+            'linshareadmcli-config=linsharecli.admin:generate_config',
+            'linsharecli=linsharecli.user:CLI',
+            'linsharecli-config=linsharecli.user:generate_config',
+        ],
+    },
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages.
@@ -87,5 +95,4 @@ setup(
         'hurry.filesize==0.9',
         'mock==2.0.0',
     ],
-    scripts = glob.glob('bin/*'),
 )
