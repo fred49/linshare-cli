@@ -89,6 +89,7 @@ class LinShareTestCase(unittest.TestCase):
         # during output parsing (stdout)
         namespace.debug = self.debug
         namespace.ask_password = False
+        namespace.password_from_env = False
         namespace.nocache = True
         namespace.base_url = None
         namespace.host = "http://192.168.1.106:8081"

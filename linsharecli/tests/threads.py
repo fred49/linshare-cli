@@ -10,7 +10,7 @@ from linsharecli.tests.core import load_data
 from linsharecli.tests.core import MockServerResults
 from linsharecli.tests.core import LinShareTestCase
 
-from linsharecli.user.thread import add_parser as add_threads_parser
+from linsharecli.user.workgroups import add_parser as add_threads_parser
 
 LOG = logging.getLogger("threads")
 
@@ -25,7 +25,7 @@ class TestThreadsList(LinShareTestCase):
     # * header : 3 lines
     # * content : 3 threads
     # * footer : 3 lines
-    DATA_DOCUMENTS_HEIGHT = 9
+    DATA_DOCUMENTS_HEIGHT = 14
     DATA_DOCUMENTS_WIDTH = 95
 
     def setUp(self):
@@ -40,4 +40,4 @@ class TestThreadsList(LinShareTestCase):
         output = self.run_default0(command)
         LOG.error(output)
         self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
-        self.assertEqual(len(output[0]), self.DATA_DOCUMENTS_WIDTH)
+        self.assertEqual(len(output[3]), self.DATA_DOCUMENTS_WIDTH)

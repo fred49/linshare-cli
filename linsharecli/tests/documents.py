@@ -62,35 +62,35 @@ class TestDocumentsList(LinShareTestCase):
         """retrieve default documents list"""
         command = "documents list"
         output = self.run_default0(command)
-        self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
-        self.assertEqual(len(output[0]), self.DATA_DOCUMENTS_WIDTH)
+        self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT + 5)
+        self.assertEqual(len(output[3]), self.DATA_DOCUMENTS_WIDTH)
 
     def test_documents_list2(self, *args):
         """retrieve documents list sorted by name"""
-        command = "documents list --sort-name"
+        command = "documents list --sort-by name"
         output = self.run_default0(command)
-        self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
-        self.assertEqual(len(output[0]), self.DATA_DOCUMENTS_WIDTH)
-        self.assertRegex(output[-4], r"^\| file5.*")
+        self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT + 5)
+        self.assertEqual(len(output[3]), self.DATA_DOCUMENTS_WIDTH)
+        self.assertRegex(output[-6], r"^\| file5.*")
 
     def test_documents_list3(self, *args):
         """retrieve documents list reversed sorted by name"""
-        command = "documents list -r --sort-name"
+        command = "documents list -r --sort-by name"
         output = self.run_default0(command)
-        self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
-        self.assertEqual(len(output[0]), self.DATA_DOCUMENTS_WIDTH)
-        self.assertRegex(output[-4], r"^\| file0.*")
+        self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT + 5)
+        self.assertEqual(len(output[3]), self.DATA_DOCUMENTS_WIDTH)
+        self.assertRegex(output[-6], r"^\| file0.*")
 
     def test_documents_list4(self, *args):
         """retrieve documents list with csv output"""
         command = "documents list --csv"
         output = self.run_default0(command)
         # documents + header + footer = 6 + 0 + 2
-        self.assertEqual(len(output), 9)
-        self.assertEqual(len(output[0]), 45)
-        self.assertEqual(len(output[1]), 86)
+        self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
+        self.assertEqual(len(output[3]), 45)
+        self.assertEqual(len(output[4]), 86)
         # first file
-        self.assertRegex(output[1], "file5.*")
+        self.assertRegex(output[4], "file5.*")
         self.assertRegex(output[-5], "file1.*")
 
     def test_documents_list4b(self, *args):
@@ -98,8 +98,8 @@ class TestDocumentsList(LinShareTestCase):
         command = "documents list --csv --no-headers"
         output = self.run_default0(command)
         # documents + header + footer = 6 + 0 + 2
-        self.assertEqual(len(output), 8)
-        self.assertEqual(len(output[0]), 86)
+        self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT - 1)
+        self.assertEqual(len(output[3]), 86)
         self.assertRegex(output[-3], "file3.*")
 
     def test_documents_list4c(self, *args):
@@ -107,41 +107,44 @@ class TestDocumentsList(LinShareTestCase):
         command = "documents list --raw"
         output = self.run_default0(command)
         # documents + header + footer = 6 + 3 + 3
-        self.assertEqual(len(output), 12)
-        self.assertEqual(len(output[0]), 94)
-        self.assertRegex(output[-4], "file3.*")
-        self.assertRegex(output[-5], "2097152.*1423939308912.*")
+        self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT + 5)
+        self.assertEqual(len(output[3]), 94)
+        self.assertRegex(output[-6], "file3.*")
+        self.assertRegex(output[-7], "2097152.*1423939308912.*")
 
     def test_documents_list5(self, *args):
         """retrieve documents with vertical list"""
         command = "documents list -t"
         output = self.run_default0(command)
         # 38 lines
-        self.assertEqual(len(output), 38)
+        self.assertEqual(len(output), 43)
         # 58 characters for the first line
-        first_line = output[0]
+        # the three first lines are API version info.
+        # the first useful line, is the fourth.
+        # tests data are now store in a file.
+        first_line = output[3]
         # tests data are now store in a file.
         first_line = first_line.strip('\n')
-        self.assertEqual(len(first_line), 58)
+        self.assertEqual(len(first_line), 57)
         # time shift ?
-        # self.assertRegexpMatches(output[-3], ".*2015-02-14 19:41:49$")
-        # self.assertRegexpMatches(output[-3], ".*2015-02-14.18:41:49*")
-        self.assertRegex(output[-3], ".*2015-02-14.*")
-        self.assertRegex(output[-8], ".*RECORD 6.*")
+        # self.assertRegexpMatches(output[-5], ".*2015-02-14 19:41:49$")
+        # self.assertRegexpMatches(output[-5], ".*2015-02-14.18:41:49*")
+        self.assertRegex(output[-5], ".*2015-02-14.*")
+        self.assertRegex(output[-10], ".*RECORD 6.*")
 
     def test_documents_list6(self, *args):
         """retrieve documents list with extened mode"""
         command = "documents list --extended"
         output = self.run_default0(command)
-        self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
-        self.assertEqual(len(output[0]), 251)
+        self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT + 5)
+        self.assertEqual(len(output[3]), 251)
 
     def test_documents_list7(self, *args):
         """retrieve documents list and count them"""
         command = "documents list --count"
         output = self.run_default0(command)
-        self.assertEqual(len(output), 2)
-        self.assertEqual(output[0], "Documents found : 6\n")
+        self.assertEqual(len(output), 5)
+        self.assertEqual(output[3], "Ressources found : 6\n")
 
     @patch('linshareapi.user.documents.Documents.download',
            return_value=('ffffffff', 18))
@@ -149,7 +152,7 @@ class TestDocumentsList(LinShareTestCase):
         """retrieve documents list and download them"""
         command = "documents list --download "
         output = self.run_default0(command)
-        self.assertEqual(len(output), 7)
+        self.assertEqual(len(output), 10)
 
     @patch('linshareapi.user.documents.Documents.download',
            side_effect=urllib.error.HTTPError(404, 'Boom!', None, None, None))
@@ -157,8 +160,8 @@ class TestDocumentsList(LinShareTestCase):
         """retrieve documents list and try to download them (all failed)"""
         command = "documents list --download "
         output = self.run_default0(command)
-        self.assertEqual(len(output), 2)
-        self.assertEqual(output[0], "6 documents can not be downloaded.\n")
+        self.assertEqual(len(output), 5)
+        self.assertEqual(output[3], "6 resources can not be downloaded.\n")
 
     @patch('linshareapi.user.documents.Documents.delete', return_value=deepcopy(
         {
@@ -179,7 +182,7 @@ class TestDocumentsList(LinShareTestCase):
         """retrieve documents list and try to delete them"""
         command = "documents list --delete"
         output = self.run_default0(command)
-        self.assertEqual(len(output), 7)
+        self.assertEqual(len(output), 10)
 
     @patch('linshareapi.user.documents.Documents.delete',
            side_effect=urllib.error.HTTPError(404, 'Boom!', None, None, None))
@@ -187,52 +190,52 @@ class TestDocumentsList(LinShareTestCase):
         """retrieve documents list and try to download them (all failed)"""
         command = "documents list --delete "
         output = self.run_default0(command)
-        self.assertEqual(len(output), 2)
-        self.assertEqual(output[0], "6 document(s) can not be deleted.\n")
+        self.assertEqual(len(output), 5)
+        self.assertEqual(output[3], "6 resource(s) can not be deleted.\n")
 
     def test_documents_list12(self, *args):
         """
         retrieve documents list and try to download them (all should failed)
         """
 
-        first_line = 3
-        last_line = -4
+        first_line = 6
+        last_line = -6
         # start
         command = "documents list --start 2"
         output = self.run_default0(command)
-        self.assertEqual(len(output), 10)
-        self.assertRegex(output[first_line], r"^\| file4.*")
+        self.assertEqual(len(output), 15)
+        self.assertRegex(output[first_line], r"^\| file0.*")
         self.assertRegex(output[last_line], r"^\| file3.*")
         # start and sort by name
-        command = "documents list --start 2 --sort-name"
+        command = "documents list --start 2 --sort-by name"
         output = self.run_default0(command)
-        self.assertEqual(len(output), 10)
+        self.assertEqual(len(output), 15)
         self.assertRegex(output[first_line], r"^\| file2.*")
         self.assertRegex(output[last_line], r"^\| file5.*")
 
         # end
         command = "documents list --end 2"
         output = self.run_default0(command)
-        self.assertEqual(len(output), 8)
+        self.assertEqual(len(output), 13)
         self.assertRegex(output[first_line], r"^\| file2.*")
         self.assertRegex(output[last_line], r"^\| file3.*")
         # end and sort by name
-        command = "documents list --end 2 --sort-name"
+        command = "documents list --end 2 --sort-by name"
         output = self.run_default0(command)
-        self.assertEqual(len(output), 8)
+        self.assertEqual(len(output), 13)
         self.assertRegex(output[first_line], r"^\| file4.*")
         self.assertRegex(output[last_line], r"^\| file5.*")
 
         # limit and start
         command = "documents list --start 2 --limit 2"
         output = self.run_default0(command)
-        self.assertEqual(len(output), 8)
-        self.assertRegex(output[first_line], r"^\| file4.*")
+        self.assertEqual(len(output), 13)
+        self.assertRegex(output[first_line], r"^\| file0.*")
         self.assertRegex(output[last_line], r"^\| file1.*")
         # limit and  end
         command = "documents list --end 3 --limit 2"
         output = self.run_default0(command)
-        self.assertEqual(len(output), 8)
+        self.assertEqual(len(output), 13)
         self.assertRegex(output[first_line], r"^\| file1.*")
         self.assertRegex(output[last_line], r"^\| file2.*")
 
@@ -258,9 +261,9 @@ class TestDocumentsList(LinShareTestCase):
         self.assertRegex("".join(output),
                                  ".*The following documents :.*")
         if self.debug >= 2:
-            self.assertEqual(len(output), 45)
+            self.assertEqual(len(output), 48)
         else:
-            self.assertEqual(len(output), 9)
+            self.assertEqual(len(output), 12)
 
 
 # pylint: disable=too-few-public-methods
@@ -300,7 +303,7 @@ class TestDocumentsDelete(LinShareTestCase):
         """delete one document"""
         command = "documents delete bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810"
         output = self.run_default0(command)
-        self.assertEqual(len(output), 2)
+        self.assertEqual(len(output), 5)
         self.assertRegex(
             "".join(output),
             ".*'test-key-bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810'.*")
@@ -314,7 +317,7 @@ class TestDocumentsDelete(LinShareTestCase):
         """Trying to delete missing document"""
         command = "documents delete bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810"
         output = self.run_default0(command)
-        self.assertEqual(len(output), 3)
+        self.assertEqual(len(output), 6)
         self.assertRegex(
             "".join(output),
             ".*'bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810'.*")
@@ -333,7 +336,7 @@ class TestDocumentsDelete(LinShareTestCase):
         ]
         command = " ".join(['documents', 'delete'] + uuids)
         output = self.run_default0(command)
-        self.assertEqual(len(output), 3)
+        self.assertEqual(len(output), 6)
         self.assertRegex(
             "".join(output),
             ".*'test-key-bb6cc9c8-ca7c-4d59-a5eb-8cb700ee3810'.*")
