@@ -81,16 +81,20 @@ class AccessPolicyCell(ComplexCell):
         if self.value is None:
             return self.none
         output = []
-        display = " - {type:<9} : {domain} ({domain_uuid:.8})"
         if self.vertical:
-            output.append(">---")
-            display = "\t - {type:<9} : {domain} ({domain_uuid})"
+            output.append("\n\t>---")
         for rule in self.value['rules']:
+            display = " - {type}"
+            if self.vertical:
+                display = "\t - {type}"
             rule_dct = {}
             rule_dct['type'] = rule['type']
-            rule_dct['domain'] = None
-            rule_dct['domain_uuid'] = None
+            rule_dct['domain'] = ""
+            rule_dct['domain_uuid'] = ""
             if rule.get('domain'):
+                display = " - {type:<7} : {domain} ({domain_uuid:.8})"
+                if self.vertical:
+                    display = "\t - {type:<7} : {domain} ({domain_uuid})"
                 rule_dct['domain'] = rule['domain']['label']
                 rule_dct['domain_uuid'] = rule['domain']['identifier']
             output.append(display.format(**rule_dct))
