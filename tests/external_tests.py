@@ -1,7 +1,7 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 # PYTHON_ARGCOMPLETE_OK
-
+"""TODO"""
 
 
 from linsharecli.tests.misc import AdminGenericTestList
@@ -40,6 +40,27 @@ class LaunchTestsCommand(DefaultCommand):
                 loader, version, AdminGenericTestList, key, val))
         return suites
 
+    def get_options(self, api_version, command, extra_opts):
+        """TODO"""
+        options = {}
+        LOG.debug("command: %s", command)
+        commands = self.get_all_commands(api_version)
+        if command in commands:
+            options.update(commands[command])
+        LOG.debug("options: %s", options)
+        if "skip" not in options:
+            options['skip'] = False
+        if extra_opts:
+            options.update(json.load(StringIO(extra_opts)))
+        LOG.debug("options: %s", options)
+        return options
+
+    def get_all_commands(self, version):
+        """TODO"""
+        if version == 0:
+            return self.get_all_commands_v0()
+        return self.get_all_commands_v1()
+
     def get_all_commands_v0(self):
         keyerror = False
         keyerror_extended = False
@@ -59,6 +80,7 @@ class LaunchTestsCommand(DefaultCommand):
                 'delete': False,
                 'keyerror': keyerror,
                 'keyerror_extended': keyerror_extended,
+                'fields': False,
                 },
             'ldap': {
                 'delete': False,
@@ -72,9 +94,11 @@ class LaunchTestsCommand(DefaultCommand):
                 },
             'funcs': {
                 'delete': False,
+                'fields': False,
                 },
             'domainpolicy': {
                 'delete': False,
+                'fields': False,
                 },
         }
         return commands
@@ -99,6 +123,7 @@ class LaunchTestsCommand(DefaultCommand):
                 'delete': False,
                 'keyerror': keyerror,
                 'keyerror_extended': keyerror_extended,
+                'fields': False,
                 },
             'ldap': {
                 'delete': False,
@@ -112,9 +137,11 @@ class LaunchTestsCommand(DefaultCommand):
                 },
             'funcs': {
                 'delete': False,
+                'fields': False,
                 },
             'domainpolicy': {
                 'delete': False,
+                'fields': False,
                 },
         }
         return commands
@@ -134,10 +161,12 @@ class LaunchAllTestsCommand(LaunchTestsCommand):
     def __call__(self, args):
         super(LaunchAllTestsCommand, self).__call__(args)
         AdminGenericTestList.host = args.server
+        AdminGenericTestList.password = args.password
         suite = self.get_all_tests()
         print("Detected testcases : " + str(suite.countTestCases()))
         if query_yes_no("Do you want to continue ?"):
             unittest.TextTestRunner(verbosity=2).run(suite)
+        return True
 
 
 class ListCommandTestsCommand(LaunchTestsCommand):
@@ -169,10 +198,8 @@ class LaunchOneCommandTestsCommand(LaunchTestsCommand):
         suite = unittest.TestSuite()
         loader = unittest.TestLoader()
         AdminGenericTestList.host = args.server
-        options = {}
-        print(args.options)
-        if args.options:
-            options = json.load(StringIO(args.options))
+        AdminGenericTestList.password = args.password
+        options = self.get_options(args.api_version, args.command, args.options)
         for testcase in loader.loadTestsFromTestCase(AdminGenericTestList):
             testcase.api_version = int(args.api_version)
             testcase.set_command_to_test(args.command, options)
@@ -180,6 +207,7 @@ class LaunchOneCommandTestsCommand(LaunchTestsCommand):
         print("Detected testcases : " + str(suite.countTestCases()))
         if query_yes_no("Do you want to continue ?"):
             unittest.TextTestRunner(verbosity=2).run(suite)
+        return True
 
 
 class ListMethodTestsCommand(LaunchTestsCommand):
@@ -202,10 +230,8 @@ class LaunchOneMethodTestsCommand(LaunchTestsCommand):
         suite = unittest.TestSuite()
         loader = unittest.TestLoader()
         AdminGenericTestList.host = args.server
-        options = {}
-        print(args.options)
-        if args.options:
-            options = json.load(StringIO(args.options))
+        AdminGenericTestList.password = args.password
+        options = self.get_options(args.api_version, args.command, args.options)
         for testcase in loader.loadTestsFromTestCase(AdminGenericTestList):
             if testcase._testMethodName in args.method:
                 print("Found : ", testcase)
@@ -215,6 +241,7 @@ class LaunchOneMethodTestsCommand(LaunchTestsCommand):
         print("Detected testcases : " + str(suite.countTestCases()))
         if query_yes_no("Do you want to continue ?"):
             unittest.TextTestRunner(verbosity=2).run(suite)
+        return True
 
 
 class LaunchTestProgram(BasicProgram):
@@ -226,9 +253,14 @@ class LaunchTestProgram(BasicProgram):
         # To be removed if useless : samples
         section = self.config.get_default_section()
         section.add_element(Element('server', default="http://127.0.0.1:8080"))
+        section.add_element(Element('password', default="adminlinshare"))
 
     def add_commands(self):
         super(LaunchTestProgram, self).add_commands()
+        self.parser.add_argument(
+            "--password",
+            help="default adminlinshare",
+            **self.config.default.password.get_arg_parse_arguments())
         self.parser.add_argument(
             "--server",
             help="default http://127.0.0.1:8080",

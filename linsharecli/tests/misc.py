@@ -5,10 +5,11 @@
 
 import re
 import logging
+import unittest
 from linsharecli.tests.core import LinShareTestCase
 
-from linsharecli.admin.thread import add_parser as add_threads_parser
-from linsharecli.admin.tmember import add_parser as add_thread_members_parser
+from linsharecli.admin.threads import add_parser as add_threads_parser
+from linsharecli.admin.tmembers import add_parser as add_thread_members_parser
 from linsharecli.admin.user import add_parser as add_users_parser
 from linsharecli.admin.iuser import add_parser as add_iusers_parser
 from linsharecli.admin.domain import add_parser as add_domains_parser
@@ -31,11 +32,11 @@ class SkipIfDisable(object):
     def __call__(self, original_func):
         def wrapper(*args, **kwargs):
             """Decorator method"""
-            obj = args[0]
-            if obj.check_if_enable(self.attr):
-                return original_func(*args, **kwargs)
-            else:
-                obj.skipTest("[deactivated]")
+            test_case = args[0]
+            # raise unittest.SkipTest("[deactivated]")
+            if not test_case.check_if_enable(self.attr):
+                test_case.skipTest("[deactivated]")
+            return original_func(*args, **kwargs)
         wrapper.__doc__ = original_func.__doc__
         return wrapper
 
@@ -70,6 +71,8 @@ class AdminGenericTestList(LinShareTestCase):
         add_domain_policies(self.subparsers, "domainpolicy",
                             "Domain Policies", self.config)
         add_core_parser(self.subparsers, self.config)
+        if self.test_config['skip']:
+            self.skipTest("[deactivated]")
 
     def shortDescription(self):
         """Override default method to suffix with current tested api_version"""
@@ -92,17 +95,23 @@ class AdminGenericTestList(LinShareTestCase):
         self.command_to_test = command
         # pylint: disable=attribute-defined-outside-init
         self.test_config = config
+        if "skip" not in self.test_config:
+            self.test_config['skip'] = False
 
     def check_if_enable(self, kind):
         """check if a test 'kind' is enable"""
+        LOG.debug("kind: %s", kind)
+        LOG.debug("test_config: %s", self.test_config)
+        if self.test_config['skip']:
+            return False
         if kind in self.test_config:
             return self.test_config.get(kind)
         else:
-            return True
+            LOG.debug('kind is not in config.')
+        return True
 
     def logSystemExit(self, ex):
-        LOG.error("SystemExit : ")
-        LOG.error(ex.message)
+        LOG.error("SystemExit code: %s", ex.code)
         raise AssertionError("unexpected failure ! Unsupportted command ?")
 
     def test_list(self):
@@ -273,9 +282,18 @@ class AdminGenericTestList(LinShareTestCase):
 
     @SkipIfDisable('fields')
     def test_list_fields(self):
-        """Generic tests for sub command 'list -k test '"""
+        """Generic tests for sub command 'list -k uuid '"""
         self.assertNotEqual(self.command_to_test, "", "Missing command to test")
-        command = "{c} {s}".format(c=self.command_to_test, s="list -k test ")
+        command = "{c} {s}".format(c=self.command_to_test, s="list -k uuid ")
+        try:
+            output = self.run_default0(command)
+        except SystemExit as ex:
+            self.logSystemExit(ex)
+    @SkipIfDisable('fields_i')
+    def test_list_fields_identifier(self):
+        """Generic tests for sub command 'list -k identifier '"""
+        self.assertNotEqual(self.command_to_test, "", "Missing command to test")
+        command = "{c} {s}".format(c=self.command_to_test, s="list -k identifier ")
         try:
             output = self.run_default0(command)
         except SystemExit as ex:
