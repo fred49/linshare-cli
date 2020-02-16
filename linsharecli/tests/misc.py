@@ -8,16 +8,7 @@ import logging
 import unittest
 from linsharecli.tests.core import LinShareTestCase
 
-from linsharecli.admin.threads import add_parser as add_threads_parser
-from linsharecli.admin.tmembers import add_parser as add_thread_members_parser
-from linsharecli.admin.user import add_parser as add_users_parser
-from linsharecli.admin.iuser import add_parser as add_iusers_parser
-from linsharecli.admin.domain import add_parser as add_domains_parser
-from linsharecli.admin.ldap import add_parser as add_ldap_connections_parser
-from linsharecli.admin.dpattern import add_parser as add_domain_patterns_parser
-from linsharecli.admin.func import add_parser as add_functionalities_parser
-from linsharecli.admin.core import add_parser as add_core_parser
-from linsharecli.admin.domainpolicies import add_parser as add_domain_policies
+from linsharecli.admin import PARSERS
 
 LOG = logging.getLogger("external_tests")
 
@@ -53,24 +44,12 @@ class AdminGenericTestList(LinShareTestCase):
 
     def setUp(self):
         super(AdminGenericTestList, self).setUp()
-        add_threads_parser(self.subparsers, "threads", "threads management",
-                           self.config)
-        add_thread_members_parser(self.subparsers, "tmembers",
-                                  "thread member management", self.config)
-        add_users_parser(self.subparsers, "users", "users", self.config)
-        add_iusers_parser(self.subparsers, "iusers", "inconsistent users",
-                          self.config)
-        add_domains_parser(self.subparsers, "domains", "domains",
-                           self.config)
-        add_ldap_connections_parser(self.subparsers, "ldap",
-                                    "ldap connections", self.config)
-        add_domain_patterns_parser(self.subparsers, "dpatterns",
-                                   "domain patterns", self.config)
-        add_functionalities_parser(self.subparsers, "funcs",
-                                   "Functionalities", self.config)
-        add_domain_policies(self.subparsers, "domainpolicy",
-                            "Domain Policies", self.config)
-        add_core_parser(self.subparsers, self.config)
+        for parser in PARSERS:
+            name = parser.get('name')
+            description = parser.get('description')
+            func = parser.get('parsers')
+            func(self.subparsers, name, description, self.config)
+
         if self.test_config['skip']:
             self.skipTest("[deactivated]")
 

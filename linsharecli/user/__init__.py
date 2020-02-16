@@ -74,7 +74,7 @@ def _add_parser(name=None, description=None, parsers=None):
         }
     )
 
-#####
+
 _add_parser(name='documents', description='Documents of you personal space.',
             parsers=add_documents_parser)
 _add_parser(name='shares', description='Share documents in you personal space.',

@@ -58,6 +58,37 @@ from .. import __version__
 # if you want to debug argcomplete completion,
 # you just need to export _ARC_DEBUG=True
 
+PARSERS = []
+
+def _add_parser(name=None, description=None, parsers=None):
+    PARSERS.append(
+        {
+            'name': name,
+            'description': description,
+            'parsers': parsers
+        }
+    )
+
+
+_add_parser(name="threads", description="threads management", parsers=add_threads_parser)
+_add_parser(name="tmembers", description="thread member management", parsers=add_thread_members_parser)
+_add_parser(name="shared_spaces", description="shared spaces", parsers=add_shared_spaces_parser)
+_add_parser(name="shared_space_members", description="shared spaces members", parsers=add_shared_space_members_parser)
+_add_parser(name="users", description="users", parsers=add_users_parser)
+_add_parser(name="iusers", description="inconsistent users", parsers=add_iusers_parser)
+_add_parser(name="domains", description="domains", parsers=add_domains_parser)
+_add_parser(name="ldap", description="ldap connections", parsers=add_ldap_connections_parser)
+_add_parser(name="dpatterns", description="domain patterns", parsers=add_domain_patterns_parser)
+_add_parser(name="funcs", description="Functionalities", parsers=add_functionalities_parser)
+_add_parser(name="domainpolicy", description="Domain Policies", parsers=add_domain_policies)
+_add_parser(name="upgrade", description="upgrade tasks", parsers=add_upgrade_tasks)
+_add_parser(name="welcome", description="welcome messages", parsers=add_welcome_messages)
+_add_parser(name="pubkeys", description="welcome messages", parsers=add_public_keys)
+_add_parser(name="jwts", description="JWT Persistent Token", parsers=add_jwt)
+_add_parser(name="auth", description="Authentication", parsers=add_authentication)
+_add_parser(name="mail_configs", description="mail_configs", parsers=add_mail_configs)
+_add_parser(name="mail_attachments", description="mail_attachments", parsers=add_mail_attachments)
+_add_parser(parsers=add_core_parser)
 
 class LinShareCliProgram(BasicProgram):
     """Main program."""
@@ -209,27 +240,11 @@ class LinShareCliProgram(BasicProgram):
 
         # Adding all others parsers.
         subparsers = self.parser.add_subparsers()
-        add_threads_parser(subparsers, "threads", "threads management", self.config)
-        add_thread_members_parser(subparsers, "tmembers",
-                                  "thread member management", self.config)
-        add_shared_spaces_parser(subparsers, "shared_spaces", "shared spaces", self.config)
-        add_shared_space_members_parser(subparsers, "shared_space_members",
-                                        "shared spaces members", self.config)
-        add_users_parser(subparsers, "users", "users", self.config)
-        add_iusers_parser(subparsers, "iusers", "inconsistent users", self.config)
-        add_domains_parser(subparsers, "domains", "domains", self.config)
-        add_ldap_connections_parser(subparsers, "ldap", "ldap connections", self.config)
-        add_domain_patterns_parser(subparsers, "dpatterns", "domain patterns", self.config)
-        add_functionalities_parser(subparsers, "funcs", "Functionalities", self.config)
-        add_domain_policies(subparsers, "domainpolicy", "Domain Policies", self.config)
-        add_upgrade_tasks(subparsers, "upgrade", "upgrade tasks", self.config)
-        add_welcome_messages(subparsers, "welcome", "welcome messages", self.config)
-        add_public_keys(subparsers, "pubkeys", "welcome messages", self.config)
-        add_jwt(subparsers, "jwts", "JWT Persistent Token", self.config)
-        add_authentication(subparsers, "auth", "Authentication", self.config)
-        add_mail_configs(subparsers, "mail_configs", "mail_configs", self.config)
-        add_mail_attachments(subparsers, "mail_attachments", "mail_attachments", self.config)
-        add_core_parser(subparsers, self.config)
+        for parser in PARSERS:
+            name = parser.get('name')
+            description = parser.get('description')
+            func = parser.get('parsers')
+            func(subparsers, name, description, self.config)
 
     def reload(self):
         """TODO"""
