@@ -215,9 +215,16 @@ class LaunchOneCommandTestsCommand(LaunchTestsCommand):
         AdminGenericTestList.password = args.password
         options = self.get_options(args.api_version, args.command, args.options)
         for testcase in loader.loadTestsFromTestCase(AdminGenericTestList):
-            testcase.api_version = float(args.api_version)
-            testcase.set_command_to_test(args.command, options)
-            suite.addTest(testcase)
+            if args.method:
+                if testcase._testMethodName == args.method:
+                    print("Found : ", testcase)
+                    testcase.api_version = float(args.api_version)
+                    testcase.set_command_to_test(args.command, options)
+                    suite.addTest(testcase)
+            else:
+                testcase.api_version = float(args.api_version)
+                testcase.set_command_to_test(args.command, options)
+                suite.addTest(testcase)
         print("Detected testcases : " + str(suite.countTestCases()))
         if query_yes_no("Do you want to continue ?"):
             unittest.TextTestRunner(verbosity=2).run(suite)
@@ -234,28 +241,6 @@ class ListMethodTestsCommand(LaunchTestsCommand):
         for testcase in loader.loadTestsFromTestCase(AdminGenericTestList):
             print(" - ", testcase)
         print()
-        return True
-
-
-class LaunchOneMethodTestsCommand(LaunchTestsCommand):
-    """Launchtests command"""
-
-    def __call__(self, args):
-        super(LaunchOneMethodTestsCommand, self).__call__(args)
-        suite = unittest.TestSuite()
-        loader = unittest.TestLoader()
-        AdminGenericTestList.host = args.server
-        AdminGenericTestList.password = args.password
-        options = self.get_options(args.api_version, args.command, args.options)
-        for testcase in loader.loadTestsFromTestCase(AdminGenericTestList):
-            if testcase._testMethodName in args.method:
-                print("Found : ", testcase)
-                testcase.api_version = float(args.api_version)
-                testcase.set_command_to_test(args.command, options)
-                suite.addTest(testcase)
-        print("Detected testcases : " + str(suite.countTestCases()))
-        if query_yes_no("Do you want to continue ?"):
-            unittest.TextTestRunner(verbosity=2).run(suite)
         return True
 
 
@@ -298,11 +283,14 @@ class LaunchTestProgram(BasicProgram):
 
         # command: Launch all tests for only one command
         pat = subparsers.add_parser(
-            'command',
+            'test',
             help="Launch all tests for only one command")
         pat.add_argument(
             "command",
-            help="See linshareadmcli -h, like users, to get a valid command.")
+            help="A command name to test. See list-commands")
+        pat.add_argument(
+            "-m", "--method",
+            help="Optional, a test method name. See list-methods")
         pat.add_argument("-a", "--api-version",
                          default=0, help=api_version_help,
                          type=float)
@@ -310,22 +298,6 @@ class LaunchTestProgram(BasicProgram):
         # pat.add_argument("--classname",
         # help="exmaple : AdminGenericTestList", default=AdminGenericTestList)
         pat.set_defaults(__func__=LaunchOneCommandTestsCommand(self.config))
-
-        # command: test one test method for a command
-        pat = subparsers.add_parser(
-            'method',
-            help="Launch one test method for one command")
-        pat.add_argument(
-            "command",
-            help="See linshareadmcli -h, like users, to get a valid command.")
-        pat.add_argument(
-            "method", nargs="+",
-            help="See linshareadmcli -h, like users, to get a valid command.")
-        pat.add_argument("-a", "--api-version",
-                         default=0, help=api_version_help,
-                         type=float)
-        pat.add_argument("-o", "--options")
-        pat.set_defaults(__func__=LaunchOneMethodTestsCommand(self.config))
 
         # command: only list all available test methods
         pat = subparsers.add_parser(
