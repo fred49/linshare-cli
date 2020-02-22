@@ -14,6 +14,8 @@ from argtoolbox import BasicProgram
 from argtoolbox import Element
 from argtoolbox import query_yes_no
 
+from linshareapi.admin import AdminCli
+
 LOG = logging.getLogger('core')
 LOG.info("loading tests")
 
@@ -44,7 +46,7 @@ class LaunchTestsCommand(DefaultCommand):
         """TODO"""
         options = {}
         LOG.debug("command: %s", command)
-        commands = self.get_all_commands(api_version)
+        commands = self.get_commands(api_version)
         if command in commands:
             options.update(commands[command])
         LOG.debug("options: %s", options)
@@ -55,7 +57,7 @@ class LaunchTestsCommand(DefaultCommand):
         LOG.debug("options: %s", options)
         return options
 
-    def get_all_commands(self, version):
+    def get_commands(self, version):
         """TODO"""
         if version == 0:
             return self.get_all_commands_v0()
@@ -146,12 +148,18 @@ class LaunchTestsCommand(DefaultCommand):
         }
         return commands
 
-    def get_all_tests(self):
+    def get_all_tests(self, api_version):
         """Build all tests"""
         loader = unittest.TestLoader()
         suites = unittest.TestSuite()
-        suites.addTest(self.load_tests(loader, self.get_all_commands_v0(), 0))
-        suites.addTest(self.load_tests(loader, self.get_all_commands_v1(), 1))
+        if api_version is None:
+            suites.addTest(self.load_tests(loader, self.get_all_commands_v0(), 0))
+            suites.addTest(self.load_tests(loader, self.get_all_commands_v1(), 1))
+        else:
+            suites.addTest(self.load_tests(
+                loader,
+                self.get_commands(api_version),
+                api_version))
         return suites
 
 
@@ -162,7 +170,7 @@ class LaunchAllTestsCommand(LaunchTestsCommand):
         super(LaunchAllTestsCommand, self).__call__(args)
         AdminGenericTestList.host = args.server
         AdminGenericTestList.password = args.password
-        suite = self.get_all_tests()
+        suite = self.get_all_tests(args.api_version)
         print("Detected testcases : " + str(suite.countTestCases()))
         if query_yes_no("Do you want to continue ?"):
             unittest.TextTestRunner(verbosity=2).run(suite)
@@ -201,7 +209,7 @@ class LaunchOneCommandTestsCommand(LaunchTestsCommand):
         AdminGenericTestList.password = args.password
         options = self.get_options(args.api_version, args.command, args.options)
         for testcase in loader.loadTestsFromTestCase(AdminGenericTestList):
-            testcase.api_version = int(args.api_version)
+            testcase.api_version = float(args.api_version)
             testcase.set_command_to_test(args.command, options)
             suite.addTest(testcase)
         print("Detected testcases : " + str(suite.countTestCases()))
@@ -235,7 +243,7 @@ class LaunchOneMethodTestsCommand(LaunchTestsCommand):
         for testcase in loader.loadTestsFromTestCase(AdminGenericTestList):
             if testcase._testMethodName in args.method:
                 print("Found : ", testcase)
-                testcase.api_version = int(args.api_version)
+                testcase.api_version = float(args.api_version)
                 testcase.set_command_to_test(args.command, options)
                 suite.addTest(testcase)
         print("Detected testcases : " + str(suite.countTestCases()))
@@ -257,6 +265,8 @@ class LaunchTestProgram(BasicProgram):
 
     def add_commands(self):
         super(LaunchTestProgram, self).add_commands()
+
+        api_version_help = "Available values : " + ",".join(str(x) for x in AdminCli.VERSIONS)
         self.parser.add_argument(
             "--password",
             help="default adminlinshare",
@@ -271,6 +281,9 @@ class LaunchTestProgram(BasicProgram):
         pat = subparsers.add_parser(
             'all',
             help="Launch all tests")
+        pat.add_argument("-a", "--api-version",
+                         default=None, help=api_version_help,
+                         type=float)
         pat.set_defaults(__func__=LaunchAllTestsCommand(self.config))
 
         # command: test one command
@@ -281,8 +294,8 @@ class LaunchTestProgram(BasicProgram):
             "command",
             help="See linshareadmcli -h, like users, to get a valid command.")
         pat.add_argument("-a", "--api-version",
-                         default=0, help="Available values : 0, 1",
-                         type=int)
+                         default=0, help=api_version_help,
+                         type=float)
         pat.add_argument("-o", "--options", help='Sample: {"delete": false}')
         # pat.add_argument("--classname",
         # help="exmaple : AdminGenericTestList", default=AdminGenericTestList)
@@ -299,8 +312,8 @@ class LaunchTestProgram(BasicProgram):
             "method", nargs="+",
             help="See linshareadmcli -h, like users, to get a valid command.")
         pat.add_argument("-a", "--api-version",
-                         default=0, help="Available values : 0, 1",
-                         type=int)
+                         default=0, help=api_version_help,
+                         type=float)
         pat.add_argument("-o", "--options")
         pat.set_defaults(__func__=LaunchOneMethodTestsCommand(self.config))
 
