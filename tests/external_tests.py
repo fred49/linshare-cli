@@ -4,6 +4,7 @@
 """TODO"""
 
 
+# pylint: disable=superfluous-parens
 from linsharecli.tests.misc import AdminGenericTestList
 import unittest
 import logging
@@ -62,6 +63,13 @@ class LaunchTestsCommand(DefaultCommand):
         if version == 0:
             return self.get_all_commands_v0()
         return self.get_all_commands_v1()
+
+    def get_all_commands(self):
+        """TODO"""
+        res = {}
+        res[0] = self.get_all_commands_v0()
+        res[1] = self.get_all_commands_v1()
+        return res
 
     def get_all_commands_v0(self):
         keyerror = False
@@ -182,20 +190,18 @@ class ListCommandTestsCommand(LaunchTestsCommand):
 
     def __call__(self, args):
         super(ListCommandTestsCommand, self).__call__(args)
-        version0 = self.get_all_commands_v0()
-        version1 = self.get_all_commands_v1()
-        if args.command:
-            version0 = version0[args.command]
-            version1 = version1[args.command]
-        elif not args.all_details:
-            version0 = list(version0.keys())
-            version1 = list(version1.keys())
-        print("Version : 0")
-        print(json.dumps(version0, sort_keys=True, indent=2))
-        print()
-        print("Version : 1")
-        print(json.dumps(version1, sort_keys=True, indent=2))
-        print()
+        LOG.debug("command: %s", args.command)
+        all_commands = self.get_all_commands()
+        for version, commands in all_commands.items():
+            print("Version : ", version)
+            for command, config in commands.items():
+                if args.command:
+                    if args.command == command:
+                        print("\t" + command)
+                        print(json.dumps(config, sort_keys=True, indent=2))
+                else:
+                    print("\t" + command)
+        return True
 
 
 class LaunchOneCommandTestsCommand(LaunchTestsCommand):
@@ -228,6 +234,7 @@ class ListMethodTestsCommand(LaunchTestsCommand):
         for testcase in loader.loadTestsFromTestCase(AdminGenericTestList):
             print(" - ", testcase)
         print()
+        return True
 
 
 class LaunchOneMethodTestsCommand(LaunchTestsCommand):
@@ -264,8 +271,10 @@ class LaunchTestProgram(BasicProgram):
         section.add_element(Element('password', default="adminlinshare"))
 
     def add_commands(self):
+        """Add all commands to the cli"""
         super(LaunchTestProgram, self).add_commands()
 
+        # global options
         api_version_help = "Available values : " + ",".join(str(x) for x in AdminCli.VERSIONS)
         self.parser.add_argument(
             "--password",
@@ -277,19 +286,20 @@ class LaunchTestProgram(BasicProgram):
             **self.config.default.server.get_arg_parse_arguments())
         subparsers = self.parser.add_subparsers()
 
-        # command: launch all commands
+        # command: launch all tests
         pat = subparsers.add_parser(
             'all',
             help="Launch all tests")
         pat.add_argument("-a", "--api-version",
-                         default=None, help=api_version_help,
-                         type=float)
+                         default=None,
+                         type=float,
+                         help="Run all tests on only one api.")
         pat.set_defaults(__func__=LaunchAllTestsCommand(self.config))
 
-        # command: test one command
+        # command: Launch all tests for only one command
         pat = subparsers.add_parser(
             'command',
-            help="Launch all tests for one command")
+            help="Launch all tests for only one command")
         pat.add_argument(
             "command",
             help="See linshareadmcli -h, like users, to get a valid command.")
@@ -317,18 +327,20 @@ class LaunchTestProgram(BasicProgram):
         pat.add_argument("-o", "--options")
         pat.set_defaults(__func__=LaunchOneMethodTestsCommand(self.config))
 
-        # command: test one test method for a command
+        # command: only list all available test methods
         pat = subparsers.add_parser(
-            'methods',
-            help="only list available tests")
+            'list-methods',
+            help="only list all available test methods")
         pat.set_defaults(__func__=ListMethodTestsCommand(self.config))
-        # command: test one test method for a command
+
+        # command: list all available cli commands to test
         pat = subparsers.add_parser(
-            'commands',
-            help="only list available commands and config")
+            'list-commands',
+            help="list all available cli commands to test and their related test configuration")
         pat.add_argument(
             "command", nargs="?",
-            help="See linshareadmcli -h, like users, to get a valid command.")
+            help="""Display configuration for a particuler command.
+            See linshareadmcli -h, like users, to get a valid command.""")
         pat.add_argument("-a", "--all_details", help="all details",
                          action="store_true")
         pat.set_defaults(__func__=ListCommandTestsCommand(self.config))
