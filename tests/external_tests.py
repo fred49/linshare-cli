@@ -276,9 +276,9 @@ class LaunchTestProgram(BasicProgram):
             'all',
             help="Launch all tests")
         pat.add_argument("-a", "--api-version",
-                         default=None,
-                         type=float,
-                         help="Run all tests on only one api.")
+                         choices=AdminCli.VERSIONS,
+                         default=None, help=api_version_help,
+                         type=float)
         pat.set_defaults(__func__=LaunchAllTestsCommand(self.config))
 
         # command: Launch all tests for only one command
@@ -292,7 +292,9 @@ class LaunchTestProgram(BasicProgram):
             "-m", "--method",
             help="Optional, a test method name. See list-methods")
         pat.add_argument("-a", "--api-version",
-                         default=0, help=api_version_help,
+                         required=True,
+                         choices=AdminCli.VERSIONS,
+                         default=None, help=api_version_help,
                          type=float)
         pat.add_argument("-o", "--options", help='Sample: {"delete": false}')
         # pat.add_argument("--classname",
