@@ -157,7 +157,7 @@ class LinShareCliProgram(BasicProgram):
             desc="Disable SSL certificate verification"))
 
         section_server.add_element(Element(
-            'no_cache',
+            'nocache',
             e_type=bool,
             default=False))
 
@@ -253,12 +253,12 @@ class LinShareCliProgram(BasicProgram):
         self.parser.add_argument(
             '--no-cache',
             action="store_true",
-            **self.config.server.no_cache.get_arg_parse_arguments())
+            **self.config.server.nocache.get_arg_parse_arguments())
 
         # compatibility.
         self.parser.add_argument(
             '--nocache',
-            dest="no_cache",
+            dest="nocache",
             action="store_true",
             default=False,
             help=argparse.SUPPRESS)
