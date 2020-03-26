@@ -88,8 +88,8 @@ setup(
     # List run-time dependencies here.  These will be installed by pip when your
     # project is installed.
     install_requires=[
-        'argtoolbox>=1.1.0,<1.2.0',
-        'linshareapi>=1.0.0,<1.1.0',
+        'argtoolbox>=1.1.2,<1.2.0',
+        'linshareapi>=1.0.4,<1.1.0',
         'progressbar2',
         'veryprettytable==0.8.1',
         'hurry.filesize==0.9',

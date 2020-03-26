@@ -157,13 +157,13 @@ class DocumentsListCommand(DocumentsCommand):
         super(DocumentsListCommand, self).__call__(args)
         from argcomplete import warn
         if len(prefix) >= 3:
-            json_obj = self.ls.users.list()
-            return (v.get('mail')
-                    for v in json_obj if v.get('mail').startswith(prefix))
+            json_obj = self.ls.autocomplete.list(prefix)
+            return (v.get('display') for v in json_obj)
         else:
             warn("---------------------------------------")
             warn("Completion need at least 3 characters.")
             warn("---------------------------------------")
+        return []
 
 
 class DocumentsUploadCommand(DefaultCommand):
