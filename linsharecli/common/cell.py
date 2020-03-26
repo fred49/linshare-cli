@@ -61,6 +61,8 @@ class CellFactory(object):
             clazz = DateCell
         elif name in self.size_cells:
             clazz = SizeCell
+        elif isinstance(value, bool):
+            clazz = BCell
         elif isinstance(value, int):
             clazz = ICell
         elif isinstance(value, list):
@@ -235,6 +237,20 @@ class ICell(int, BaseCell):
 
     def __init__(self, value):
         super(ICell, self).__init__(value)
+        self.value = value
+
+    def __unicode__(self):
+        if self.raw:
+            return str(self.value)
+        return str(self.value)
+
+
+class BCell(BaseCell):
+    """TODO"""
+    # pylint: disable=too-few-public-methods
+
+    def __init__(self, value):
+        super(BCell, self).__init__(value)
         self.value = value
 
     def __unicode__(self):
