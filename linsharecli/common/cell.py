@@ -211,6 +211,8 @@ class SCell(BaseCell):
 class DateCell(BaseCell):
     """TODO"""
 
+    millisecond=True
+
     # pylint: disable=too-few-public-methods
     def __init__(self, value):
         super(DateCell, self).__init__(value)
@@ -222,8 +224,11 @@ class DateCell(BaseCell):
         if self.value is not None:
             # if self.vertical:
             #     self._d_formatt = "{da:%Y-%m-%d}"
+            div = 1
+            if self.millisecond:
+                div = 1000
             return self._d_formatt.format(
-                da=datetime.datetime.fromtimestamp(self.value / 1000))
+                da=datetime.datetime.fromtimestamp(self.value / div))
         return self.none
 
     def __div__(self, value):
