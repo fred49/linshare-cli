@@ -85,7 +85,7 @@ class ShareAction(Action):
         """TODO"""
         self.init(args, cli, endpoint)
         uuids = [row.get(self.resource_identifier) for row in data]
-        self.share_all(uuids)
+        return self.share_all(uuids)
 
     def share_all(self, uuids):
         """TODO"""
@@ -128,7 +128,7 @@ class ShareAction(Action):
         for doc in sorted(recipients):
             self.pprint(" - " + doc)
         self.pprint("")
-        return 0
+        return True
 
 
 class DocumentsListCommand(DocumentsCommand):
