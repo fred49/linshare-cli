@@ -30,8 +30,7 @@
 import datetime
 import logging
 
-from hurry.filesize import size as filesize
-from hurry.filesize import si
+from humanfriendly import format_size
 
 
 class CellFactory(object):
@@ -275,7 +274,7 @@ class SizeCell(BaseCell):
             return str(self.value)
         if self.value is None:
             return self.none
-        return filesize(self.value, system=si)
+        return format_size(self.value)
 
 
 class ComplexCell(BaseCell):

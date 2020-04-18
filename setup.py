@@ -92,7 +92,7 @@ setup(
         'linshareapi>=1.0.4,<1.1.0',
         'progressbar2',
         'veryprettytable==0.8.1',
-        'hurry.filesize==0.9',
+        'humanfriendly',
         'mock==2.0.0',
     ],
 )
