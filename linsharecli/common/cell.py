@@ -282,6 +282,12 @@ class SizeCell(BaseCell):
         return format_size(self.value)
 
 
+class TypeCell(BaseCell):
+    """TODO"""
+    def __str__(self):
+        return str(type(self.value))
+
+
 class ComplexCell(BaseCell):
     """TODO"""
     # pylint: disable=too-few-public-methods
