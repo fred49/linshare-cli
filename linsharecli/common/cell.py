@@ -162,15 +162,31 @@ class BaseCell(object):
         return self.value == item
 
     def __lt__(self, value):
+        if value is None:
+            return True
+        if self.value is None:
+            return True
         return self.value < value
 
     def __le__(self, value):
+        if value is None:
+            return True
+        if self.value is None:
+            return True
         return self.value <= value
 
     def __gt__(self, value):
+        if value is None:
+            return False
+        if self.value is None:
+            return False
         return self.value > value
 
     def __ge__(self, value):
+        if value is None:
+            return False
+        if self.value is None:
+            return False
         return self.value >= value
 
 
