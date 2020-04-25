@@ -419,6 +419,8 @@ class HTable(BaseTable):
 class Action(object):
     """TODO"""
 
+    no_cell = True
+
     def __init__(self):
         self.cli_mode = False
         self.verbose = False
@@ -953,7 +955,8 @@ class TableBuilder(object):
                 table = self._action_table(self.columns)
                 # a little bit ugly. :(
                 table.action = action
-                self.no_cell = True
+                # if no_cell property does not exist, we keep the old behaviour
+                self.no_cell = getattr(action, 'no_cell', True)
                 self.raw = True
                 break
         if table is None:
