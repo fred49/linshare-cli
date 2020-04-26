@@ -73,8 +73,8 @@ class Filter(object):
         val = row.get(prop)
         if val is None:
             raise ValueError("missing key : " + self.prop)
-        self.log.debug("value: '%s'", val)
         self.log.debug("type: %s", type(val))
+        self.log.debug("value: '%s'", val)
         return val
 
 
@@ -95,6 +95,8 @@ class PartialOr(Filter):
                 self.regex = re.compile(pattern, re.IGNORECASE)
             else:
                 self.regex = re.compile(pattern)
+    def __str__(self):
+        return "PartialOr: " + str(self.values)
 
     def __call__(self, row):
         # pylint: disable=too-many-return-statements

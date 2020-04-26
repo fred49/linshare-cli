@@ -64,19 +64,23 @@ class AbstractTable(object):
     _formatters = []
     _pre_render_classes = []
 
-    # pylint: disable=inconsistent-return-statements
     def filters(self, row, filters):
         """TODO"""
-        # pylint: disable=no-self-use
         if filters is not None:
             if isinstance(filters, list):
-                cpt = 0
+                matches = 0
+                enabled_filters = 0
                 for func in filters:
+                    self.log.debug("filter: %s (enabled=%s)", func, func.is_enable())
                     if func.is_enable():
-                        cpt += 1
+                        enabled_filters += 1
                         if func(row):
-                            return True
-                if cpt == 0:
+                            matches += 1
+                self.log.debug("matches: %s", matches)
+                self.log.debug("enabled_filters: %s", enabled_filters)
+                if enabled_filters == 0:
+                    return True
+                if matches == enabled_filters:
                     return True
             else:
                 if filters.is_enable():
