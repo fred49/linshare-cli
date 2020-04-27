@@ -48,7 +48,7 @@ import urllib.request, urllib.error, urllib.parse
 import types
 import copy
 from argparse import ArgumentError
-from hurry.filesize import size as filesize
+from humanfriendly import format_size
 from linshareapi.core import LinShareException
 from linsharecli.common.tables import HTable
 from linsharecli.common.tables import VTable
@@ -488,7 +488,7 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         field is saved to a new field called 'field_raw'."""
         for row in data:
             row[attr + "_raw"] = row[attr]
-            row[attr] = filesize(row[attr])
+            row[attr] = format_size(row[attr])
 
     def getmaxlength(self, data):
         """TODO"""

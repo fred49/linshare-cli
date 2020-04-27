@@ -31,8 +31,7 @@
 import logging
 import datetime
 # pylint: disable=import-error
-from hurry.filesize import size as filesize
-from hurry.filesize import si
+from humanfriendly import format_size
 
 # pylint: disable=too-few-public-methods
 class Formatter(object):
@@ -88,7 +87,7 @@ class SizeFormatter(Formatter):
                 # feature.
                 return
             try:
-                row[self.prop] = filesize(lsize, system=si)
+                row[self.prop] = format_size(lsize)
             except TypeError:
                 pass
         else:
