@@ -33,6 +33,8 @@ import argtoolbox
 from requests import Request
 
 from linshareapi.user import UserCli
+from linshareapi.core import trace_session
+from linshareapi.core import trace_request
 import linsharecli.common.core as common
 
 
@@ -81,10 +83,11 @@ class RawCommand(DefaultCommand):
         self.verbose = args.verbose
         self.debug = args.debug
         self.log.info("Begin of raw command.")
+        core = self.ls.raw.core
+        trace_session(core.session)
         method = 'GET'
         if args.method:
             method = args.method
-        core = self.ls.raw.core
         url = core.get_full_url(args.url)
         for i in range(1, args.repeat + 1):
             self.log.debug("list url:%s: %s", i, url)
@@ -95,9 +98,9 @@ class RawCommand(DefaultCommand):
             prepped = core.session.prepare_request(request)
             starttime = datetime.datetime.now()
             request = core.session.send(prepped)
-            for header in request.headers.items():
-                self.log.debug("request.header: %s", header)
             endtime = datetime.datetime.now()
+            trace_session(core.session)
+            trace_request(request)
             last_req_time = str(endtime - starttime)
             content_type = request.headers['Content-Type']
             if content_type == 'application/json':
