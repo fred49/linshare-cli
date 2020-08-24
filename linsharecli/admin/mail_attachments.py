@@ -173,7 +173,7 @@ def add_parser(subparsers, name, desc, config):
     parser_tmp = subparsers.add_parser(name, help=desc)
     parser_tmp.add_argument(
         'mail_config',
-        help="config uuid"
+        help="Mail config uuid"
     ).completer = Completer("complete_configs")
 
     subparsers2 = parser_tmp.add_subparsers()
@@ -193,15 +193,34 @@ def add_parser(subparsers, name, desc, config):
     # command : create
     parser = subparsers2.add_parser(
         'create', help="create public key.")
-    parser.add_argument('logo', action="store")
-    parser.add_argument('--cid', action="store")
+    parser.add_argument('logo', action="store",
+                        help="Path to the file (logo) to upload")
+    parser.add_argument(
+        '--cid',
+        action="store",
+        help=("Content id for the mail attachment.\n"
+              "Use the 'logo.linshare@linshare.org' CID to override the default "
+              "LinShare logo. "
+              "If you are using your own CID, you must create your own mail "
+              "layout and reference it."))
     parser.add_argument('--name', action="store")
     parser.add_argument('--description', action="store")
-    parser.add_argument('--language', action="store")
+    parser.add_argument(
+        '--language', action="store",
+        choices=["ENGLISH", "FRENCH", "RUSSIAN"],
+        help=(
+            "By default, the new logo will be used with all languages.\n"
+            "If set, you will override only one language."
+        ))
     parser.add_argument('--alt', action="store")
-    parser.add_argument('--disable', action="store_false", dest="enable")
-    parser.add_argument('--disable-for-all', dest="enable_for_all", action="store_false")
-    parser.add_argument('--cli-mode', action="store_true", help="")
+    parser.add_argument('--disable', action="store_false", dest="enable",
+                        help=(
+                            "When enabled, mail attachment will be used during "
+                            "server side mail rendering.\n"
+                            "By default, mail attachments are enabled."
+                        ))
+    parser.add_argument('--cli-mode', action="store_true",
+                        help="It will only display the created resource uuid.")
     parser.set_defaults(__func__=MailAttachmentsCreateCommand(config))
 
     # command : update
