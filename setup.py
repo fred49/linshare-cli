@@ -89,7 +89,7 @@ setup(
     # project is installed.
     install_requires=[
         'argtoolbox>=1.1.2,<1.2.0',
-        'linshareapi>=1.0.6,<1.1.0',
+        'linshareapi>=1.0.7,<1.1.0',
         'progressbar2',
         'veryprettytable==0.8.1',
         'humanfriendly',
