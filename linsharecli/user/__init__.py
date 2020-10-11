@@ -140,8 +140,12 @@ class LinShareCliProgram(BasicProgram):
         section_server.add_element(Element(
             'password',
             hidden=True,
-            desc="user password to linshare. See cli help for using env variable instead.",
-            hooks=[Base64ElementHook(warning=True), ]))
+            desc="user password to linshare. See cli help for using env variable instead."))
+
+        section_server.add_element(Element(
+            'auth_type',
+            default="plain-b64",
+            desc="Authentication mecanism : plain, plain-b64 or jwt"))
 
         section_server.add_element(Element(
             'base_url',

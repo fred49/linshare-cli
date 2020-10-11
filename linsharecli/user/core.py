@@ -26,7 +26,7 @@
 #
 
 
-
+import base64
 import json
 import datetime
 import argtoolbox
@@ -49,8 +49,17 @@ class DefaultCommand(common.DefaultCommand):
 
     def __get_cli_object(self, args):
         api_version = self.config.server.api_version.value
-        cli = UserCli(args.host, args.user, args.password, args.verbose,
-                      args.debug, api_version=api_version, verify=getattr(args, 'verify', True))
+        self.log.debug("using api version : " + str(api_version))
+        auth_type = self.config.server.auth_type.value
+        password = args.password
+        if auth_type == "plain-b64":
+            if password:
+                password = base64.b64decode(password)
+            auth_type = "plain"
+        cli = UserCli(args.host, args.user, password, args.verbose,
+                      args.debug, api_version=api_version,
+                      verify=getattr(args, 'verify', True),
+                      auth_type=auth_type)
         if args.base_url:
             cli.base_url = args.base_url
         return cli
