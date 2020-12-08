@@ -52,9 +52,12 @@ class DefaultCommand(common.DefaultCommand):
         self.log.debug("using api version : " + str(api_version))
         auth_type = self.config.server.auth_type.value
         password = args.password
+        self.log.debug("auth_type: %s", auth_type)
+        self.log.debug("password: %s...", password[0:2])
         if auth_type == "plain-b64":
             if password:
-                password = base64.b64decode(password)
+                self.log.debug("converting base64 encoded password to plain text.")
+                password = base64.b64decode(password).decode('utf-8')
             auth_type = "plain"
         cli = UserCli(args.host, args.user, password, args.verbose,
                       args.debug, api_version=api_version,
