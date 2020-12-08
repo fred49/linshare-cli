@@ -50,7 +50,7 @@ class DefaultCommand(common.DefaultCommand):
     def __get_cli_object(self, args):
         api_version = self.config.server.api_version.value
         self.log.debug("using api version : " + str(api_version))
-        auth_type = self.config.server.auth_type.value
+        auth_type = args.auth_type
         password = args.password
         self.log.debug("auth_type: %s", auth_type)
         self.log.debug("password: %s...", password[0:2])

@@ -219,6 +219,12 @@ class LinShareCliProgram(BasicProgram):
             help="If set, the program will load your password from this environement variable.")
 
         self.parser.add_argument(
+            '--auth-type',
+            action="store",
+            choices=['plain', 'plain-b64', 'jwt'],
+            **self.config.server.auth_type.get_arg_parse_arguments())
+
+        self.parser.add_argument(
             '-H',
             '--host',
             action="store",
