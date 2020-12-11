@@ -144,8 +144,8 @@ class LinShareCliProgram(BasicProgram):
 
         section_server.add_element(Element(
             'auth_type',
-            default="plain-b64",
-            desc="Authentication mecanism : plain, plain-b64 or jwt"))
+            default="plain",
+            desc="Format of provided/store password: plain, plain-b64 or jwt"))
 
         section_server.add_element(Element(
             'base_url',
