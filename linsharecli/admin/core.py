@@ -34,6 +34,8 @@ import argtoolbox
 from requests import Request
 
 from linshareapi.admin import AdminCli
+from linshareapi.core import trace_session
+from linshareapi.core import trace_request
 from linshareapi.core import LinShareException
 import linsharecli.common.core as common
 
@@ -112,10 +114,11 @@ class RawCommand(DefaultCommand):
         self.verbose = args.verbose
         self.debug = args.debug
         self.log.info("Begin of raw command.")
+        core = self.ls.raw.core
+        trace_session(core.session)
         method = 'GET'
         if args.method:
             method = args.method
-        core = self.ls.raw.core
         url = core.get_full_url(args.url)
         for i in range(1, args.repeat + 1):
             self.log.debug("list url:%s: %s", i, url)
@@ -124,11 +127,18 @@ class RawCommand(DefaultCommand):
             else:
                 request = Request(method, url)
             prepped = core.session.prepare_request(request)
+            if args.headers:
+                headers = {}
+                for item in args.headers:
+                    key, val = item.split(':')
+                    headers[key] = val.rstrip()
+                prepped.headers.update(headers)
             starttime = datetime.datetime.now()
+            for header in prepped.headers.items():
+                self.log.debug("prepped.header: %s", header)
             request = core.session.send(prepped)
-            for header in request.headers.items():
-                self.log.debug("request.header: %s", header)
             endtime = datetime.datetime.now()
+            trace_request(request)
             last_req_time = str(endtime - starttime)
             content_type = request.headers['Content-Type']
             if content_type == 'application/json':
@@ -147,7 +157,8 @@ class RawCommand(DefaultCommand):
                             if line:
                                 file_stream.write(line)
                 else:
-                    self.log.error("Can not process this query, unhandled result content type: %s", content_type)
+                    self.log.warning("Can not process this query, unhandled result content type: %s", content_type)
+                    self.log.warning("data: %s", request.text)
             self.log.info(
                 "url:%(cpt)s:%(url)s:request time: %(time)s",
                 {
@@ -195,6 +206,7 @@ def add_parser(subparsers, name, desc, config):
         '-m', '--method',
         choices=["GET", "POST", "DELETE", "HEAD", "OPTIONS", "PUT"])
     parser.add_argument('--data')
+    parser.add_argument('-H', '--header', action="append", dest="headers")
     parser.add_argument('--output')
     parser.set_defaults(__func__=RawCommand(config))
 

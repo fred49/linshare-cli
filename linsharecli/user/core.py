@@ -108,10 +108,17 @@ class RawCommand(DefaultCommand):
             else:
                 request = Request(method, url)
             prepped = core.session.prepare_request(request)
+            if args.headers:
+                headers = {}
+                for item in args.headers:
+                    key, val = item.split(':')
+                    headers[key] = val.rstrip()
+                prepped.headers.update(headers)
             starttime = datetime.datetime.now()
+            for header in prepped.headers.items():
+                self.log.debug("prepped.header: %s", header)
             request = core.session.send(prepped)
             endtime = datetime.datetime.now()
-            trace_session(core.session)
             trace_request(request)
             last_req_time = str(endtime - starttime)
             content_type = request.headers['Content-Type']
@@ -131,7 +138,8 @@ class RawCommand(DefaultCommand):
                             if line:
                                 file_stream.write(line)
                 else:
-                    self.log.error("Can not process this query, unhandled result content type: %s", content_type)
+                    self.log.warning("Can not process this query, unhandled result content type: %s", content_type)
+                    self.log.warning("data: %s", request.text)
             self.log.info(
                 "url:%(cpt)s:%(url)s:request time: %(time)s",
                 {
@@ -179,6 +187,7 @@ def add_parser(subparsers, name, desc, config):
         '-m', '--method',
         choices=["GET", "POST", "DELETE", "HEAD", "OPTIONS", "PUT"])
     parser.add_argument('--data')
+    parser.add_argument('-H', '--header', action="append", dest="headers")
     parser.add_argument('--output')
     parser.set_defaults(__func__=RawCommand(config))
 
