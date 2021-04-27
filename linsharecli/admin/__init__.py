@@ -53,6 +53,7 @@ from .jwt import add_parser as add_jwt
 from .authentication import add_parser as add_authentication
 from .mail_configs import add_parser as add_mail_configs
 from .mail_attachments import add_parser as add_mail_attachments
+from .mail_activations import add_parser as add_mail_activations
 from .. import __version__
 
 # if you want to debug argcomplete completion,
@@ -88,6 +89,7 @@ _add_parser(name="jwts", description="JWT Persistent Token", parsers=add_jwt)
 _add_parser(name="auth", description="Authentication", parsers=add_authentication)
 _add_parser(name="mail_configs", description="mail_configs", parsers=add_mail_configs)
 _add_parser(name="mail_attachments", description="mail_attachments", parsers=add_mail_attachments)
+_add_parser(name="mail_activations", description="mail_activations", parsers=add_mail_activations)
 _add_parser(parsers=add_core_parser)
 
 class LinShareCliProgram(BasicProgram):
