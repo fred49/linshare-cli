@@ -140,7 +140,7 @@ class RawCommand(DefaultCommand):
             endtime = datetime.datetime.now()
             trace_request(request)
             last_req_time = str(endtime - starttime)
-            content_type = request.headers['Content-Type']
+            content_type = request.headers.get('Content-Type')
             if content_type == 'application/json':
                 res = core.process_request(request, url)
                 self.log.debug("res: %s", res)
