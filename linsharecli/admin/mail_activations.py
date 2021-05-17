@@ -34,6 +34,7 @@ from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.tables import TableBuilder
+from linsharecli.common.tables import SampleAction
 from linsharecli.common.cell import ComplexCell
 
 
@@ -75,12 +76,6 @@ class MailActivationsCommand(DefaultCommand):
     )
     MSG_RS_CAN_NOT_BE_UPDATED = "The MailActivation '%(identifier)s' can not be updated."
     MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s MailActivation(s) can not be updated."
-
-    ACTIONS = {
-        'status' : '_update_all',
-        'count_only' : '_count_only',
-    }
-
 
     def complete(self, args, prefix):
         super().__call__(args)
@@ -136,6 +131,7 @@ class MailActivationsListCommand(MailActivationsCommand):
         tbu.add_custom_cell("activationPolicy", PolicyCell)
         tbu.add_custom_cell("delegationPolicy", PolicyCell)
         tbu.add_custom_cell("configurationPolicy", PolicyCell)
+        tbu.add_action('status', SampleAction('coucou'))
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
         )
@@ -244,47 +240,39 @@ class MailActivationsResetCommand(MailActivationsCommand):
                 for val in json_obj if val.get('identifier').startswith(prefix))
 
 
-def add_update_parser(parser, required=True):
+def add_update_parser(actions_group, required=True):
     """TODO"""
-    policy_group = parser.add_argument_group(
-        'Choose the policy to update, default is activation policy ')
-    group = policy_group.add_mutually_exclusive_group()
-    group.add_argument(
-        '--cp',
-        '--configuration-policy',
-        action="store_const",
-        const="configurationPolicy",
-        dest="policy_type",
-        help="configuration policy")
 
-    status_group = parser.add_argument_group('Status')
-    group = status_group.add_mutually_exclusive_group(required=required)
-    group.add_argument(
-        '--disable',
-        default=None,
-        action="store_const",
-        help="Set policy to ALLOWED and status to disable",
-        const="DISABLE",
-        dest="status")
-    group.add_argument(
-        '--enable',
-        default=None,
-        action="store_const",
-        help="Set policy to ALLOWED and status to enable",
-        const="ENABLE",
-        dest="status")
-    group.add_argument(
-        '--mandatory',
-        action="store_const",
-        help="Set policy to MANDATORY and status to enable",
-        const="MANDATORY",
-        dest="status")
-    group.add_argument(
-        '--forbidden',
-        action="store_const",
-        help="Set policy to FORBIDDEN and status to disable",
-        const="FORBIDDEN",
-        dest="status")
+    def add_parser_options(status_group, name, prefix):
+        cst_prefix = prefix.upper().replace('-', '_')
+        group = status_group.add_mutually_exclusive_group(required=required)
+        group.add_argument(
+            '--' + prefix + 'disable',
+            default=None,
+            action="store_const",
+            help="Set " + name + " to ALLOWED and status to disable",
+            const=cst_prefix + "DISABLE",
+            dest="status")
+        group.add_argument(
+            '--' + prefix + 'enable',
+            default=None,
+            action="store_const",
+            help="Set " + name + " to ALLOWED and status to enable",
+            const=cst_prefix + "ENABLE",
+            dest="status")
+        group.add_argument(
+            '--' + prefix + 'mandatory',
+            action="store_const",
+            help="Set " + name + " to MANDATORY and status to enable",
+            const=cst_prefix + "MANDATORY",
+            dest="status")
+        group.add_argument(
+            '--' + prefix + 'forbidden',
+            action="store_const",
+            help="Set " + name + " to FORBIDDEN and status to disable",
+            const=cst_prefix + "FORBIDDEN",
+            dest="status")
+    add_parser_options(actions_group, "Configuration Policy", "cp-")
 
 def add_parser(subparsers, name, desc, config):
     """Add all domain sub commands."""
@@ -303,7 +291,7 @@ def add_parser(subparsers, name, desc, config):
     # groups : filter_group, sort_group, format_group, actions_group
     actions_group = groups[3]
     actions_group.add_argument('--dry-run', action="store_true")
-    add_update_parser(parser, required=False)
+    add_update_parser(actions_group, required=False)
     parser.set_defaults(__func__=MailActivationsListCommand(config))
 
     # command : update
