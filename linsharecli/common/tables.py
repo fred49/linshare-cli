@@ -954,6 +954,7 @@ class TableBuilder(object):
         table = None
         action_classes = OrderedDict(self._action_classes)
         action_classes['cli_mode'] = CliModeAction(self.cli_mode_identifier)
+        self.log.debug("action_classes: %s", action_classes)
         for flag, action in list(action_classes.items()):
             if getattr(self.args, flag, False):
                 table = self._action_table(self.columns)
