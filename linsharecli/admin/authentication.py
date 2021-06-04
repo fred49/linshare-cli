@@ -29,10 +29,10 @@
 
 import getpass
 import time
-import urllib.request, urllib.error, urllib.parse
 import os
 
 from argparse import ArgumentError
+from requests.auth import HTTPBasicAuth
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
 from argtoolbox import DefaultCompleter as Completer
@@ -98,39 +98,26 @@ class ChangePasswordCommand(AuthenticationCommand):
             raise ArgumentError(None, msg)
         # creating a new cli instance with new password.
         if not self.ls.auth(quiet=True):
-            self.log.warn("Current password is not valid.")
+            self.log.warning("Current password is not valid.")
             self.log.info("Trying to authenticate with the new provided password")
-            auth_handler = urllib.request.HTTPBasicAuthHandler()
-            try:
-                auth_handler.add_password(
-                    realm="Name Of Your LinShare Realm",
-                    uri=self.ls.host.encode('utf8'),
-                    user=self.ls.user.encode('utf8'),
-                    passwd=args.new_password.encode('utf8'))
-            except UnicodeEncodeError:
-                self.log.error(
-                    "the program was not able to compute "
-                    + "the basic authentication token.")
-                return False
-            urllib.request.install_opener(urllib.request.build_opener(auth_handler))
+            self.ls.session.auth = HTTPBasicAuth(self.ls.user, args.new_password)
             if self.ls.auth(quiet=True):
                 self.log.info("New password is already defined.")
                 return True
             self.log.error("Can't update the current password.")
             return False
-        else:
-            self.log.info("Current password is valid.")
-            if args.password == args.new_password:
-                self.log.info("Current password and new password are the same.")
-                return True
-            self.log.info("Updating password...")
-            cli = self.ls.authentication
-            rbu = cli.get_rbu_update()
-            rbu.set_value('oldPwd', args.password)
-            rbu.set_value('newPwd', args.new_password)
-            rbu.check_required_fields()
-            data = rbu.to_resource()
-            return self.update_password(cli, data)
+        self.log.info("Current password is valid.")
+        if args.password == args.new_password:
+            self.log.info("Current password and new password are the same.")
+            return True
+        self.log.info("Updating password...")
+        cli = self.ls.authentication
+        rbu = cli.get_rbu_update()
+        rbu.set_value('oldPwd', args.password)
+        rbu.set_value('newPwd', args.new_password)
+        rbu.check_required_fields()
+        data = rbu.to_resource()
+        return self.update_password(cli, data)
 
     def update_password(self, cli, data):
         """TODO"""
