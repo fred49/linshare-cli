@@ -69,6 +69,7 @@ class DefaultCommand(DefaultCommandArgtoolbox):
     class should extend this class.
     """
     # pylint: disable=line-too-long
+    # pylint: disable=too-many-public-methods
     IDENTIFIER = "name"
     DEFAULT_SORT = "creationDate"
     DEFAULT_TOTAL = "Ressources found : %(count)s"
@@ -90,6 +91,7 @@ class DefaultCommand(DefaultCommandArgtoolbox):
     CFG_DELETE_MODE = 0
     CFG_DELETE_ARG_ATTR = "parent_uuid"
 
+    # ACTIONS: deprecated, see TableBuilder
     ACTIONS = {
         'delete' : '_delete_all',
         'download' : '_download_all',
@@ -103,7 +105,7 @@ class DefaultCommand(DefaultCommandArgtoolbox):
         self.log = logging.getLogger('linsharecli.' + classname)
         self.verbose = False
         self.debug = False
-        #pylint: disable=C0103
+        # pylint: disable=invalid-name
         self.ls = None
         self.enable_auth = True
 
@@ -144,6 +146,9 @@ class DefaultCommand(DefaultCommandArgtoolbox):
             "You must implement the __get_cli_object method.")
 
     def _apply_to_all(self, args, cli, uuids, msg_m, func):
+        warn("This method is deprecated, use DownloadAction instead",
+             DeprecationWarning,
+             stacklevel=2)
         count = len(uuids)
         position = 0
         res = 0
@@ -454,7 +459,7 @@ class DefaultCommand(DefaultCommandArgtoolbox):
             self.log.info(message_ok, json_obj)
             return True
         except LinShareException as ex:
-            self.log.debug("LinShareException : " + str(ex.args))
+            self.log.debug("LinShareException : %s", ex.args)
             self.log.error(ex.args[1] + " : " + err_suffix)
         return False
 
@@ -467,7 +472,7 @@ class DefaultCommand(DefaultCommandArgtoolbox):
     def pprint_warn(self, msg, meta={}):
         """TODO"""
         msg = "WARN: " + msg % meta
-        self.log.warn(msg)
+        self.log.warning(msg)
         print(msg)
 
     def pprint_error(self, msg, meta={}):
@@ -476,7 +481,7 @@ class DefaultCommand(DefaultCommandArgtoolbox):
         self.log.error(msg)
         print(msg)
 
-    #pylint: disable=R0201
+    # pylint: disable=no-self-use
     def pretty_json(self, obj):
         """Just a pretty printer for a json object."""
         print((json.dumps(obj, sort_keys=True, indent=2)))
@@ -544,15 +549,15 @@ class DefaultCommand(DefaultCommandArgtoolbox):
         """TODO"""
         if datatype[name] == int:
             return "{" + name + "!s:" + str(int(maxlength[name] *
-                                                  factor)) + suffix
-        elif datatype[name] == int:
+                                                factor)) + suffix
+        if datatype[name] == int:
             return "{" + name + "!s:" + str(int(maxlength[name] *
-                                                  factor)) + suffix
-        elif datatype[name] == bool:
+                                                factor)) + suffix
+        if datatype[name] == bool:
             return "{" + name + "!s:" + str(int(maxlength[name] *
-                                                  factor)) + suffix
+                                                factor)) + suffix
         return "{" + name + ":" + str(int(maxlength[name] *
-                                            factor)) + suffix
+                                          factor)) + suffix
 
     def print_fields(self, data):
         """TODO"""
@@ -643,6 +648,9 @@ class DefaultCommand(DefaultCommandArgtoolbox):
 
     def get_table(self, args, cli, first_column, in_keys=None, other_table=None):
         """TODO"""
+        warn("This method is deprecated, use TableBuilder instead",
+             DeprecationWarning,
+             stacklevel=2)
         keys = []
         args.vertical = getattr(args, "vertical", False)
         if not args.vertical:
@@ -676,37 +684,6 @@ class DefaultCommand(DefaultCommandArgtoolbox):
         table.debug = args.debug
         table.no_cell = args.no_cell
         table.vertical = args.vertical
-        table.sortby = None
-        table.reversesort = args.reverse
-        table.keys = keys
-        table.json = getattr(args, "json", False)
-        table.raw_json = getattr(args, "raw_json", False)
-        table.csv = getattr(args, "csv", False)
-        table.raw = getattr(args, "raw", False)
-        table._pref_start = getattr(args, "start", 0)
-        table._pref_end = getattr(args, "end", 0)
-        table._pref_limit = getattr(args, "limit", 0)
-        table._pref_no_csv_headers = getattr(args, "no_headers", True)
-        # just backup args into table
-        table.args = args
-        return table
-
-    def get_raw_table(self, args, cli, first_column, keys, other_table=None):
-        """TODO"""
-        # pylint: disable=unused-argument
-        args.reverse = getattr(args, "reverse", False)
-        args.extended = getattr(args, "extended", False)
-        table = None
-        if args.vertical:
-            table = VTable(keys, debug=self.debug)
-        else:
-            if other_table:
-                table = ConsoleTable(keys, debug=self.debug)
-            else:
-                table = HTable(keys)
-                # styles
-                table.align[first_column] = "l"
-                table.padding_width = 1
         table.sortby = None
         table.reversesort = args.reverse
         table.keys = keys
