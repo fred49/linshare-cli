@@ -34,7 +34,7 @@ from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.tables import TableBuilder
-from linsharecli.common.tables import SampleAction
+from linsharecli.common.tables import Action
 from linsharecli.common.cell import ComplexCell
 
 
@@ -52,6 +52,8 @@ class PolicyCell(ComplexCell):
         if not self.value.get('parentAllowUpdate'):
             if self.vertical:
                 dformat += " | READONLY"
+            else:
+                dformat += " | RO"
         return dformat.format(**self.value)
 
 
@@ -106,7 +108,7 @@ class MailActivationsCommand(DefaultCommand):
         if args.policy_type is not None:
             policy = resource.get(args.policy_type)
         if policy is None:
-            raise ArgumentError(None, "No delegation policy for this functionality")
+            raise ArgumentError(None, "No delegation policy for this mail_activation")
         policy['policy'] = args.status
         if args.status == "ENABLE" or args.status == "DISABLE":
             if args.status == "ENABLE":
@@ -117,8 +119,95 @@ class MailActivationsCommand(DefaultCommand):
         return self._update(args, cli, resource)
 
 
+class UpdateAction(Action):
+    """Update mail activation, can only be used by an action table."""
+
+    MSG_RS_UPDATED = (
+        "%(position)s/%(count)s: "
+        "The MailActivation '%(identifier)s' was updated. (%(time)s s)"
+    )
+    MSG_RS_CAN_NOT_BE_UPDATED = "The MailActivation '%(identifier)s' can not be updated."
+    MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s MailActivation(s) can not be updated."
+
+    def init(self, args, cli, endpoint):
+        super(UpdateAction, self).init(args, cli, endpoint)
+        return self
+
+    def __call__(self, args, cli, endpoint, data):
+        """TODO"""
+        self.init(args, cli, endpoint)
+        count = len(data)
+        position = 0
+        res = 0
+        for row in data:
+            position += 1
+            status = self.update_row(row, position, count, args.status)
+            res += abs(status - 1)
+        if res > 0:
+            meta = {'count': res}
+            self.pprint(self.MSG_RS_CAN_NOT_BE_UPDATED_M, meta)
+            return False
+        return True
+
+    def update_row(self, row, position, count, status):
+        """TODO"""
+        self.log.debug("row : %s", row)
+        meta = {}
+        meta.update(row)
+        meta['time'] = " -"
+        meta['position'] = position
+        meta['count'] = count
+        if status == 'CP_DISABLE':
+            row['configurationPolicy']['policy'] = 'ALLOWED'
+            row['configurationPolicy']['status'] = False
+        elif status == 'CP_ENABLE':
+            row['configurationPolicy']['policy'] = 'ALLOWED'
+            row['configurationPolicy']['status'] = True
+        elif status == 'CP_MANDATORY':
+            row['configurationPolicy']['policy'] = 'MANDATORY'
+            row['configurationPolicy']['status'] = True
+        elif status == 'CP_FORBIDDEN':
+            row['configurationPolicy']['policy'] = 'FORBIDDEN'
+            row['configurationPolicy']['status'] = False
+        elif status == 'DISABLE':
+            row['enable'] = False
+        elif status == 'ENABLE':
+            row['enable'] = True
+        else:
+            raise ValueError("Unsupported status value")
+        self.endpoint.update(row)
+        meta['time'] = self.endpoint.core.last_req_time
+        if self.cli_mode:
+            print(row['identifier'])
+        else:
+            self.pprint(self.MSG_RS_UPDATED, meta)
+        return True
+
+
+class DomainTitle(Action):
+    """TODO"""
+
+    display = True
+
+    def init(self, args, cli, endpoint):
+        super(DomainTitle, self).init(args, cli, endpoint)
+        self.display = not getattr(args, 'no_title', False)
+
+    def __call__(self, args, cli, endpoint, data):
+        self.init(args, cli, endpoint)
+        if self.display:
+            domain = "LinShareRootDomain"
+            if args.domain:
+                domain = args.domain
+            domain = cli.domains.get(domain)
+            dformat = "{label} ({identifier})"
+            print()
+            print("###>", dformat.format(**domain))
+            print()
+
+
 class MailActivationsListCommand(MailActivationsCommand):
-    """ List all functionalities."""
+    """ List all mail_activations."""
     IDENTIFIER = "identifier"
     DEFAULT_SORT = "identifier"
 
@@ -131,11 +220,12 @@ class MailActivationsListCommand(MailActivationsCommand):
         tbu.add_custom_cell("activationPolicy", PolicyCell)
         tbu.add_custom_cell("delegationPolicy", PolicyCell)
         tbu.add_custom_cell("configurationPolicy", PolicyCell)
-        tbu.add_action('status', SampleAction('coucou'))
+        tbu.add_action('status', UpdateAction())
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
         )
         json_obj = endpoint.list(args.domain)
+        tbu.add_pre_render_class(DomainTitle())
         table = tbu.build()
         return table.load_v2(json_obj).render()
 
@@ -162,51 +252,12 @@ class MailActivationsListCommand(MailActivationsCommand):
 
 
 class MailActivationsUpdateCommand(MailActivationsCommand):
-    """ List all functionalities."""
+    """ List all mail_activations."""
 
     def __call__(self, args):
         super().__call__(args)
         cli = self.ls.mail_activations
         return self._update_func_policies(args, cli, args.identifier)
-
-
-class MailActivationsUpdateBooleanCommand(MailActivationsCommand):
-    """ Update BOOLEAN functionalities."""
-
-    def __call__(self, args):
-        super().__call__(args)
-        cli = self.ls.mail_activations
-        resource = cli.get(args.identifier, args.domain)
-        if self.debug:
-            self.pretty_json(resource)
-        if resource.get('type') not in ('BOOLEAN', 'UNIT_BOOLEAN_TIME'):
-            raise ArgumentError(None, "Invalid functionality type")
-        parameters = resource.get('parameters')
-        param_type1 = parameters[0].get('type')
-        param_type2 = None
-        if len(parameters) == 2:
-            param_type2 = parameters[1].get('type')
-        param = parameters[0]
-        if param_type1 != 'BOOLEAN':
-            if param_type2 != 'BOOLEAN':
-                raise ArgumentError(None, "Invalid functionality type")
-            else:
-                param = parameters[1]
-        param['bool'] = args.boolean
-        return self._update(args, cli, resource)
-
-    def complete(self, args, prefix):
-        """TODO"""
-        super().__call__(args)
-        json_obj = self.ls.mail_activations.list(args.domain)
-        res = []
-        for val in json_obj:
-            if val.get('identifier').startswith(prefix):
-                if val.get('type') in ('BOOLEAN', 'UNIT_BOOLEAN_TIME'):
-                    for param in val.get('parameters'):
-                        if param.get('type') == 'BOOLEAN':
-                            res.append(val.get('identifier'))
-        return res
 
 
 class MailActivationsResetCommand(MailActivationsCommand):
@@ -272,6 +323,21 @@ def add_update_parser(actions_group, required=True):
             help="Set " + name + " to FORBIDDEN and status to disable",
             const=cst_prefix + "FORBIDDEN",
             dest="status")
+
+    actions_group.add_argument(
+        '--disable',
+        default=None,
+        action="store_const",
+        help="Disable this mail_activations, this email will never be sent",
+        const="DISABLE",
+        dest="status")
+    actions_group.add_argument(
+        '--enable',
+        default=None,
+        action="store_const",
+        help="Enable this mail_activations, this email will be sent",
+        const="ENABLE",
+        dest="status")
     add_parser_options(actions_group, "Configuration Policy", "cp-")
 
 def add_parser(subparsers, name, desc, config):
@@ -282,7 +348,7 @@ def add_parser(subparsers, name, desc, config):
 
     # command : list
     parser = subparsers2.add_parser(
-        'list', help="list functionalities.")
+        'list', help="list mail_activations.")
     parser.add_argument('identifiers', nargs="*")
     parser.add_argument(
         '-d', '--domain', action="store",
@@ -296,7 +362,7 @@ def add_parser(subparsers, name, desc, config):
 
     # command : update
     parser_tmp2 = subparsers2.add_parser(
-        'update', help="update a functionality.")
+        'update', help="update a mail_activation.")
     parser_tmp2.add_argument('identifier', action="store",
                              help="").completer = Completer()
     parser_tmp2.add_argument('-d', '--domain', action="store",
@@ -307,7 +373,7 @@ def add_parser(subparsers, name, desc, config):
 
     # command : reset
     parser_tmp2 = subparsers2.add_parser(
-        'reset', help="reset a functionality.")
+        'reset', help="reset a mail_activation.")
     parser_tmp2.add_argument('identifier', action="store",
                              help="").completer = Completer()
     parser_tmp2.add_argument('domain', action="store",
