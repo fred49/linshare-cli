@@ -44,17 +44,17 @@ import json
 import getpass
 import datetime
 import locale
-import urllib.request, urllib.error, urllib.parse
-import types
+import urllib.error
 import copy
+from warnings import warn
 from argparse import ArgumentError
 from humanfriendly import format_size
+from argtoolbox import DefaultCompleter as Completer
+from argtoolbox import DefaultCommand as DefaultCommandArgtoolbox
 from linshareapi.core import LinShareException
 from linsharecli.common.tables import HTable
 from linsharecli.common.tables import VTable
 from linsharecli.common.tables import ConsoleTable
-import argtoolbox
-from argtoolbox import DefaultCompleter as Completer
 
 
 def hook_file_content(path, context):
@@ -64,7 +64,7 @@ def hook_file_content(path, context):
         return fde.read()
 
 
-class DefaultCommand(argtoolbox.DefaultCommand):
+class DefaultCommand(DefaultCommandArgtoolbox):
     """ If you want to add a new command to the command line interface, your
     class should extend this class.
     """
@@ -159,6 +159,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         return True
 
     def _download_all(self, args, cli, uuids):
+        warn("This method is deprecated, use DownloadAction instead",
+             DeprecationWarning,
+             stacklevel=2)
         count = len(uuids)
         position = 0
         res = 0
@@ -180,6 +183,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         return True
 
     def _download(self, args, cli, uuid, position=None, count=None):
+        warn("This method is deprecated, use DownloadAction instead",
+             DeprecationWarning,
+             stacklevel=2)
         directory = getattr(args, "directory", None)
         if directory:
             if not os.path.isdir(directory):
@@ -216,6 +222,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             return False
 
     def _download_with_parent(self, args, cli, uuid, position=None, count=None):
+        warn("This method is deprecated, use DownloadAction instead",
+             DeprecationWarning,
+             stacklevel=2)
         directory = getattr(args, "directory", None)
         if directory:
             if not os.path.isdir(directory):
@@ -251,6 +260,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             return False
 
     def _download_folder_with_parent(self, args, cli, uuid, position=None, count=None):
+        warn("This method is deprecated, use DownloadAction instead",
+             DeprecationWarning,
+             stacklevel=2)
         meta = {}
         meta['uuid'] = uuid
         meta['time'] = " -"
@@ -312,6 +324,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             return False
 
     def _delete_all(self, args, cli, uuids):
+        warn("This method is deprecated, use DeleteAction instead",
+             DeprecationWarning,
+             stacklevel=2)
         count = len(uuids)
         position = 0
         res = 0
@@ -333,6 +348,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
         return True
 
     def _delete(self, args, cli, uuid, position=None, count=None):
+        warn("This method is deprecated, use DeleteAction instead",
+             DeprecationWarning,
+             stacklevel=2)
         cli_mode = getattr(args, 'cli_mode', False)
         try:
             if not position:
@@ -364,6 +382,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             return False
 
     def _delete_with_parent(self, args, cli, uuid, position=None, count=None):
+        warn("This method is deprecated, use DeleteAction instead",
+             DeprecationWarning,
+             stacklevel=2)
         try:
             if not position:
                 position = 1
@@ -393,6 +414,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             return False
 
     def _update(self, args, cli, resource, position=None, count=None):
+        warn("This method is deprecated, use TableAction instead",
+             DeprecationWarning,
+             stacklevel=2)
         try:
             if not position:
                 position = 1
@@ -420,6 +444,9 @@ class DefaultCommand(argtoolbox.DefaultCommand):
             return False
 
     def _run(self, method, message_ok, err_suffix, *args):
+        warn("This method is deprecated, use TableAction instead",
+             DeprecationWarning,
+             stacklevel=2)
         try:
             json_obj = method(*args)
             if self.debug:
