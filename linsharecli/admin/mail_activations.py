@@ -27,14 +27,18 @@
 
 
 
+import urllib.error
+
 from argparse import ArgumentError
 from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
+from linshareapi.core import LinShareException
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.tables import Action
+from linsharecli.common.tables import DeleteAction as DeleteActionTable
 from linsharecli.common.cell import ComplexCell
 
 
@@ -185,6 +189,7 @@ class MailActivationsListCommand(MailActivationsCommand):
         tbu.add_custom_cell("delegationPolicy", PolicyCell)
         tbu.add_custom_cell("configurationPolicy", PolicyCell)
         tbu.add_action('status', UpdateAction())
+        tbu.add_action('delete', DeleteAction())
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
         )
@@ -228,21 +233,67 @@ class MailActivationsUpdateCommand(MailActivationsCommand):
         return True
 
 
+class DeleteAction(DeleteActionTable):
+    """TODO"""
+
+    MSG_RS_DELETED = (
+        "%(position)s/%(count)s: "
+        "The mail_activation '%(name)s' (%(uuid)s) was reset. (%(time)s s)"
+    )
+    MSG_RS_CAN_NOT_BE_DELETED = "The mail_activation '%(uuid)s' can not be reset."
+    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s mail_activation(s) can not be reset."
+
+    def __init__(self):
+        super(DeleteAction, self).__init__(
+            identifier="name",
+            resource_identifier="identifier"
+        )
+        self.domain = None
+
+    def init(self, args, cli, endpoint):
+        super(DeleteAction, self).init(args, cli, endpoint)
+        self.domain = args.domain
+        return self
+
+    def _delete(self, uuid, position=None, count=None):
+        try:
+            if not position:
+                position = 1
+                count = 1
+            meta = {}
+            meta['uuid'] = uuid
+            meta[self.resource_identifier] = uuid
+            meta['time'] = " -"
+            meta['position'] = position
+            meta['count'] = count
+            if self.dry_run:
+                json_obj = self.endpoint.get(uuid)
+            else:
+                json_obj = self.endpoint.reset(uuid, self.domain)
+                meta['time'] = self.cli.last_req_time
+            if not json_obj:
+                meta = {'uuid': uuid}
+                self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
+                return False
+            if self.cli_mode:
+                print((json_obj.get(self.resource_identifier)))
+            else:
+                meta[self.identifier] = json_obj.get(self.identifier)
+                self.pprint(self.MSG_RS_DELETED, meta)
+            return True
+        except (urllib.error.HTTPError, LinShareException) as ex:
+            self.log.error("Delete error : %s", ex)
+            return False
+
+
 class MailActivationsResetCommand(MailActivationsCommand):
     """ Reset a functionality."""
 
     def __call__(self, args):
         super().__call__(args)
-        json_obj = self.ls.mail_activations.get(args.identifier, args.domain)
-        if self.debug:
-            self.pretty_json(json_obj)
-        name = json_obj.get('identifier')
-        name += " (domain : " + json_obj.get('domain') + ")"
-        return self._delete(
-            self.ls.mail_activations.reset,
-            "The funtionality " + name + " was successfully reseted.",
-            name,
-            json_obj)
+        act = DeleteAction()
+        act.init(args, self.ls, self.ls.mail_activations)
+        return act.delete([args.identifier,])
 
     def complete(self, args, prefix):
         """TODO"""
@@ -321,10 +372,9 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument(
         '-d', '--domain', action="store",
         help="").completer = Completer('complete_domain')
-    groups = add_list_parser_options(parser)
+    groups = add_list_parser_options(parser, delete=True)
     # groups : filter_group, sort_group, format_group, actions_group
     actions_group = groups[3]
-    actions_group.add_argument('--dry-run', action="store_true")
     add_update_parser(actions_group, required=False)
     parser.set_defaults(__func__=MailActivationsListCommand(config))
 
