@@ -233,9 +233,17 @@ class LinShareCliProgram(BasicProgram):
             **self.config.server.host.get_arg_parse_arguments())
 
         self.parser.add_argument(
-            '--nocache',
+            '--no-cache',
             action="store_true",
             **self.config.server.nocache.get_arg_parse_arguments())
+
+        # compatibility.
+        self.parser.add_argument(
+            '--nocache',
+            dest="nocache",
+            action="store_true",
+            default=False,
+            help=argparse.SUPPRESS)
 
         self.parser.add_argument(
             '--no-verify',
