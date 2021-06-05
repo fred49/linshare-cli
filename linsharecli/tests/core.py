@@ -95,6 +95,7 @@ class LinShareTestCase(unittest.TestCase):
         namespace.host = "http://192.168.1.106:8081"
         namespace.user = "homer.simpson@nodomain.com"
         namespace.password = "secret"
+        namespace.auth_type = "plain"
         namespace.env_password = False
         return namespace
 
