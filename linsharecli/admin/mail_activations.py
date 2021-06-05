@@ -65,19 +65,6 @@ class MailActivationsCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "MailActivation found : %(count)s"
     MSG_RS_NOT_FOUND = "No MailActivation could be found."
-    MSG_RS_DELETED = (
-        "%(position)s/%(count)s: "
-        "The MailActivation '%(identifier)s' was deleted. (%(time)s s)"
-    )
-    MSG_RS_CAN_NOT_BE_DELETED = "The MailActivation '%(identifier)s' can not be deleted."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s MailActivation(s) can not be reset."
-
-    MSG_RS_UPDATED = (
-        "%(position)s/%(count)s: "
-        "The MailActivation '%(identifier)s' was updated. (%(time)s s)"
-    )
-    MSG_RS_CAN_NOT_BE_UPDATED = "The MailActivation '%(identifier)s' can not be updated."
-    MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s MailActivation(s) can not be updated."
 
     def complete(self, args, prefix):
         super().__call__(args)
@@ -92,35 +79,9 @@ class MailActivationsCommand(DefaultCommand):
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
-    def _update_all(self, args, cli, uuids):
-        """TODO"""
-        return self._apply_to_all(
-            args, cli, uuids,
-            self.MSG_RS_CAN_NOT_BE_UPDATED_M,
-            self._update_func_policies)
-
-    def _update_func_policies(self, args, cli, uuid, position=None, count=None):
-        """TODO"""
-        # pylint: disable=too-many-arguments
-        # pylint: disable=unused-argument
-        resource = cli.get(uuid, args.domain)
-        policy = resource.get('configurationPolicy')
-        if args.policy_type is not None:
-            policy = resource.get(args.policy_type)
-        if policy is None:
-            raise ArgumentError(None, "No delegation policy for this mail_activation")
-        policy['policy'] = args.status
-        if args.status == "ENABLE" or args.status == "DISABLE":
-            if args.status == "ENABLE":
-                policy['status'] = True
-            else:
-                policy['status'] = False
-            policy['policy'] = "ALLOWED"
-        return self._update(args, cli, resource)
-
 
 class UpdateAction(Action):
-    """Update mail activation, can only be used by an action table."""
+    """Update mail activation, is supposed to be used by an action table."""
 
     MSG_RS_UPDATED = (
         "%(position)s/%(count)s: "
@@ -174,7 +135,10 @@ class UpdateAction(Action):
         elif status == 'ENABLE':
             row['enable'] = True
         else:
-            raise ValueError("Unsupported status value")
+            raise ArgumentError(None, "Unsupported update value: "
+                                + str(status) + " Did you forget to provide"
+                                + " the value/flag to update ?"
+                                )
         self.endpoint.update(row)
         meta['time'] = self.endpoint.core.last_req_time
         if self.cli_mode:
@@ -256,8 +220,12 @@ class MailActivationsUpdateCommand(MailActivationsCommand):
 
     def __call__(self, args):
         super().__call__(args)
-        cli = self.ls.mail_activations
-        return self._update_func_policies(args, cli, args.identifier)
+        cli = self.ls
+        endpoint = self.ls.mail_activations
+        data = [endpoint.get(args.identifier),]
+        action = UpdateAction()
+        action(args, cli, endpoint, data)
+        return True
 
 
 class MailActivationsResetCommand(MailActivationsCommand):
@@ -361,21 +329,21 @@ def add_parser(subparsers, name, desc, config):
     parser.set_defaults(__func__=MailActivationsListCommand(config))
 
     # command : update
-    parser_tmp2 = subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'update', help="update a mail_activation.")
-    parser_tmp2.add_argument('identifier', action="store",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('-d', '--domain', action="store",
-                             help="Completion available").completer = Completer('complete_domain')
-    parser_tmp2.add_argument('--dry-run', action="store_true")
-    add_update_parser(parser_tmp2)
-    parser_tmp2.set_defaults(__func__=MailActivationsUpdateCommand(config))
+    parser.add_argument('identifier', action="store",
+                        help="").completer = Completer()
+    parser.add_argument('domain', action="store",
+                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument('--dry-run', action="store_true")
+    add_update_parser(parser, required=False)
+    parser.set_defaults(__func__=MailActivationsUpdateCommand(config))
 
     # command : reset
-    parser_tmp2 = subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'reset', help="reset a mail_activation.")
-    parser_tmp2.add_argument('identifier', action="store",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('domain', action="store",
-                             help="").completer = Completer('complete_domain')
-    parser_tmp2.set_defaults(__func__=MailActivationsResetCommand(config))
+    parser.add_argument('identifier', action="store",
+                        help="").completer = Completer()
+    parser.add_argument('domain', action="store",
+                        help="").completer = Completer('complete_domain')
+    parser.set_defaults(__func__=MailActivationsResetCommand(config))
