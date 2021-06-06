@@ -414,8 +414,7 @@ class FunctionalityUpdateTimeCommand(FunctionalityCommand):
         if param_type1 != 'UNIT_TIME':
             if param_type2 != 'UNIT_TIME':
                 raise ArgumentError(None, "Invalid functionality type")
-            else:
-                param = parameters[1]
+            param = parameters[1]
         param['integer'] = args.value
         if args.unit:
             param['string'] = args.unit
@@ -536,8 +535,7 @@ class FunctionalityUpdateBooleanCommand(FunctionalityCommand):
         if param_type1 != 'BOOLEAN':
             if param_type2 != 'BOOLEAN':
                 raise ArgumentError(None, "Invalid functionality type")
-            else:
-                param = parameters[1]
+            param = parameters[1]
         param['bool'] = args.boolean
         return self._update(args, cli, resource)
 
@@ -739,28 +737,28 @@ def add_parser(subparsers, name, desc, config):
     parser.set_defaults(__func__=FunctionalityUpdateStringCommand(config))
 
     # command : update-int
-    parser_tmp2 = subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'update-int', help="update INTEGER functionality.")
-    parser_tmp2.add_argument('identifier', action="store",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('-d', '--domain', action="store",
-                             help="Completion available").completer = Completer('complete_domain')
-    parser_tmp2.add_argument(
+    parser.add_argument('identifier', action="store",
+                        help="").completer = Completer()
+    parser.add_argument('-d', '--domain', action="store",
+                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument(
         'integer',
         type=int,
         help="integer value",
         action="store")
-    parser_tmp2.add_argument('--dry-run', action="store_true")
-    parser_tmp2.set_defaults(__func__=FunctionalityUpdateIntegerCommand(config))
+    parser.add_argument('--dry-run', action="store_true")
+    parser.set_defaults(__func__=FunctionalityUpdateIntegerCommand(config))
 
     # command : update-bool
-    parser_tmp2 = subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'update-bool', help="update BOOLEAN functionality.")
-    parser_tmp2.add_argument('identifier', action="store",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('-d', '--domain', action="store",
-                             help="Completion available").completer = Completer('complete_domain')
-    status_group = parser_tmp2.add_argument_group('Boolean value')
+    parser.add_argument('identifier', action="store",
+                        help="").completer = Completer()
+    parser.add_argument('-d', '--domain', action="store",
+                        help="Completion available").completer = Completer('complete_domain')
+    status_group = parser.add_argument_group('Boolean value')
     group = status_group.add_mutually_exclusive_group(required=True)
     group.add_argument(
         '--disable',
@@ -770,69 +768,69 @@ def add_parser(subparsers, name, desc, config):
         '--enable',
         action="store_true",
         dest="boolean")
-    parser_tmp2.add_argument('--dry-run', action="store_true")
-    parser_tmp2.set_defaults(__func__=FunctionalityUpdateBooleanCommand(config))
+    parser.add_argument('--dry-run', action="store_true")
+    parser.set_defaults(__func__=FunctionalityUpdateBooleanCommand(config))
 
     # command : update-lang
-    parser_tmp2 = subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'update-lang', help="update language functionality.")
-    parser_tmp2.add_argument('identifier', action="store",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('-d', '--domain', action="store",
-                             help="Completion available").completer = Completer('complete_domain')
-    parser_tmp2.add_argument(
+    parser.add_argument('identifier', action="store",
+                        help="").completer = Completer()
+    parser.add_argument('-d', '--domain', action="store",
+                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument(
         '-l',
         '--lang',
         action="store",
         choices=('EN', 'FR'))
-    parser_tmp2.add_argument('--dry-run', action="store_true")
-    parser_tmp2.set_defaults(__func__=FunctionalityUpdateLangCommand(config))
+    parser.add_argument('--dry-run', action="store_true")
+    parser.set_defaults(__func__=FunctionalityUpdateLangCommand(config))
 
     # command : update-time
-    parser_tmp2 = subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'update-time', help="update UNIT functionality.")
-    parser_tmp2.add_argument('identifier', action="store",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('-d', '--domain', action="store",
-                             help="Completion available").completer = Completer('complete_domain')
-    parser_tmp2.add_argument(
+    parser.add_argument('identifier', action="store",
+                        help="").completer = Completer()
+    parser.add_argument('-d', '--domain', action="store",
+                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument(
         'value',
         type=int,
         help="time value",
         action="store")
-    parser_tmp2.add_argument(
+    parser.add_argument(
         '-u',
         '--unit',
         action="store",
         choices=('DAY', 'WEEK', 'MONTH'))
-    parser_tmp2.add_argument('--dry-run', action="store_true")
-    parser_tmp2.set_defaults(__func__=FunctionalityUpdateTimeCommand(config))
+    parser.add_argument('--dry-run', action="store_true")
+    parser.set_defaults(__func__=FunctionalityUpdateTimeCommand(config))
 
     # command : update-size
-    parser_tmp2 = subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'update-size', help="update UNIT functionality.")
-    parser_tmp2.add_argument('identifier', action="store",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('-d', '--domain', action="store",
-                             help="Completion available").completer = Completer('complete_domain')
-    parser_tmp2.add_argument(
+    parser.add_argument('identifier', action="store",
+                        help="").completer = Completer()
+    parser.add_argument('-d', '--domain', action="store",
+                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument(
         'value',
         type=int,
         help="size value",
         action="store")
-    parser_tmp2.add_argument(
+    parser.add_argument(
         '-u',
         '--unit',
         action="store",
         choices=('KILO', 'MEGA', 'GIGA'))
-    parser_tmp2.add_argument('--dry-run', action="store_true")
-    parser_tmp2.set_defaults(__func__=FunctionalityUpdateSizeCommand(config))
+    parser.add_argument('--dry-run', action="store_true")
+    parser.set_defaults(__func__=FunctionalityUpdateSizeCommand(config))
 
     # command : reset
-    parser_tmp2 = subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'reset', help="reset a functionality.")
-    parser_tmp2.add_argument('identifier', action="store",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('domain', action="store",
-                             help="").completer = Completer('complete_domain')
-    parser_tmp2.set_defaults(__func__=FunctionalityResetCommand(config))
+    parser.add_argument('identifier', action="store",
+                        help="").completer = Completer()
+    parser.add_argument('domain', action="store",
+                        help="").completer = Completer('complete_domain')
+    parser.set_defaults(__func__=FunctionalityResetCommand(config))
