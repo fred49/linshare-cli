@@ -229,8 +229,7 @@ class MailActivationsUpdateCommand(MailActivationsCommand):
         endpoint = self.ls.mail_activations
         data = [endpoint.get(args.identifier),]
         action = UpdateAction()
-        action(args, cli, endpoint, data)
-        return True
+        return action(args, cli, endpoint, data)
 
 
 class DeleteAction(DeleteActionTable):

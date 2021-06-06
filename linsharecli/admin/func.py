@@ -27,13 +27,18 @@
 
 
 
+import urllib.error
 from argparse import ArgumentError
+from warnings import warn
 from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
+from linshareapi.core import LinShareException
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.tables import TableBuilder
+from linsharecli.common.tables import Action
+from linsharecli.common.tables import DeleteAction as DeleteActionTable
 from linsharecli.common.cell import ComplexCell
 
 
@@ -51,6 +56,8 @@ class PolicyCell(ComplexCell):
         if not self.value.get('parentAllowUpdate'):
             if self.vertical:
                 dformat += " | READONLY"
+            else:
+                dformat += " | RO"
         return dformat.format(**self.value)
 
 
@@ -103,25 +110,6 @@ class FunctionalityCommand(DefaultCommand):
     MSG_RS_CAN_NOT_BE_UPDATED = "The Functionality '%(identifier)s' can not be updated."
     MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s Functionality(s) can not be updated."
 
-    ACTIONS = {
-        'status' : '_update_all',
-        'count_only' : '_count_only',
-    }
-
-
-    def complete(self, args, prefix):
-        super(FunctionalityCommand, self).__call__(args)
-        json_obj = self.ls.funcs.list(args.domain)
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix))
-
-    def complete_domain(self, args, prefix):
-        """TODO"""
-        super(FunctionalityCommand, self).__call__(args)
-        json_obj = self.ls.domains.list()
-        return (v.get('identifier')
-                for v in json_obj if v.get('identifier').startswith(prefix))
-
     def _update_all(self, args, cli, uuids):
         """TODO"""
         return self._apply_to_all(
@@ -149,6 +137,163 @@ class FunctionalityCommand(DefaultCommand):
         return self._update(args, cli, resource)
 
 
+    def complete(self, args, prefix):
+        super(FunctionalityCommand, self).__call__(args)
+        json_obj = self.ls.funcs.list(args.domain)
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_domain(self, args, prefix):
+        """TODO"""
+        super(FunctionalityCommand, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+
+class UpdateAction(Action):
+    """Update funtionality, is supposed to be used by an action table."""
+
+    MSG_RS_UPDATED = (
+        "%(position)s/%(count)s: "
+        "The Functionality '%(identifier)s' was updated. (%(time)s s)"
+    )
+    MSG_RS_CAN_NOT_BE_UPDATED = "The Functionality '%(identifier)s' can not be updated."
+    MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s Functionality(s) can not be updated."
+
+    def __call__(self, args, cli, endpoint, data):
+        """TODO"""
+        self.init(args, cli, endpoint)
+        count = len(data)
+        position = 0
+        res = 0
+        for row in data:
+            position += 1
+            status = self.update_row(row, position, count, args.status)
+            res += abs(status - 1)
+        if res > 0:
+            meta = {'count': res}
+            self.pprint(self.MSG_RS_CAN_NOT_BE_UPDATED_M, meta)
+            return False
+        return True
+
+    def update_row(self, row, position, count, status):
+        """TODO"""
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-statements
+        self.log.debug("row : %s", row)
+        meta = {}
+        meta.update(row)
+        meta['time'] = " -"
+        meta['position'] = position
+        meta['count'] = count
+        if status == 'DISABLE':
+            row['enable'] = False
+        elif status == 'ENABLE':
+            row['enable'] = True
+        elif status == 'AP_DISABLE':
+            row['activationPolicy']['policy'] = 'ALLOWED'
+            row['activationPolicy']['status'] = False
+        elif status == 'AP_ENABLE':
+            row['activationPolicy']['policy'] = 'ALLOWED'
+            row['activationPolicy']['status'] = True
+        elif status == 'AP_MANDATORY':
+            row['activationPolicy']['policy'] = 'MANDATORY'
+            row['activationPolicy']['status'] = True
+        elif status == 'AP_FORBIDDEN':
+            row['activationPolicy']['policy'] = 'FORBIDDEN'
+            row['activationPolicy']['status'] = False
+        elif status == 'CP_DISABLE':
+            row['configurationPolicy']['policy'] = 'ALLOWED'
+            row['configurationPolicy']['status'] = False
+        elif status == 'CP_ENABLE':
+            row['configurationPolicy']['policy'] = 'ALLOWED'
+            row['configurationPolicy']['status'] = True
+        elif status == 'CP_MANDATORY':
+            row['configurationPolicy']['policy'] = 'MANDATORY'
+            row['configurationPolicy']['status'] = True
+        elif status == 'CP_FORBIDDEN':
+            row['configurationPolicy']['policy'] = 'FORBIDDEN'
+            row['configurationPolicy']['status'] = False
+        elif status == 'DP_DISABLE':
+            row['delegationPolicy']['policy'] = 'ALLOWED'
+            row['delegationPolicy']['status'] = False
+        elif status == 'DP_ENABLE':
+            row['delegationPolicy']['policy'] = 'ALLOWED'
+            row['delegationPolicy']['status'] = True
+        elif status == 'DP_MANDATORY':
+            row['delegationPolicy']['policy'] = 'MANDATORY'
+            row['delegationPolicy']['status'] = True
+        elif status == 'DP_FORBIDDEN':
+            row['delegationPolicy']['policy'] = 'FORBIDDEN'
+            row['delegationPolicy']['status'] = False
+        else:
+            raise ArgumentError(None, "Unsupported update value: "
+                                + str(status) + " Did you forget to provide"
+                                + " the value/flag to update ?"
+                                )
+        self.endpoint.update(row)
+        meta['time'] = self.endpoint.core.last_req_time
+        if self.cli_mode:
+            print(row['identifier'])
+        else:
+            self.pprint(self.MSG_RS_UPDATED, meta)
+        return True
+
+
+class DeleteAction(DeleteActionTable):
+    """TODO"""
+
+    MSG_RS_DELETED = (
+        "%(position)s/%(count)s: "
+        "The mail_activation '%(name)s' (%(uuid)s) was reset. (%(time)s s)"
+    )
+    MSG_RS_CAN_NOT_BE_DELETED = "The mail_activation '%(uuid)s' can not be reset."
+    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s mail_activation(s) can not be reset."
+
+    def __init__(self):
+        super(DeleteAction, self).__init__(
+            identifier="name",
+            resource_identifier="identifier"
+        )
+        self.domain = None
+
+    def init(self, args, cli, endpoint):
+        super(DeleteAction, self).init(args, cli, endpoint)
+        self.domain = args.domain
+        return self
+
+    def _delete(self, uuid, position=None, count=None):
+        try:
+            if not position:
+                position = 1
+                count = 1
+            meta = {}
+            meta['uuid'] = uuid
+            meta[self.resource_identifier] = uuid
+            meta['time'] = " -"
+            meta['position'] = position
+            meta['count'] = count
+            if self.dry_run:
+                json_obj = self.endpoint.get(uuid)
+            else:
+                json_obj = self.endpoint.reset(uuid, self.domain)
+                meta['time'] = self.cli.last_req_time
+            if not json_obj:
+                meta = {'uuid': uuid}
+                self.pprint(self.MSG_RS_CAN_NOT_BE_DELETED, meta)
+                return False
+            if self.cli_mode:
+                print((json_obj.get(self.resource_identifier)))
+            else:
+                meta[self.identifier] = json_obj.get(self.identifier)
+                self.pprint(self.MSG_RS_DELETED, meta)
+            return True
+        except (urllib.error.HTTPError, LinShareException) as ex:
+            self.log.error("Delete error : %s", ex)
+            return False
+
+
 class FunctionalityListCommand(FunctionalityCommand):
     """ List all functionalities."""
     IDENTIFIER = "identifier"
@@ -164,6 +309,8 @@ class FunctionalityListCommand(FunctionalityCommand):
         tbu.add_custom_cell("activationPolicy", PolicyCell)
         tbu.add_custom_cell("configurationPolicy", PolicyCell)
         tbu.add_custom_cell("delegationPolicy", PolicyCell)
+        tbu.add_action('status', UpdateAction())
+        tbu.add_action('delete', DeleteAction())
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
             PartialOr("type", args.funct_type, True)
@@ -200,8 +347,27 @@ class FunctionalityUpdateCommand(FunctionalityCommand):
 
     def __call__(self, args):
         super(FunctionalityUpdateCommand, self).__call__(args)
-        cli = self.ls.funcs
-        return self._update_func_policies(args, cli, args.identifier)
+        error = False
+        if args.status_deprecated or args.policy_type:
+            if args.status_deprecated and args.policy_type:
+                args.status = args.policy_type + args.status_deprecated
+            else:
+                error = True
+        if error:
+            raise ArgumentError(
+                None,
+                (
+                    "If your using deprecated arguments --ap, --cp or --dp, "
+                    "you must also provide the following flags: "
+                    "--disable --enable --mandatory --forbidden.\n"
+                    "Please use news flags. Deprecated flags will removed soon."
+                )
+            )
+        cli = self.ls
+        endpoint = self.ls.funcs
+        data = [endpoint.get(args.identifier),]
+        action = UpdateAction()
+        return action(args, cli, endpoint, data)
 
 
 class FunctionalityUpdateStringCommand(FunctionalityCommand):
@@ -420,34 +586,71 @@ class FunctionalityResetCommand(FunctionalityCommand):
                 for val in json_obj if val.get('identifier').startswith(prefix))
 
 
-def add_update_parser(parser, required=True):
+def add_update_parser(actions_group, required=True):
+    """TODO"""
+
+    def add_parser_options(status_group, name, prefix):
+        cst_prefix = prefix.upper().replace('-', '_')
+        group = status_group.add_mutually_exclusive_group(required=required)
+        group.add_argument(
+            '--' + prefix + 'disable',
+            default=None,
+            action="store_const",
+            help="Set " + name + " to ALLOWED and status to disable",
+            const=cst_prefix + "DISABLE",
+            dest="status")
+        group.add_argument(
+            '--' + prefix + 'enable',
+            default=None,
+            action="store_const",
+            help="Set " + name + " to ALLOWED and status to enable",
+            const=cst_prefix + "ENABLE",
+            dest="status")
+        group.add_argument(
+            '--' + prefix + 'mandatory',
+            action="store_const",
+            help="Set " + name + " to MANDATORY and status to enable",
+            const=cst_prefix + "MANDATORY",
+            dest="status")
+        group.add_argument(
+            '--' + prefix + 'forbidden',
+            action="store_const",
+            help="Set " + name + " to FORBIDDEN and status to disable",
+            const=cst_prefix + "FORBIDDEN",
+            dest="status")
+
+    add_parser_options(actions_group, "Configuration Policy", "cp-")
+    add_parser_options(actions_group, "Activation Policy", "ap-")
+    add_parser_options(actions_group, "Delegation Policy", "dp-")
+
+def add_update_parser_old(parser, required=True):
     """TODO"""
     policy_group = parser.add_argument_group(
-        'Choose the policy to update, default is activation policy ')
+        'Deprecated. Choose the policy to update, default is activation policy')
     group = policy_group.add_mutually_exclusive_group()
     group.add_argument(
         '--ap',
         '--activation-policy',
         action="store_const",
-        const="activationPolicy",
+        const="AP_",
         dest="policy_type",
-        help="activation policy")
+        help="activation policy, deprecated see --ap-* options")
     group.add_argument(
         '--cp',
         '--configuration-policy',
         action="store_const",
-        const="configurationPolicy",
+        const="CP_",
         dest="policy_type",
-        help="configuration policy")
+        help="configuration policy, deprecated see --cp-* options")
     group.add_argument(
         '--dp',
         '--delegation-policy',
         action="store_const",
-        const="delegationPolicy",
+        const="DP_",
         dest="policy_type",
-        help="delegation policy")
+        help="delegation policy, deprecated see --dp-* options")
 
-    status_group = parser.add_argument_group('Status')
+    status_group = parser.add_argument_group('Deprecated. Status')
     group = status_group.add_mutually_exclusive_group(required=required)
     group.add_argument(
         '--disable',
@@ -455,26 +658,27 @@ def add_update_parser(parser, required=True):
         action="store_const",
         help="Set policy to ALLOWED and status to disable",
         const="DISABLE",
-        dest="status")
+        dest="status_deprecated")
     group.add_argument(
         '--enable',
         default=None,
         action="store_const",
         help="Set policy to ALLOWED and status to enable",
         const="ENABLE",
-        dest="status")
+        dest="status_deprecated")
     group.add_argument(
         '--mandatory',
         action="store_const",
         help="Set policy to MANDATORY and status to enable",
         const="MANDATORY",
-        dest="status")
+        dest="status_deprecated")
     group.add_argument(
         '--forbidden',
         action="store_const",
         help="Set policy to FORBIDDEN and status to disable",
         const="FORBIDDEN",
-        dest="status")
+        dest="status_deprecated")
+
 
 def add_parser(subparsers, name, desc, config):
     """Add all domain sub commands."""
@@ -505,33 +709,34 @@ def add_parser(subparsers, name, desc, config):
     sort_group.add_argument(
         '--sort-type', action="store_true",
         help="Sort functionalities by type")
-    add_update_parser(parser, required=False)
+    add_update_parser(actions_group, required=False)
     parser.set_defaults(__func__=FunctionalityListCommand(config))
 
     # command : update
-    parser_tmp2 = subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'update', help="update a functionality.")
-    parser_tmp2.add_argument('identifier', action="store",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('-d', '--domain', action="store",
-                             help="Completion available").completer = Completer('complete_domain')
-    parser_tmp2.add_argument('--dry-run', action="store_true")
-    add_update_parser(parser_tmp2)
-    parser_tmp2.set_defaults(__func__=FunctionalityUpdateCommand(config))
+    parser.add_argument('identifier', action="store",
+                        help="").completer = Completer()
+    parser.add_argument('-d', '--domain', action="store",
+                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument('--dry-run', action="store_true")
+    add_update_parser(parser, required=False)
+    add_update_parser_old(parser, required=False)
+    parser.set_defaults(__func__=FunctionalityUpdateCommand(config))
 
     # command : update-str
-    parser_tmp2 = subparsers2.add_parser(
+    parser = subparsers2.add_parser(
         'update-str', help="update STRING functionality.")
-    parser_tmp2.add_argument('identifier', action="store",
-                             help="").completer = Completer()
-    parser_tmp2.add_argument('-d', '--domain', action="store",
-                             help="Completion available").completer = Completer('complete_domain')
-    parser_tmp2.add_argument(
+    parser.add_argument('identifier', action="store",
+                        help="").completer = Completer()
+    parser.add_argument('-d', '--domain', action="store",
+                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument(
         'string',
         help="string value",
         action="store")
-    parser_tmp2.add_argument('--dry-run', action="store_true")
-    parser_tmp2.set_defaults(__func__=FunctionalityUpdateStringCommand(config))
+    parser.add_argument('--dry-run', action="store_true")
+    parser.set_defaults(__func__=FunctionalityUpdateStringCommand(config))
 
     # command : update-int
     parser_tmp2 = subparsers2.add_parser(
