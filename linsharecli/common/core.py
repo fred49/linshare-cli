@@ -52,9 +52,6 @@ from humanfriendly import format_size
 from argtoolbox import DefaultCompleter as Completer
 from argtoolbox import DefaultCommand as DefaultCommandArgtoolbox
 from linshareapi.core import LinShareException
-from linsharecli.common.tables import HTable
-from linsharecli.common.tables import VTable
-from linsharecli.common.tables import ConsoleTable
 
 
 def hook_file_content(path, context):
@@ -90,13 +87,6 @@ class DefaultCommand(DefaultCommandArgtoolbox):
     CFG_DOWNLOAD_ARG_ATTR = "parent_uuid"
     CFG_DELETE_MODE = 0
     CFG_DELETE_ARG_ATTR = "parent_uuid"
-
-    # ACTIONS: deprecated, see TableBuilder
-    ACTIONS = {
-        'delete' : '_delete_all',
-        'download' : '_download_all',
-        'count_only' : '_count_only',
-    }
 
     def __init__(self, config):
         super(DefaultCommand, self).__init__(config)
@@ -645,59 +635,6 @@ class DefaultCommand(DefaultCommandArgtoolbox):
         else:
             self.print_list(json_obj, d_format, "Documents",
                             no_legend=no_legend)
-
-    def get_table(self, args, cli, first_column, in_keys=None, other_table=None):
-        """TODO"""
-        warn("This method is deprecated, use TableBuilder instead",
-             DeprecationWarning,
-             stacklevel=2)
-        keys = []
-        args.vertical = getattr(args, "vertical", False)
-        if not args.vertical:
-            if getattr(args, "json", False):
-                args.vertical = True
-            elif getattr(args, "csv", False):
-                args.vertical = True
-            else:
-                for key in self.ACTIONS:
-                    if getattr(args, key, False):
-                        args.vertical = True
-        args.reverse = getattr(args, "reverse", False)
-        args.extended = getattr(args, "extended", False)
-        if in_keys:
-            keys += in_keys
-            if self.IDENTIFIER not in in_keys:
-                keys.insert(0, self.IDENTIFIER)
-        else:
-            keys = cli.get_rbu().get_keys(args.extended)
-        table = None
-        if args.vertical:
-            table = VTable(keys, debug=self.debug)
-        else:
-            if other_table:
-                table = ConsoleTable(keys, debug=self.debug)
-            else:
-                table = HTable(keys)
-                # styles
-                table.align[first_column] = "l"
-                table.padding_width = 1
-        table.debug = args.debug
-        table.no_cell = args.no_cell
-        table.vertical = args.vertical
-        table.sortby = None
-        table.reversesort = args.reverse
-        table.keys = keys
-        table.json = getattr(args, "json", False)
-        table.raw_json = getattr(args, "raw_json", False)
-        table.csv = getattr(args, "csv", False)
-        table.raw = getattr(args, "raw", False)
-        table._pref_start = getattr(args, "start", 0)
-        table._pref_end = getattr(args, "end", 0)
-        table._pref_limit = getattr(args, "limit", 0)
-        table._pref_no_csv_headers = getattr(args, "no_headers", True)
-        # just backup args into table
-        table.args = args
-        return table
 
     def check_required_options(self, args, required_fields, options):
         """Check if at least one option is set among the required_fields list"""

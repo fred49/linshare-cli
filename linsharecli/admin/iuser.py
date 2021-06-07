@@ -80,6 +80,7 @@ class InconsistentUsersListCommand(InconsistentUsersCommand):
 
     # FIXME: handle custom action : set domain
     # how to trigger email check.
+    # FIXME: ACTIONS is not supported anymore
     ACTIONS = {
         'set_domain' : '_set_domains',
     }

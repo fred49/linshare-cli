@@ -48,6 +48,7 @@ class DefaultCommand(Command):
     MSG_RS_UPDATED = "The contactslist '%(name)s' (%(uuid)s) was successfully updated."
     MSG_RS_CREATED = "The contactslist '%(name)s' (%(uuid)s) was successfully created."
 
+    # FIXME: ACTIONS is not supported anymore
     ACTIONS = {
         'delete': '_delete_all',
         'count_only': '_count_only',

@@ -427,6 +427,7 @@ class WorkgroupDocumentsDownloadCommand(WgNodesCommand):
     @Time('linsharecli.workgroups.nodes', label='Global time : %(time)s')
     def __call__(self, args):
         super(WorkgroupDocumentsDownloadCommand, self).__call__(args)
+        # TODO: DEPRECATED
         act = DownloadAction(
             mode=self.CFG_DOWNLOAD_MODE,
             parent_identifier=self.CFG_DOWNLOAD_ARG_ATTR
