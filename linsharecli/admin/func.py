@@ -29,7 +29,6 @@
 
 import urllib.error
 from argparse import ArgumentError
-from warnings import warn
 from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
@@ -96,46 +95,6 @@ class FunctionalityCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Functionality found : %(count)s"
     MSG_RS_NOT_FOUND = "No Functionality could be found."
-    MSG_RS_DELETED = (
-        "%(position)s/%(count)s: "
-        "The Functionality '%(identifier)s' was deleted. (%(time)s s)"
-    )
-    MSG_RS_CAN_NOT_BE_DELETED = "The Functionality '%(identifier)s' can not be deleted."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s Functionality(s) can not be reset."
-
-    MSG_RS_UPDATED = (
-        "%(position)s/%(count)s: "
-        "The Functionality '%(identifier)s' was updated. (%(time)s s)"
-    )
-    MSG_RS_CAN_NOT_BE_UPDATED = "The Functionality '%(identifier)s' can not be updated."
-    MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s Functionality(s) can not be updated."
-
-    def _update_all(self, args, cli, uuids):
-        """TODO"""
-        return self._apply_to_all(
-            args, cli, uuids,
-            self.MSG_RS_CAN_NOT_BE_UPDATED_M,
-            self._update_func_policies)
-
-    def _update_func_policies(self, args, cli, uuid, position=None, count=None):
-        """TODO"""
-        # pylint: disable=too-many-arguments
-        # pylint: disable=unused-argument
-        resource = cli.get(uuid, args.domain)
-        policy = resource.get('activationPolicy')
-        if args.policy_type is not None:
-            policy = resource.get(args.policy_type)
-        if policy is None:
-            raise ArgumentError(None, "No delegation policy for this functionality")
-        policy['policy'] = args.status
-        if args.status == "ENABLE" or args.status == "DISABLE":
-            if args.status == "ENABLE":
-                policy['status'] = True
-            else:
-                policy['status'] = False
-            policy['policy'] = "ALLOWED"
-        return self._update(args, cli, resource)
-
 
     def complete(self, args, prefix):
         super(FunctionalityCommand, self).__call__(args)
@@ -246,10 +205,10 @@ class DeleteAction(DeleteActionTable):
 
     MSG_RS_DELETED = (
         "%(position)s/%(count)s: "
-        "The mail_activation '%(name)s' (%(uuid)s) was reset. (%(time)s s)"
+        "The functionality '%(name)s' (%(uuid)s) was reset. (%(time)s s)"
     )
-    MSG_RS_CAN_NOT_BE_DELETED = "The mail_activation '%(uuid)s' can not be reset."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s mail_activation(s) can not be reset."
+    MSG_RS_CAN_NOT_BE_DELETED = "The functionality '%(uuid)s' can not be reset."
+    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s functionality(s) can not be reset."
 
     def __init__(self):
         super(DeleteAction, self).__init__(
@@ -310,7 +269,7 @@ class FunctionalityListCommand(FunctionalityCommand):
         tbu.add_custom_cell("configurationPolicy", PolicyCell)
         tbu.add_custom_cell("delegationPolicy", PolicyCell)
         tbu.add_action('status', UpdateAction())
-        tbu.add_action('delete', DeleteAction())
+        # tbu.add_action('delete', DeleteAction())
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
             PartialOr("type", args.funct_type, True)
@@ -558,16 +517,9 @@ class FunctionalityResetCommand(FunctionalityCommand):
 
     def __call__(self, args):
         super(FunctionalityResetCommand, self).__call__(args)
-        json_obj = self.ls.funcs.get(args.identifier, args.domain)
-        if self.debug:
-            self.pretty_json(json_obj)
-        name = json_obj.get('identifier')
-        name += " (domain : " + json_obj.get('domain') + ")"
-        return self._delete(
-            self.ls.funcs.reset,
-            "The funtionality " + name + " was successfully reseted.",
-            name,
-            json_obj)
+        act = DeleteAction()
+        act.init(args, self.ls, self.ls.funcs)
+        return act.delete([args.identifier,])
 
     def complete(self, args, prefix):
         """TODO"""
