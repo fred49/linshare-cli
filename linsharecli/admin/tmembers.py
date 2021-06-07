@@ -26,24 +26,24 @@
 #
 
 
-
+from argtoolbox import DefaultCompleter as Completer
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
-from argtoolbox import DefaultCompleter as Completer
+from linsharecli.common.tables import TableBuilder
 
 
 class ThreadMembersListCommand(DefaultCommand):
     """ List all thread members store from a thread."""
-    IDENTIFIER = "name"
+    IDENTIFIER = "userMail"
 
     def __call__(self, args):
         super(ThreadMembersListCommand, self).__call__(args)
-        cli = self.ls.thread_members
-        table = self.get_table(args, cli, self.IDENTIFIER, args.fields)
-        json_obj = cli.list(args.uuid)
-        table.load(json_obj)
-        table.render()
-        return True
+        endpoint = self.ls.thread_members
+        tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
+        tbu.load_args(args)
+        json_obj = endpoint.list(args.uuid)
+        table = tbu.build()
+        return table.load_v2(json_obj).render()
 
     def complete(self, args, prefix):
         super(ThreadMembersListCommand, self).__call__(args)
