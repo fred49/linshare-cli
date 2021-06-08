@@ -147,7 +147,7 @@ class SharesCommand(DefaultCommand):
     def __call__(self, args):
         super(SharesCommand, self).__call__(args)
         cli = self.ls.shares
-        self._share_all(args, cli, args.uuids)
+        return self._share_all(args, cli, args.uuids)
 
     def _share_all_1_8(self, args, cli, uuids):
         """Method to share documents. compatible >= 1.8 """
