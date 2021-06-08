@@ -47,8 +47,7 @@ class ShareAction(object):
     def __call__(self, args, cli, uuids):
         if self.api_version == 0:
             return self._share_all_1_7(args, cli, uuids)
-        else:
-            return self._share_all_1_8(args, cli, uuids)
+        return self._share_all_1_8(args, cli, uuids)
 
     def _share_all_1_8(self, args, cli, uuids):
         rbu = self.ls.shares.get_rbu()
@@ -97,7 +96,7 @@ class ShareAction(object):
         for doc in sorted(recipients):
             self.pprint(" - " + doc)
         self.pprint("")
-        return 0
+        return True
 
     def _share_all_1_7(self, args, cli, uuids):
         count = len(uuids)
@@ -141,7 +140,9 @@ class ShareAction(object):
                     meta)
         return err_count
 
+
 class SharesCommand(DefaultCommand):
+    """TODO"""
 
     def __call__(self, args):
         super(SharesCommand, self).__call__(args)
@@ -156,24 +157,26 @@ class SharesCommand(DefaultCommand):
     def _share_all(self, args, cli, uuids):
         if self.api_version == 0:
             return self._share_all_1_7(args, cli, uuids)
-        else:
-            return self._share_all_1_8(args, cli, uuids)
+        return self._share_all_1_8(args, cli, uuids)
 
     def _share_all_1_7(self, args, cli, uuids):
         """Deprecated method to share documents. 1.0 < compatible < 1.9 """
+        # pylint: disable=unused-argument
         for uuid in args.uuids:
             for mail in args.mails:
                 code, msg, req_time = self.ls.shares.share(uuid, mail)
                 if code == 204:
                     self.log.info(
-                        "The document '" + uuid +
-                        "' was successfully shared with " + mail +
-                        " ( " + req_time + "s)")
+                        "The document '%s' was successfully shared with %s (%s)",
+                        uuid,
+                        mail,
+                        req_time)
                 else:
-                    self.log.warn("Trying to share document '" + uuid +
-                                  "' with " + mail)
-                    self.log.error("Unexpected return code : " + str(code) +
-                                   " : " + msg)
+                    self.log.warning(
+                        "Trying to share document '%s' with %s",
+                        uuid, mail)
+                    self.log.error("Unexpected return code: %s : %s", code, msg)
+        return True
 
     def complete(self, args, prefix):
         super(SharesCommand, self).__call__(args)
