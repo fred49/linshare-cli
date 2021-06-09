@@ -56,6 +56,8 @@ class ShareAction(object):
         self.log.debug("rbu document: " + str(rbu))
         recipients = []
         cpt = 0
+        if not args.mails:
+            args.mails = []
         size = len(args.mails)
         for mail in args.mails:
             cpt += 1
@@ -144,6 +146,10 @@ class ShareAction(object):
 class SharesCommand(DefaultCommand):
     """TODO"""
 
+    def __init__(self, config, gparser):
+        super(SharesCommand, self).__init__(config)
+        self.gparser = gparser
+
     def __call__(self, args):
         super(SharesCommand, self).__call__(args)
         cli = self.ls.shares
@@ -157,6 +163,7 @@ class SharesCommand(DefaultCommand):
     def _share_all(self, args, cli, uuids):
         if self.api_version == 0:
             return self._share_all_1_7(args, cli, uuids)
+        self.check_required_options_v2(args, self.gparser)
         return self._share_all_1_8(args, cli, uuids)
 
     def _share_all_1_7(self, args, cli, uuids):
@@ -195,18 +202,67 @@ class SharesCommand(DefaultCommand):
 
 
 def add_parser(subparsers, name, desc, config):
+    """TODO"""
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
 
     parser_tmp2 = subparsers2.add_parser('create',
                                          help="share files into linshare")
-    parser_tmp2.set_defaults(__func__=SharesCommand(config))
     parser_tmp2.add_argument(
         'uuids',
         nargs='+',
         help="document's uuids you want to share."
         ).completer = DefaultCompleter()
-    parser_tmp2.add_argument(
-        '-m', '--mail', action="append", dest="mails", required=True,
+    gparser = parser_tmp2.add_argument_group(
+        "Recipients",
+        "You must at least use one of these options")
+    gparser.add_argument(
+        '-m', '--mail', action="append", dest="mails",
         help="Recipient mails.").completer = DefaultCompleter("complete_mail")
+    gparser.add_argument(
+        '--contact-list', action="append", dest="contact_list",
+        help="list of contact list uuids")
+    parser_tmp2.add_argument('--expiration-date', action="store")
+    parser_tmp2.add_argument('--secured', action="store_true", default=None)
+    parser_tmp2.add_argument('--no-secured', action="store_false", default=None,
+                             dest="secured")
+    parser_tmp2.add_argument(
+        '--enable-USDA', action="store_true",
+        help=(
+            "USDA aka Undownloaded Shared Document Alert.\n"
+            "If enable, you will receive a email containing a report about "
+            "the sharing after N days.\n"
+            "This report will list document by document the recipients and if "
+            "they had downloaded the document."
+        ),
+        default=None)
+    parser_tmp2.add_argument(
+        '--no-enable-USDA', action="store_false",
+        help="Disable USDA report",
+        default=None, dest="enable_USDA")
+    parser_tmp2.add_argument(
+        '--force-anonymous-sharing', action="store_true",
+        help=(
+            "If enable, you will receive a email containing a resume of the "
+            "sharing, with the lists of all recipients and documents."
+        ),
+        default=None)
+    parser_tmp2.add_argument(
+        '--no-force-anonymous-sharing', action="store_false", default=None,
+        help="Disable forced usage of anonymous sharing if it is enabled on the server.",
+        dest="force_anonymous_sharing")
+    parser_tmp2.add_argument(
+        '--sharing-acknowledgement', action="store_true", default=None,
+        help=(
+            "If enable, you will receive a email containing a resume of the "
+            "sharing, with the lists of all recipients and documents."
+        ),
+        dest="sharing_acknowledgement")
+    parser_tmp2.add_argument(
+        '--no-sharing-acknowledgement', action="store_false", default=None,
+        help="Disable sharing acknowledgement if it is enabled on the server.",
+        dest="sharing_acknowledgement")
+    parser_tmp2.add_argument('--message', action="store")
+    parser_tmp2.add_argument('--subject', action="store")
+    parser_tmp2.set_defaults(__func__=SharesCommand(config, gparser))
