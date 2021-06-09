@@ -95,6 +95,12 @@ class FunctionalityCommand(DefaultCommand):
 
     DEFAULT_TOTAL = "Functionality found : %(count)s"
     MSG_RS_NOT_FOUND = "No Functionality could be found."
+    MSG_RS_UPDATED = (
+        "%(position)s/%(count)s: "
+        "The Functionality '%(identifier)s' was updated. (%(time)s s)"
+    )
+    MSG_RS_CAN_NOT_BE_UPDATED = "The Functionality '%(identifier)s' can not be updated."
+    MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s Functionality(s) can not be updated."
 
     def complete(self, args, prefix):
         super(FunctionalityCommand, self).__call__(args)
