@@ -262,9 +262,14 @@ class DocumentsUpdateCommand(DocumentsCommand):
 class DocumentsUploadAndSharingCommand(DefaultCommand):
     """TODO"""
 
+    def __init__(self, config, gparser):
+        super(DocumentsUploadAndSharingCommand, self).__init__(config)
+        self.gparser = gparser
+
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
+        self.check_required_options_v2(args, self.gparser)
         uuids = []
         for file_path in args.files:
             json_obj = self.ls.documents.upload(file_path)
@@ -320,6 +325,61 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
             warn("Completion need at least 3 characters.")
 
 
+def add_sharing_parser(parser):
+    """TODO"""
+    gparser = parser.add_argument_group(
+        "Recipients",
+        "You must at least use one of these options")
+    gparser.add_argument(
+        '-m', '--mail', action="append", dest="mails",
+        help="Recipient mails.").completer = Completer("complete")
+    gparser.add_argument(
+        '--contact-list', action="append", dest="contact_list",
+        help="list of contact list uuids")
+    parser.add_argument('--expiration-date', action="store")
+    parser.add_argument('--secured', action="store_true", default=None)
+    parser.add_argument('--no-secured', action="store_false", default=None,
+                        dest="secured")
+    parser.add_argument(
+        '--enable-USDA', action="store_true",
+        help=(
+            "USDA aka Undownloaded Shared Document Alert.\n"
+            "If enable, you will receive a email containing a report about "
+            "the sharing after N days.\n"
+            "This report will list document by document the recipients and if "
+            "they had downloaded the document."
+        ),
+        default=None)
+    parser.add_argument(
+        '--no-enable-USDA', action="store_false",
+        help="Disable USDA report",
+        default=None, dest="enable_USDA")
+    parser.add_argument(
+        '--force-anonymous-sharing', action="store_true",
+        help=(
+            "If enable, you will receive a email containing a resume of the "
+            "sharing, with the lists of all recipients and documents."
+        ),
+        default=None)
+    parser.add_argument(
+        '--no-force-anonymous-sharing', action="store_false", default=None,
+        help="Disable forced usage of anonymous sharing if it is enabled on the server.",
+        dest="force_anonymous_sharing")
+    parser.add_argument(
+        '--sharing-acknowledgement', action="store_true", default=None,
+        help=(
+            "If enable, you will receive a email containing a resume of the "
+            "sharing, with the lists of all recipients and documents."
+        ),
+        dest="sharing_acknowledgement")
+    parser.add_argument(
+        '--no-sharing-acknowledgement', action="store_false", default=None,
+        help="Disable sharing acknowledgement if it is enabled on the server.",
+        dest="sharing_acknowledgement")
+    parser.add_argument('--message', action="store")
+    parser.add_argument('--subject', action="store")
+    return gparser
+
 def add_parser(subparsers, name, desc, config):
     """This method adds to the input subparser, all parsers for document
     methods"""
@@ -338,17 +398,10 @@ def add_parser(subparsers, name, desc, config):
     # command : upshare
     parser = subparsers2.add_parser(
         'upshare',
-         help="upload and share documents")
+        help="upload and share documents")
     parser.add_argument('files', nargs='+')
-    parser.add_argument(
-        '-m',
-        '--mail',
-        action="append",
-        dest="mails",
-        required=True,
-        help="Recipient mails."
-        ).completer = Completer()
-    parser.set_defaults(__func__=DocumentsUploadAndSharingCommand(config))
+    gparser = add_sharing_parser(parser)
+    parser.set_defaults(__func__=DocumentsUploadAndSharingCommand(config, gparser))
 
     # command : download
     parser = subparsers2.add_parser(
