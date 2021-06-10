@@ -207,14 +207,14 @@ def add_parser(subparsers, name, desc, config):
 
     subparsers2 = parser_tmp.add_subparsers()
 
-    parser_tmp2 = subparsers2.add_parser('create',
-                                         help="share files into linshare")
-    parser_tmp2.add_argument(
+    parser = subparsers2.add_parser(
+        'create', help="share files into linshare")
+    parser.add_argument(
         'uuids',
         nargs='+',
         help="document's uuids you want to share."
         ).completer = DefaultCompleter()
-    gparser = parser_tmp2.add_argument_group(
+    gparser = parser.add_argument_group(
         "Recipients",
         "You must at least use one of these options")
     gparser.add_argument(
@@ -223,11 +223,11 @@ def add_parser(subparsers, name, desc, config):
     gparser.add_argument(
         '--contact-list', action="append", dest="contact_list",
         help="list of contact list uuids")
-    parser_tmp2.add_argument('--expiration-date', action="store")
-    parser_tmp2.add_argument('--secured', action="store_true", default=None)
-    parser_tmp2.add_argument('--no-secured', action="store_false", default=None,
-                             dest="secured")
-    parser_tmp2.add_argument(
+    parser.add_argument('--expiration-date', action="store")
+    parser.add_argument('--secured', action="store_true", default=None)
+    parser.add_argument('--no-secured', action="store_false", default=None,
+                        dest="secured")
+    parser.add_argument(
         '--enable-USDA', action="store_true",
         help=(
             "USDA aka Undownloaded Shared Document Alert.\n"
@@ -237,32 +237,32 @@ def add_parser(subparsers, name, desc, config):
             "they had downloaded the document."
         ),
         default=None)
-    parser_tmp2.add_argument(
+    parser.add_argument(
         '--no-enable-USDA', action="store_false",
         help="Disable USDA report",
         default=None, dest="enable_USDA")
-    parser_tmp2.add_argument(
+    parser.add_argument(
         '--force-anonymous-sharing', action="store_true",
         help=(
             "If enable, you will receive a email containing a resume of the "
             "sharing, with the lists of all recipients and documents."
         ),
         default=None)
-    parser_tmp2.add_argument(
+    parser.add_argument(
         '--no-force-anonymous-sharing', action="store_false", default=None,
         help="Disable forced usage of anonymous sharing if it is enabled on the server.",
         dest="force_anonymous_sharing")
-    parser_tmp2.add_argument(
+    parser.add_argument(
         '--sharing-acknowledgement', action="store_true", default=None,
         help=(
             "If enable, you will receive a email containing a resume of the "
             "sharing, with the lists of all recipients and documents."
         ),
         dest="sharing_acknowledgement")
-    parser_tmp2.add_argument(
+    parser.add_argument(
         '--no-sharing-acknowledgement', action="store_false", default=None,
         help="Disable sharing acknowledgement if it is enabled on the server.",
         dest="sharing_acknowledgement")
-    parser_tmp2.add_argument('--message', action="store")
-    parser_tmp2.add_argument('--subject', action="store")
-    parser_tmp2.set_defaults(__func__=SharesCommand(config, gparser))
+    parser.add_argument('--message', action="store")
+    parser.add_argument('--subject', action="store")
+    parser.set_defaults(__func__=SharesCommand(config, gparser))
