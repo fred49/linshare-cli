@@ -74,10 +74,10 @@ class ShareAction(Action):
         super(ShareAction, self).init(args, cli, endpoint)
         self.mails = getattr(args, "mails", None)
         if not self.mails:
-            raise ValueError("To share files, you need to use -m/--mail option.")
+            self.mails = []
         self.rbu = cli.shares.get_rbu()
         self.rbu.load_from_args(args)
-        self.log.debug("rbu share: " + str(self.rbu))
+        self.log.debug("rbu share: %s", self.rbu)
         return self
 
     def __call__(self, args, cli, endpoint, data):
@@ -134,9 +134,15 @@ class ShareAction(Action):
 class DocumentsListCommand(DocumentsCommand):
     """ List all documents store into LinShare."""
 
+    def __init__(self, config, gparser):
+        super(DocumentsListCommand, self).__init__(config)
+        self.gparser = gparser
+
     @Time('linsharecli.document', label='Global time : %(time)s')
     def __call__(self, args):
         super(DocumentsListCommand, self).__call__(args)
+        if args.share:
+            self.check_required_options_v2(args, self.gparser)
         endpoint = self.ls.documents
         tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
@@ -332,15 +338,16 @@ def add_sharing_parser(parser, config):
         "You must at least use one of these options")
     gparser.add_argument(
         '-m', '--mail', action="append", dest="mails",
-        help="Recipient mails.").completer = Completer("complete")
+        help="Recipient mails.").completer = Completer("complete_mail")
     gparser.add_argument(
         '--contact-list', action="append", dest="contact_list",
         help="list of contact list uuids")
-    parser.add_argument('--expiration-date', action="store")
-    parser.add_argument('--secured', action="store_true", default=None)
-    parser.add_argument('--no-secured', action="store_false", default=None,
-                        dest="secured")
-    parser.add_argument(
+    share_group = parser.add_argument_group('Sharing options')
+    share_group.add_argument('--expiration-date', action="store")
+    share_group.add_argument('--secured', action="store_true", default=None)
+    share_group.add_argument('--no-secured', action="store_false", default=None,
+                             dest="secured")
+    share_group.add_argument(
         '--enable-USDA', action="store_true",
         help=(
             "USDA aka Undownloaded Shared Document Alert.\n"
@@ -350,35 +357,35 @@ def add_sharing_parser(parser, config):
             "they had downloaded the document."
         ),
         default=None)
-    parser.add_argument(
+    share_group.add_argument(
         '--no-enable-USDA', action="store_false",
         help="Disable USDA report",
         default=None, dest="enable_USDA")
     if config.server.api_version.value >= 2:
-        parser.add_argument(
+        share_group.add_argument(
             '--force-anonymous-sharing', action="store_true",
             help=(
                 "If enable, you will receive a email containing a resume of the "
                 "sharing, with the lists of all recipients and documents."
             ),
             default=None)
-        parser.add_argument(
+        share_group.add_argument(
             '--no-force-anonymous-sharing', action="store_false", default=None,
             help="Disable forced usage of anonymous sharing if it is enabled on the server.",
             dest="force_anonymous_sharing")
-    parser.add_argument(
+    share_group.add_argument(
         '--sharing-acknowledgement', action="store_true", default=None,
         help=(
             "If enable, you will receive a email containing a resume of the "
             "sharing, with the lists of all recipients and documents."
         ),
         dest="sharing_acknowledgement")
-    parser.add_argument(
+    share_group.add_argument(
         '--no-sharing-acknowledgement', action="store_false", default=None,
         help="Disable sharing acknowledgement if it is enabled on the server.",
         dest="sharing_acknowledgement")
-    parser.add_argument('--message', action="store")
-    parser.add_argument('--subject', action="store")
+    share_group.add_argument('--message', action="store")
+    share_group.add_argument('--subject', action="store")
     return gparser
 
 def add_parser(subparsers, name, desc, config):
@@ -434,22 +441,9 @@ def add_parser(subparsers, name, desc, config):
         action="store_true",
         dest="share",
         help="You can share all displayed files by the list command.")
-    parser.set_defaults(__func__=DocumentsListCommand(config))
+    gparser = add_sharing_parser(parser, config)
+    parser.set_defaults(__func__=DocumentsListCommand(config, gparser))
     # command : list : share options
-    share_group = parser.add_argument_group('Sharing options')
-    share_group.add_argument('--expiration-date', action="store")
-    share_group.add_argument('--secured', action="store_true", default=None)
-    share_group.add_argument('--no-secured', action="store_false", default=None, dest="secured")
-    share_group.add_argument('--message', action="store")
-    share_group.add_argument('--subject', action="store")
-    share_group.add_argument(
-        '-m',
-        '--mail',
-        action="append",
-        dest="mails",
-        # required=True,
-        help="Recipient (email)."
-        ).completer = Completer("complete_mail")
 
     # command : update
     parser = subparsers2.add_parser(
