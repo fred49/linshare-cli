@@ -325,7 +325,7 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
             warn("Completion need at least 3 characters.")
 
 
-def add_sharing_parser(parser):
+def add_sharing_parser(parser, config):
     """TODO"""
     gparser = parser.add_argument_group(
         "Recipients",
@@ -354,17 +354,18 @@ def add_sharing_parser(parser):
         '--no-enable-USDA', action="store_false",
         help="Disable USDA report",
         default=None, dest="enable_USDA")
-    parser.add_argument(
-        '--force-anonymous-sharing', action="store_true",
-        help=(
-            "If enable, you will receive a email containing a resume of the "
-            "sharing, with the lists of all recipients and documents."
-        ),
-        default=None)
-    parser.add_argument(
-        '--no-force-anonymous-sharing', action="store_false", default=None,
-        help="Disable forced usage of anonymous sharing if it is enabled on the server.",
-        dest="force_anonymous_sharing")
+    if config.server.api_version.value >= 2:
+        parser.add_argument(
+            '--force-anonymous-sharing', action="store_true",
+            help=(
+                "If enable, you will receive a email containing a resume of the "
+                "sharing, with the lists of all recipients and documents."
+            ),
+            default=None)
+        parser.add_argument(
+            '--no-force-anonymous-sharing', action="store_false", default=None,
+            help="Disable forced usage of anonymous sharing if it is enabled on the server.",
+            dest="force_anonymous_sharing")
     parser.add_argument(
         '--sharing-acknowledgement', action="store_true", default=None,
         help=(
@@ -400,7 +401,7 @@ def add_parser(subparsers, name, desc, config):
         'upshare',
         help="upload and share documents")
     parser.add_argument('files', nargs='+')
-    gparser = add_sharing_parser(parser)
+    gparser = add_sharing_parser(parser, config)
     parser.set_defaults(__func__=DocumentsUploadAndSharingCommand(config, gparser))
 
     # command : download
