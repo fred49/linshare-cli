@@ -37,7 +37,7 @@ class TestDocumentsList(LinShareTestCase):
     # * content : 6 documents
     # * footer : 3 line
     DATA_DOCUMENTS_HEIGHT = 12
-    DATA_DOCUMENTS_WIDTH = 100
+    DATA_DOCUMENTS_WIDTH = 103
 
     def setUp(self):
         super(TestDocumentsList, self).setUp()
@@ -88,7 +88,7 @@ class TestDocumentsList(LinShareTestCase):
         # documents + header + footer = 6 + 0 + 2
         self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT)
         self.assertEqual(len(output[3]), 45)
-        self.assertEqual(len(output[4]), 86)
+        self.assertEqual(len(output[4]), 91)
         # first file
         self.assertRegex(output[4], "file5.*")
         self.assertRegex(output[-5], "file1.*")
@@ -99,7 +99,7 @@ class TestDocumentsList(LinShareTestCase):
         output = self.run_default0(command)
         # documents + header + footer = 6 + 0 + 2
         self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT - 1)
-        self.assertEqual(len(output[3]), 86)
+        self.assertEqual(len(output[3]), 91)
         self.assertRegex(output[-3], "file3.*")
 
     def test_documents_list4c(self, *args):
@@ -137,7 +137,7 @@ class TestDocumentsList(LinShareTestCase):
         command = "documents list --extended"
         output = self.run_default0(command)
         self.assertEqual(len(output), self.DATA_DOCUMENTS_HEIGHT + 5)
-        self.assertEqual(len(output[3]), 251)
+        self.assertEqual(len(output[3]), 254)
 
     def test_documents_list7(self, *args):
         """retrieve documents list and count them"""
