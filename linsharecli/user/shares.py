@@ -228,7 +228,7 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('--no-secured', action="store_false", default=None,
                         dest="secured")
     parser.add_argument(
-        '--enable-USDA', action="store_true",
+        '--USDA', action="store_true",
         help=(
             "USDA aka Undownloaded Shared Document Alert.\n"
             "If enable, you will receive a email containing a report about "
@@ -236,9 +236,9 @@ def add_parser(subparsers, name, desc, config):
             "This report will list document by document the recipients and if "
             "they had downloaded the document."
         ),
-        default=None)
+        default=None, dest="enable_USDA")
     parser.add_argument(
-        '--no-enable-USDA', action="store_false",
+        '--no-USDA', action="store_false",
         help="Disable USDA report",
         default=None, dest="enable_USDA")
     parser.add_argument(

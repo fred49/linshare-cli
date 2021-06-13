@@ -348,7 +348,7 @@ def add_sharing_parser(parser, config):
     share_group.add_argument('--no-secured', action="store_false", default=None,
                              dest="secured")
     share_group.add_argument(
-        '--enable-USDA', action="store_true",
+        '--USDA', action="store_true",
         help=(
             "USDA aka Undownloaded Shared Document Alert.\n"
             "If enable, you will receive a email containing a report about "
@@ -356,9 +356,9 @@ def add_sharing_parser(parser, config):
             "This report will list document by document the recipients and if "
             "they had downloaded the document."
         ),
-        default=None)
+        default=None, dest="enable_USDA")
     share_group.add_argument(
-        '--no-enable-USDA', action="store_false",
+        '--no-USDA', action="store_false",
         help="Disable USDA report",
         default=None, dest="enable_USDA")
     if config.server.api_version.value >= 2:
