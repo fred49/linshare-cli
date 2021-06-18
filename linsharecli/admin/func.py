@@ -314,6 +314,8 @@ class FunctionalityUpdateCommand(FunctionalityCommand):
         super(FunctionalityUpdateCommand, self).__call__(args)
         error = False
         if args.status_deprecated or args.policy_type:
+            if args.status_deprecated and not args.policy_type:
+                args.policy_type = "AP_"
             if args.status_deprecated and args.policy_type:
                 args.status = args.policy_type + args.status_deprecated
             else:
