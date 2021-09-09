@@ -24,4 +24,4 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 
-__version__ = '1.0.15'
+__version__ = '1.1.0'
