@@ -91,8 +91,7 @@ setup(
         'argtoolbox>=1.1.4,<1.2.0',
         'linshareapi>=1.0.9,<1.1.0',
         'progressbar2',
-        'veryprettytable==0.8.1',
-        'humanfriendly',
+        'vhatable>=1.0.0,<1.1.0',
         'mock==2.0.0',
     ],
 )

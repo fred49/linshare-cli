@@ -28,15 +28,14 @@
 
 
 from argparse import RawTextHelpFormatter
-from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand as Command
-from linsharecli.common.filters import PartialOr
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.tables import DeleteAction
-
+from argtoolbox import DefaultCompleter as Completer
+from vhatable.filters import PartialOr
 
 class ContactListsCompleter(object):
     """TODO"""

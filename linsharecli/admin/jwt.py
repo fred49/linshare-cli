@@ -30,17 +30,17 @@
 import os
 import time
 
-from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.actions import CreateAction
 from linsharecli.common.actions import UpdateAction
-from linsharecli.common.filters import PartialOr
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.tables import TableBuilder
-from linsharecli.common.cell import ComplexCellBuilder
+from vhatable.filters import PartialOr
+from vhatable.cell import ComplexCellBuilder
+from argtoolbox import DefaultCompleter as Completer
 
 
 class JwtCreateAction(CreateAction):
@@ -71,7 +71,7 @@ class JwtCreateAction(CreateAction):
                     return False
                 else:
                     if not self.cli_mode:
-                        self.log.warn("Existing jwt token file will be overriden.")
+                        self.log.warning("Existing jwt token file will be overriden.")
         try:
             start = time.time()
             json_obj = self._execute(data)

@@ -29,7 +29,7 @@
 
 from argtoolbox import DefaultCompleter as Completer
 from linsharecli.admin.core import DefaultCommand
-from linsharecli.common.cell import CellBuilder
+from vhatable.cell import CellBuilder
 from linsharecli.common.tables import TableBuilder
 
 

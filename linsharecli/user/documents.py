@@ -30,14 +30,17 @@ import re
 
 from argparse import ArgumentError
 from argparse import RawTextHelpFormatter
+
+from argcomplete import warn
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
+from vhatable.filters import PartialOr
+from vhatable.filters import PartialDate
+from argtoolbox import DefaultCompleter as Completer
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
-from linsharecli.common.filters import PartialOr
-from linsharecli.common.filters import PartialDate
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.tables import Action
 from linsharecli.common.tables import DeleteAction

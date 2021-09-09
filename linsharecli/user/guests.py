@@ -31,13 +31,13 @@ from argparse import RawTextHelpFormatter
 from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from linsharecli.user.core import DefaultCommand
-from linsharecli.common.filters import PartialMultipleAnd
-from linsharecli.common.filters import PartialOr
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
-from linsharecli.common.cell import ComplexCellBuilder
 from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import TableBuilder
+from vhatable.cell import ComplexCellBuilder
+from vhatable.filters import PartialMultipleAnd
+from vhatable.filters import PartialOr
 
 
 class GuestsCommand(DefaultCommand):

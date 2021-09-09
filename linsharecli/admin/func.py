@@ -30,15 +30,15 @@
 import urllib.error
 from argparse import ArgumentError
 from argtoolbox import DefaultCompleter as Completer
+from vhatable.filters import PartialOr
+from vhatable.cell import ComplexCell
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
 from linsharecli.common.core import add_list_parser_options
-from linsharecli.common.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.tables import Action
 from linsharecli.common.tables import DeleteAction as DeleteActionTable
-from linsharecli.common.cell import ComplexCell
 
 
 class PolicyCell(ComplexCell):

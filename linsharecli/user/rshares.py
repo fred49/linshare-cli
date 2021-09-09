@@ -28,12 +28,12 @@
 
 
 from linshareapi.cache import Time
+from vhatable.filters import PartialOr
+from vhatable.filters import PartialDate
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
-from linsharecli.common.filters import PartialOr
-from linsharecli.common.filters import PartialDate
 from linsharecli.common.tables import DownloadAction
 from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import TableBuilder

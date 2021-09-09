@@ -31,11 +31,11 @@
 from argparse import RawTextHelpFormatter
 from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
+from vhatable.filters import PartialOr
+from vhatable.cell import ComplexCellBuilder
 from linsharecli.user.core import DefaultCommand as Command
-from linsharecli.common.filters import PartialOr
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
-from linsharecli.common.cell import ComplexCellBuilder
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.tables import DeleteAction
 from linsharecli.common.actions import CreateAction

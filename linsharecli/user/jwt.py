@@ -33,17 +33,17 @@ import time
 
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
+from vhatable.filters import PartialOr
+from vhatable.cell import CellBuilder
+from vhatable.cell import ComplexCell
+from vhatable.cell import ComplexCellBuilder
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.actions import CreateAction
 from linsharecli.common.actions import UpdateAction
-from linsharecli.common.filters import PartialOr
 from linsharecli.common.core import add_delete_parser_options
-from linsharecli.common.cell import CellBuilder
-from linsharecli.common.cell import ComplexCell
 from linsharecli.common.cell import ActorCell
 from linsharecli.common.cell import AuthUserCell
-from linsharecli.common.cell import ComplexCellBuilder
 from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import TableBuilder
 
@@ -76,7 +76,7 @@ class JwtCreateAction(CreateAction):
                     return False
                 else:
                     if not self.cli_mode:
-                        self.log.warn("Existing jwt token file will be overriden.")
+                        self.log.warning("Existing jwt token file will be overriden.")
         try:
             start = time.time()
             json_obj = self._execute(data)

@@ -29,13 +29,13 @@
 
 from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
+from vhatable.filters import PartialOr
+from vhatable.cell import ComplexCellBuilder
 from linsharecli.common.actions import CreateAction as CCreateAction
 from linsharecli.common.actions import UpdateAction as UUpdateAction
 from linsharecli.common.core import add_list_parser_options
-from linsharecli.common.filters import PartialOr
 from linsharecli.common.tables import TableBuilder
 from linsharecli.admin.core import DefaultCommand
-from linsharecli.common.cell import ComplexCellBuilder
 
 
 class CreateAction(CCreateAction):

@@ -31,16 +31,16 @@ import os
 import argparse
 from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
-from linsharecli.common.filters import PartialOr
-from linsharecli.common.filters import PartialDate
+from vhatable.cell import ComplexCell
+from vhatable.cell import ComplexCellBuilder
+from vhatable.filters import PartialOr
+from vhatable.filters import PartialDate
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.actions import CreateAction
 from linsharecli.common.actions import UpdateAction
-from linsharecli.common.cell import ComplexCell
-from linsharecli.common.cell import ComplexCellBuilder
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.tables import Action
 from linsharecli.common.tables import DeleteAction
@@ -303,7 +303,7 @@ class WorkgroupDocumentsUploadCommand(WgNodesCommand):
             else:
                 file_size = os.path.getsize(file_path)
                 if file_size == 0:
-                    self.log.warn("this file '%s' is empty. skipped.", file_path)
+                    self.log.warning("this file '%s' is empty. skipped.", file_path)
                     continue
                 json_obj = self.ls.workgroup_nodes.upload(
                     wg_uuid, file_path, description, parent)

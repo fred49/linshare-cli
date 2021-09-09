@@ -27,12 +27,12 @@
 
 
 
-from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
-from linsharecli.common.core import add_list_parser_options
-from linsharecli.common.filters import PartialOr
-from linsharecli.common.tables import TableBuilder
+from vhatable.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand
+from linsharecli.common.core import add_list_parser_options
+from linsharecli.common.tables import TableBuilder
+from linshareapi.cache import Time
 
 
 class MailConfigsCommand(DefaultCommand):

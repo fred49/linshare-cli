@@ -29,16 +29,15 @@
 
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
+from argtoolbox import DefaultCompleter as Completer
+from vhatable.filters import PartialOr
+from vhatable.filters import PartialDate
+from vhatable.filters import Equals
+from vhatable.cell import ComplexCell
+from vhatable.core import ConsoleTable
 from linsharecli.common.core import add_list_parser_options
-from linsharecli.common.tables import ConsoleTable
-from linsharecli.common.filters import PartialOr
-from linsharecli.common.filters import PartialDate
-from linsharecli.common.filters import Equals
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.tables import TableBuilder
-from linsharecli.common.cell import ComplexCell
-from argtoolbox import DefaultCompleter as Completer
-
 
 
 class UpgradeTasksCommand(DefaultCommand):
