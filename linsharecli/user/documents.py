@@ -30,7 +30,6 @@ import re
 
 from argparse import ArgumentError
 from argparse import RawTextHelpFormatter
-
 from argcomplete import warn
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
@@ -45,7 +44,6 @@ from linsharecli.common.tables import TableBuilder
 from linsharecli.common.tables import Action
 from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import DownloadAction
-from argtoolbox import DefaultCompleter as Completer
 
 
 class DocumentsCommand(DefaultCommand):
@@ -56,6 +54,17 @@ class DocumentsCommand(DefaultCommand):
         json_obj = self.ls.documents.list()
         return (
             v.get('uuid') for v in json_obj if v.get('uuid').startswith(prefix))
+
+    def complete_mail(self, args, prefix):
+        """autocomplete method on possible recipients (emails)"""
+        super(DocumentsCommand, self).__call__(args)
+        if len(prefix) >= 3:
+            json_obj = self.ls.autocomplete.list(prefix)
+            return (v.get('display') for v in json_obj)
+        warn("---------------------------------------")
+        warn("Completion need at least 3 characters.")
+        warn("---------------------------------------")
+        return []
 
 
 class ShareAction(Action):
@@ -162,18 +171,6 @@ class DocumentsListCommand(DocumentsCommand):
         cli = self.ls.documents
         return cli.get_rbu().get_keys(True)
 
-    def complete_mail(self, args, prefix):
-        super(DocumentsListCommand, self).__call__(args)
-        from argcomplete import warn
-        if len(prefix) >= 3:
-            json_obj = self.ls.autocomplete.list(prefix)
-            return (v.get('display') for v in json_obj)
-        else:
-            warn("---------------------------------------")
-            warn("Completion need at least 3 characters.")
-            warn("---------------------------------------")
-        return []
-
 
 class DocumentsUploadCommand(DefaultCommand):
     """ Upload a file to LinShare using its rest api. return the uploaded
@@ -268,7 +265,7 @@ class DocumentsUpdateCommand(DocumentsCommand):
         return False
 
 
-class DocumentsUploadAndSharingCommand(DefaultCommand):
+class DocumentsUploadAndSharingCommand(DocumentsCommand):
     """TODO"""
 
     def __init__(self, config, gparser):
@@ -293,7 +290,6 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
 
     def complete(self, args, prefix):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
-        from argcomplete import warn
         if len(prefix) >= 3:
             json_obj = self.ls.users.list()
             return (v.get('mail')
@@ -303,7 +299,6 @@ class DocumentsUploadAndSharingCommand(DefaultCommand):
 
     def complete2(self, args, prefix):
         super(DocumentsUploadAndSharingCommand, self).__call__(args)
-        from argcomplete import warn
         if len(prefix) >= 3:
             json_obj = self.ls.users.list()
             guesses = []
