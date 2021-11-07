@@ -36,6 +36,7 @@ from linsharecli.common.actions import CreateAction
 from linsharecli.common.actions import UpdateAction
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
+from linsharecli.common.tables import Action
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.tables import DeleteAction
 
@@ -55,6 +56,26 @@ class DefaultCommand(Command):
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
 
+class Breadcrumb(Action):
+    """TODO"""
+
+    display = True
+
+    def init(self, args, cli, endpoint):
+        super(Breadcrumb, self).init(args, cli, endpoint)
+        self.display = not getattr(args, 'no_breadcrumb', False)
+
+    def __call__(self, args, cli, endpoint, data):
+        self.init(args, cli, endpoint)
+        if self.display:
+            drive_uuid = args.drive
+            if drive_uuid:
+                node = endpoint.get(drive_uuid)
+                print()
+                print("###>", node['name'])
+                print()
+
+
 class ListCommand(DefaultCommand):
     """ List all shared_spaces store into LinShare."""
 
@@ -68,7 +89,8 @@ class ListCommand(DefaultCommand):
             PartialOr(self.IDENTIFIER, args.names, True),
             PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True)
         )
-        return tbu.build().load_v2(endpoint.list()).render()
+        tbu.add_pre_render_class(Breadcrumb())
+        return tbu.build().load_v2(endpoint.list(drive=args.drive)).render()
 
     def complete_fields(self, args, prefix):
         """TODO"""
@@ -151,8 +173,15 @@ def add_parser(subparsers, name, desc, config):
         'list',
         formatter_class=RawTextHelpFormatter,
         help="list shared space from linshare")
-    parser.add_argument('names', nargs="*", help="")
-    parser.add_argument('-u', '--uuids', nargs="*", help="")
+    parser.add_argument('names', nargs="*",
+                        help="Filter shared spaces by uuid")
+    parser.add_argument(
+        '-d', '--drive', help="Filter shared spaces by uuid")
+    parser.add_argument(
+        '-u', '--uuids', nargs="*", help="Filter shared spaces by uuid")
+    parser.add_argument(
+        '--no-breadcrumb', action="store_true",
+        help="Do not display breadcrumb.")
     add_list_parser_options(parser, delete=True, cdate=True)
     parser.set_defaults(__func__=ListCommand(config))
 

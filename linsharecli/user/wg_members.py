@@ -228,7 +228,9 @@ class ThreadMembersDeleteCommand(ThreadMembersCommand):
 
 def add_parser(subparsers, name, desc, config):
     """TODO"""
-    # api_version = config.server.api_version.value
+    api_version = config.server.api_version.value
+    if api_version >= 4:
+        return
     parser_tmp = subparsers.add_parser(name, help=desc)
     parser_tmp.add_argument(
         '-u',

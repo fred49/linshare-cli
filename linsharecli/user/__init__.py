@@ -38,6 +38,7 @@ from .rshares import add_parser as add_received_shares_parser
 from .workgroups import add_parser as add_workgroups_parser
 from .wg_members import add_parser as add_wg_members_parser
 from .wg_documents import add_parser as add_wg_documents_parser
+from .wg_documents import add_parser_v4 as add_shared_space_content_parser
 from .shared_spaces import add_parser as add_shared_spaces_parser
 from .shared_space_members import add_parser as add_shared_space_members_parser
 from .shared_space_audit import add_parser as add_shared_space_audit_parser
@@ -98,6 +99,9 @@ _add_parser(name='shared_space_audit',
 _add_parser(name='shared_space_members',
             description='Shared spaces members management',
             parsers=add_shared_space_members_parser)
+_add_parser(name='shared_space_content',
+            description='Shared spaces content management',
+            parsers=add_shared_space_content_parser)
 _add_parser(name='users', description='Users management',
             parsers=add_users_parser)
 _add_parser(name='guests', description='Guests management',
@@ -130,7 +134,7 @@ class LinShareCliProgram(BasicProgram):
         section_server.add_element(Element(
             'api_version',
             required=True,
-            default=float(os.getenv('LS_API', 2.2)),
+            default=float(os.getenv('LS_API', "2.2")),
             e_type=float,
             desc=textwrap.dedent("""
             The linshare api version to be used. Default '2.2'.
@@ -181,7 +185,7 @@ class LinShareCliProgram(BasicProgram):
             'debug',
             e_type=int,
             e_type_exclude=True,
-            default=int(os.getenv('LS_DEBUG', 0)),
+            default=int(os.getenv('LS_DEBUG', "0")),
             desc=textwrap.dedent("""
             (default: 0)
             0 : debug off
@@ -316,8 +320,9 @@ class LinShareCliProgram(BasicProgram):
 CLI = LinShareCliProgram(
     "linshare-cli",
     version=__version__,
-    force_debug=os.getenv('_LINSHARE_CLI_USER_DEBUG', False),
-    force_debug_to_file=os.getenv('_LINSHARE_CLI_USER_DEBUG_FILE', False),
+    force_debug=bool(os.getenv('_LINSHARE_CLI_USER_DEBUG', False)),
+    force_debug_to_file=bool(os.getenv(
+        '_LINSHARE_CLI_USER_DEBUG_FILE', False)),
     desc="""An user cli for LinShare, using its REST API.
 
     In order to enable auto complete support, or generate the default
@@ -360,5 +365,6 @@ you just need to export _LINSHARE_CLI_USER_DEBUG=True
 
 def generate_config():
     """TODO"""
+    # pylint: disable=import-outside-toplevel
     from argtoolbox.commands import cli_generate_config
     cli_generate_config("linsharecli-config", CLI)

@@ -113,6 +113,9 @@ class ThreadsDeleteCommand(ThreadsCommand):
 
 def add_parser(subparsers, name, desc, config):
     """TODO"""
+    api_version = config.server.api_version.value
+    if api_version >= 4:
+        return
     parser_tmp = subparsers.add_parser(name, help=desc)
 
     subparsers2 = parser_tmp.add_subparsers()
