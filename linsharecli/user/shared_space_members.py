@@ -222,9 +222,14 @@ def add_parser(subparsers, name, desc, config):
     parser = subparsers2.add_parser(
         'create', help="create shared space.")
     parser.add_argument('account', action="store", help="Account uuid")
-    parser.add_argument('--role', action="store",
-                        choices=['ADMIN', 'WRITER', 'CONTRIBUTOR', 'READER'],
-                        help="")
+    choices = ['ADMIN', 'WRITER', 'CONTRIBUTOR', 'READER']
+    api_version = config.server.api_version.value
+    if api_version >= 4.2:
+        choices += ['DRIVE_ADMIN', 'DRIVE_WRITER', 'DRIVE_WRITER']
+    parser.add_argument(
+            '--role', action="store",
+            choices=choices,
+            help="")
     parser.add_argument('--cli-mode', action="store_true", help="")
     parser.set_defaults(__func__=CreateCommand(config))
 
