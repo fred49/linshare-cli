@@ -24,14 +24,12 @@
 #  Frédéric MARTIN frederic.martin.fma@gmail.com
 #
 import os
-import sys
 import argparse
 import textwrap
 
 from argtoolbox import BasicProgram
 from argtoolbox import SimpleSection
 from argtoolbox import Element
-from argtoolbox import Base64ElementHook
 from argtoolbox import SectionHook
 
 from .documents import add_parser as add_documents_parser
@@ -46,13 +44,14 @@ from .shared_space_audit import add_parser as add_shared_space_audit_parser
 from .users import add_parser as add_users_parser
 from .guests import add_parser as add_guests_parser
 from .contactslists import add_parser as add_contactslists_parser
-from .contactslistscontacts import add_parser as add_contactslistscontacts_parser
+from .contactslistscontacts import add_parser as add_clc_parser
 from .core import add_parser as add_core_parser
 from .jwt import add_parser as add_jwt_parser
 from .audit import add_parser as add_audit_parser
 from .. import __version__
 
 PARSERS = []
+
 
 def add_parser(subparsers, parser, config):
     """Add some parsers to a subparser.
@@ -64,6 +63,7 @@ def add_parser(subparsers, parser, config):
     description = parser.get('description')
     func = parser.get('parsers')
     func(subparsers, name, description, config)
+
 
 def _add_parser(name=None, description=None, parsers=None):
     PARSERS.append(
@@ -77,7 +77,8 @@ def _add_parser(name=None, description=None, parsers=None):
 
 _add_parser(name='documents', description='Documents of you personal space.',
             parsers=add_documents_parser)
-_add_parser(name='shares', description='Share documents in you personal space.',
+_add_parser(name='shares',
+            description='Share documents in you personal space.',
             parsers=add_shares_parser)
 _add_parser(name='received_shares', description='Received shares management',
             parsers=add_received_shares_parser)
@@ -91,23 +92,28 @@ _add_parser(name='wg-content', description='Workgroup content management',
             parsers=add_wg_documents_parser)
 _add_parser(name='shared_spaces', description='Shared spaces management',
             parsers=add_shared_spaces_parser)
-_add_parser(name='shared_space_audit', description='Shared spaces audit management',
+_add_parser(name='shared_space_audit',
+            description='Shared spaces audit management',
             parsers=add_shared_space_audit_parser)
-_add_parser(name='shared_space_members', description='Shared spaces members management',
+_add_parser(name='shared_space_members',
+            description='Shared spaces members management',
             parsers=add_shared_space_members_parser)
 _add_parser(name='users', description='Users management',
             parsers=add_users_parser)
 _add_parser(name='guests', description='Guests management',
             parsers=add_guests_parser)
-_add_parser(name='lists', description='list all lists of contacts (aka mailing lists',
+_add_parser(name='lists',
+            description='list all lists of contacts (aka mailing lists',
             parsers=add_contactslists_parser)
-_add_parser(name='lists-contacts', description='Manage contacts within a list of contacts',
-            parsers=add_contactslistscontacts_parser)
+_add_parser(name='lists-contacts',
+            description='Manage contacts within a list of contacts',
+            parsers=add_clc_parser)
 _add_parser(name='jwts', description='JWT Persistent Token',
             parsers=add_jwt_parser)
 _add_parser(name='audit', description='audit',
             parsers=add_audit_parser)
 _add_parser(parsers=add_core_parser)
+
 
 class LinShareCliProgram(BasicProgram):
     """Main program."""
@@ -127,20 +133,23 @@ class LinShareCliProgram(BasicProgram):
             default=float(os.getenv('LS_API', 2.2)),
             e_type=float,
             desc=textwrap.dedent("""
-            The linshare api version to be used. Default '2'.
+            The linshare api version to be used. Default '2.2'.
             * For LinShare Core = 1.7.x, use api_version=0
             * For LinShare Core >= 1.8.x, use api_version=1
             * For LinShare Core >= 2.0.x, use api_version=2
             * For LinShare Core >= 2.2.x, use api_version=2.2
-            The default value can be overriden by the env variable LS_API, which can be
-            overriden by this parameter.""")))
+            * For LinShare Core >= 4.0.x, use api_version=4.0
+            * For LinShare Core >= 4.1.x, use api_version=4.1
+            * For LinShare Core >= 4.2.x, use api_version=4.2
+            The default value can be overriden by the env variable LS_API,
+            which can be overriden by this parameter.""")))
 
         section_server.add_element(Element('user', required=True))
 
         section_server.add_element(Element(
             'password',
             hidden=True,
-            desc="user password to linshare. See cli help for using env variable instead."))
+            desc="user password. See cli help for using env variable."))
 
         section_server.add_element(Element(
             'auth_type',
@@ -151,7 +160,8 @@ class LinShareCliProgram(BasicProgram):
             'base_url',
             desc=textwrap.dedent("""
             This parameter is dynamically computed according api_version value.
-            For api_version=2, its default value will be 'linshare/webservice/rest/user/v2'.
+            For api_version=2, its default value will be
+            'linshare/webservice/rest/user/v2'.
             You can also override it according your environment.""")))
 
         section_server.add_element(Element(
@@ -179,8 +189,8 @@ class LinShareCliProgram(BasicProgram):
             2 : debug on and request result is printed (pretty json)
             3 : debug on and urllib debug on and http headers and request
             are printed
-            The default value can be overriden by the env variable LS_DEBUG, which can be
-            overriden by this parameter.""")))
+            The default value can be overriden by the env variable LS_DEBUG,
+            which can be overriden by this parameter.""")))
 
     def add_pre_commands(self):
         """TODO"""
@@ -190,9 +200,9 @@ class LinShareCliProgram(BasicProgram):
             dest='server_section',
             help=textwrap.dedent("""
             This option let you select the server section in the cfg
-            file you want to load (server section is always load first as default
-            configuration). You just need to specify a number like '4' for
-            section 'server-4'"""))
+            file you want to load (server section is always load first as
+            default configuration). You just need to specify a number like
+            '4' for section 'server-4'"""))
 
         self.parser.add_argument(
             '-d',
@@ -241,12 +251,20 @@ class LinShareCliProgram(BasicProgram):
             action="store_true",
             default=False,
             dest="env_password",
-            help="If set, the program will load your password from LS_PASSWORD environement variable.")
+            help=(
+                "If set, the program will load your password"
+                "from LS_PASSWORD environement variable."
+            )
+        )
 
         group.add_argument(
             '--password-from-env',
             action="store",
-            help="If set, the program will load your password from a environement variable.")
+            help=(
+                "If set, the program will load your password"
+                "from a environement variable."
+            )
+        )
 
         self.parser.add_argument(
             '--auth-type',
@@ -319,6 +337,10 @@ set in the configuration file.
 * For LinShare Core = 1.7.x, use api_version=0.
 * For LinShare Core >= 1.8.x, use api_version=1.
 * For LinShare Core >= 2.0.x, use api_version=2.
+* For LinShare Core >= 2.2.x, use api_version=2.2
+* For LinShare Core >= 4.0.x, use api_version=4.0
+* For LinShare Core >= 4.1.x, use api_version=4.1
+* For LinShare Core >= 4.2.x, use api_version=4.2
 The default value can be overriden by the env variable LS_API, which can be
 overriden by this parameter.
 
@@ -328,11 +350,13 @@ Advanced debug:
 * If you need debug during class construction, config file loading,
 you just need to export _LINSHARE_CLI_USER_DEBUG=True
 * To debug auto completion, you need to export _ARC_DEBUG=1.
-    * Disable warning about SSL verification : export PYTHONWARNINGS="ignore:Unverified HTTPS request"
+    * Disable warning about SSL verification:
+    export PYTHONWARNINGS="ignore:Unverified HTTPS request"
 
 
 ================================================================
 """)
+
 
 def generate_config():
     """TODO"""

@@ -26,9 +26,10 @@
 #
 
 
-
+import traceback
 
 from argparse import RawTextHelpFormatter
+from argcomplete import debug
 from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
 from vhatable.filters import PartialOr
@@ -47,28 +48,35 @@ class DefaultCommand(Command):
 
     IDENTIFIER = "creationDate"
 
-    MSG_RS_UPDATED = "The shared space member '%(account)s' (%(uuid)s) was successfully updated."
-    MSG_RS_CREATED = "The shared space member '%(account)s' (%(uuid)s) was successfully created."
+    MSG_RS_UPDATED = (
+        "The shared space member '%(account)s' "
+        "(%(uuid)s) was successfully updated."
+    )
+    MSG_RS_CREATED = (
+        "The shared space member '%(account)s' "
+        "(%(uuid)s) was successfully created."
+    )
 
     CFG_DELETE_MODE = 1
     CFG_DELETE_ARG_ATTR = "ss_uuid"
 
-
     def complete(self, args, prefix):
-        super(DefaultCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.shared_spaces.list()
         return (v.get(self.RESOURCE_IDENTIFIER)
-                for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
+                for v in json_obj if v.get(
+                    self.RESOURCE_IDENTIFIER).startswith(prefix))
 
     def complete_shared_spaces(self, args, prefix):
         """TODO"""
-        super(DefaultCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.shared_spaces.list()
         return (v.get(self.RESOURCE_IDENTIFIER)
-                for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
+                for v in json_obj if v.get(
+                    self.RESOURCE_IDENTIFIER).startswith(prefix))
 
 
-class SharedSpaceCompleter(object):
+class SharedSpaceCompleter:
     """TODO"""
     # pylint: disable=too-few-public-methods
 
@@ -76,7 +84,6 @@ class SharedSpaceCompleter(object):
         self.config = config
 
     def __call__(self, prefix, **kwargs):
-        from argcomplete import debug
         try:
             debug("\n------------ SharedSpaceCompleter -----------------")
             debug("Kwargs content :")
@@ -90,7 +97,6 @@ class SharedSpaceCompleter(object):
         # pylint: disable=broad-except
         except Exception as ex:
             debug("\nERROR:An exception was caught :" + str(ex) + "\n")
-            import traceback
             traceback.print_exc()
             debug("\n------\n")
             return ["comlete-error"]
@@ -101,7 +107,7 @@ class ListCommand(DefaultCommand):
 
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
-        super(ListCommand, self).__call__(args)
+        super().__call__(args)
         endpoint = self.ls.shared_spaces.members
         tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
@@ -121,7 +127,9 @@ class ListCommand(DefaultCommand):
                 '{name}',
             )
         )
-        tbu.add_custom_cell("node", ComplexCellBuilder('{nodeType}: {name} ({uuid:.8})'))
+        tbu.add_custom_cell(
+                "node",
+                ComplexCellBuilder('{nodeType}: {name} ({uuid:.8})'))
         tbu.add_action('delete', DeleteAction(
             mode=self.CFG_DELETE_MODE,
             parent_identifier=self.CFG_DELETE_ARG_ATTR
@@ -136,7 +144,7 @@ class ListCommand(DefaultCommand):
     def complete_fields(self, args, prefix):
         """TODO"""
         # pylint: disable=unused-argument
-        super(ListCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.shared_spaces
         return cli.get_rbu().get_keys(True)
 
@@ -146,7 +154,7 @@ class CreateCommand(DefaultCommand):
 
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
-        super(CreateCommand, self).__call__(args)
+        super().__call__(args)
         act = CreateAction(self, self.ls.shared_spaces.members)
         act.load(args)
         act.rbu.set_value('node', {'uuid': args.ss_uuid})
@@ -158,7 +166,7 @@ class DeleteCommand(DefaultCommand):
 
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
-        super(DeleteCommand, self).__call__(args)
+        super().__call__(args)
         act = DeleteAction(
             mode=self.CFG_DELETE_MODE,
             parent_identifier=self.CFG_DELETE_ARG_ATTR
@@ -172,7 +180,7 @@ class UpdateCommand(DefaultCommand):
 
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
-        super(UpdateCommand, self).__call__(args)
+        super().__call__(args)
         self.check_required_options(
             args,
             ['role'],
