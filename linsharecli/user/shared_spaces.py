@@ -68,7 +68,7 @@ class Breadcrumb(Action):
     def __call__(self, args, cli, endpoint, data):
         self.init(args, cli, endpoint)
         if self.display:
-            drive_uuid = args.drive
+            drive_uuid = getattr(args, 'drive', None)
             if drive_uuid:
                 node = endpoint.get(drive_uuid)
                 print()
@@ -90,7 +90,11 @@ class ListCommand(DefaultCommand):
             PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True)
         )
         tbu.add_pre_render_class(Breadcrumb())
-        return tbu.build().load_v2(endpoint.list(drive=args.drive)).render()
+        if self.config.server.api_version.value >= 4.2:
+            return tbu.build().load_v2(endpoint.list(
+                drive=args.drive)).render()
+        else:
+            return tbu.build().load_v2(endpoint.list()).render()
 
     def complete_fields(self, args, prefix):
         """TODO"""
@@ -167,6 +171,7 @@ def add_parser(subparsers, name, desc, config):
     """TODO"""
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
+    api_version = config.server.api_version.value
 
     # command : list
     parser = subparsers2.add_parser(
@@ -175,13 +180,14 @@ def add_parser(subparsers, name, desc, config):
         help="list shared space from linshare")
     parser.add_argument('names', nargs="*",
                         help="Filter shared spaces by uuid")
-    parser.add_argument(
-        '-d', '--drive', help="Filter shared spaces by uuid")
+    if api_version >= 4.2:
+        parser.add_argument(
+            '-d', '--drive', help="Filter shared spaces by uuid")
+        parser.add_argument(
+            '--no-breadcrumb', action="store_true",
+            help="Do not display breadcrumb.")
     parser.add_argument(
         '-u', '--uuids', nargs="*", help="Filter shared spaces by uuid")
-    parser.add_argument(
-        '--no-breadcrumb', action="store_true",
-        help="Do not display breadcrumb.")
     add_list_parser_options(parser, delete=True, cdate=True)
     parser.set_defaults(__func__=ListCommand(config))
 

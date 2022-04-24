@@ -120,6 +120,14 @@ class ListCommand(DefaultCommand):
             )
         )
         tbu.add_custom_cell(
+            "nestedRole",
+            ComplexCellBuilder(
+                '{name}\n({uuid:.8})',
+                '{name} ({uuid:})',
+                '{name}',
+            )
+        )
+        tbu.add_custom_cell(
             "account",
             ComplexCellBuilder(
                 '{name}\n({uuid:.8})',
@@ -156,6 +164,18 @@ class CreateCommand(DefaultCommand):
     def __call__(self, args):
         super().__call__(args)
         act = CreateAction(self, self.ls.shared_spaces.members)
+        act.load(args)
+        act.rbu.set_value('node', {'uuid': args.ss_uuid})
+        return act.execute()
+
+
+class CreateDriveCommand(DefaultCommand):
+    """TODO"""
+
+    @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
+    def __call__(self, args):
+        super().__call__(args)
+        act = CreateAction(self, self.ls.shared_spaces.members.drives)
         act.load(args)
         act.rbu.set_value('node', {'uuid': args.ss_uuid})
         return act.execute()
@@ -207,7 +227,7 @@ def add_parser(subparsers, name, desc, config):
     parser = subparsers2.add_parser(
         'list',
         formatter_class=RawTextHelpFormatter,
-        help="list shared space from linshare")
+        help="list shared space members of a shared space")
     parser.add_argument(
         'accounts', nargs="*",
         help="Filter documents by their account names")
@@ -220,12 +240,9 @@ def add_parser(subparsers, name, desc, config):
 
     # command : create
     parser = subparsers2.add_parser(
-        'create', help="create shared space.")
+        'create', help="create shared space member for Workgroup")
     parser.add_argument('account', action="store", help="Account uuid")
     choices = ['ADMIN', 'WRITER', 'CONTRIBUTOR', 'READER']
-    api_version = config.server.api_version.value
-    if api_version >= 4.2:
-        choices += ['DRIVE_ADMIN', 'DRIVE_WRITER', 'DRIVE_WRITER']
     parser.add_argument(
             '--role', action="store",
             choices=choices,
@@ -233,16 +250,33 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('--cli-mode', action="store_true", help="")
     parser.set_defaults(__func__=CreateCommand(config))
 
+    # command : create-drive
+    api_version = config.server.api_version.value
+    if api_version >= 4.2:
+        parser = subparsers2.add_parser(
+            'create-drive', help="create shared space member for Drive.")
+        parser.add_argument('account', action="store", help="Account uuid")
+        parser.add_argument(
+                '--role', action="store",
+                choices=['DRIVE_ADMIN', 'DRIVE_WRITER', 'DRIVE_READER'],
+                help="Drive role")
+        parser.add_argument(
+                '--nested-role', action="store",
+                choices=['ADMIN', 'WRITER', 'CONTRIBUTOR', 'READER'],
+                help="Nested role (default workgroup role)")
+        parser.add_argument('--cli-mode', action="store_true", help="")
+        parser.set_defaults(__func__=CreateDriveCommand(config))
+
     # command : delete
     parser = subparsers2.add_parser(
         'delete',
-        help="delete shared space")
+        help="delete shared space member")
     add_delete_parser_options(parser)
     parser.set_defaults(__func__=DeleteCommand(config))
 
     # command : update
     parser = subparsers2.add_parser(
-        'update', help="update shared space.")
+        'update', help="update shared space member.")
     parser.add_argument(
         'uuid', action="store", help="").completer = Completer()
     parser.add_argument('--role', action="store",
