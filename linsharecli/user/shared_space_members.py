@@ -256,9 +256,12 @@ def add_parser(subparsers, name, desc, config):
         parser = subparsers2.add_parser(
             'create-drive', help="create shared space member for Drive.")
         parser.add_argument('account', action="store", help="Account uuid")
+        choices=['DRIVE_ADMIN', 'DRIVE_WRITER', 'DRIVE_READER'],
+        if api_version >= 5:
+            choices=['WORKSPACE_ADMIN', 'WORKSPACE_WRITER', 'WORKSPACE_READER'],
         parser.add_argument(
                 '--role', action="store",
-                choices=['DRIVE_ADMIN', 'DRIVE_WRITER', 'DRIVE_READER'],
+                choices=choices,
                 help="Drive role")
         parser.add_argument(
                 '--nested-role', action="store",
