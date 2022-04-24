@@ -45,23 +45,43 @@ from vhatable.filters import PartialOr
 class DomainsCommand(DefaultCommand):
     """For  api >= 1.9"""
     # pylint: disable=too-many-instance-attributes
-    IDENTIFIER = "label"
-    DEFAULT_SORT = "label"
-    RESOURCE_IDENTIFIER = "identifier"
+    IDENTIFIER = "name"
+    DEFAULT_SORT = "name"
+    RESOURCE_IDENTIFIER = "uuid"
 
     DEFAULT_TOTAL = "Domain found : %(count)s"
     MSG_RS_NOT_FOUND = "No domain could be found."
     MSG_RS_DELETED = (
         "%(position)s/%(count)s: "
-        "The domain '%(label)s' (%(identifier)s) was deleted. (%(time)s s)"
+        "The domain '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
     )
-    MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(label)s'  '%(identifier)s' can not be deleted."
+    MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(name)s'  '%(uuid)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain (s) can not be deleted."
-    MSG_RS_UPDATED = "The domain '%(label)s' (%(identifier)s) was successfully updated."
+    MSG_RS_UPDATED = "The domain '%(name)s' (%(uuid)s) was successfully updated."
     MSG_RS_CREATED = (
-        "The domain '%(label)s' (%(identifier)s) "
+        "The domain '%(name)s' (%(uuid)s) "
         "was successfully created. (%(_time)s s)"
     )
+
+    # pylint: disable=no-self-use
+    def init_old_language_key_before_5(self):
+        DomainsCommand.IDENTIFIER = "label"
+        DomainsCommand.DEFAULT_SORT = "label"
+        DomainsCommand.RESOURCE_IDENTIFIER = "identifier"
+
+        DomainsCommand.DEFAULT_TOTAL = "Domain found : %(count)s"
+        DomainsCommand.MSG_RS_NOT_FOUND = "No domain could be found."
+        DomainsCommand.MSG_RS_DELETED = (
+            "%(position)s/%(count)s: "
+            "The domain '%(label)s' (%(identifier)s) was deleted. (%(time)s s)"
+        )
+        DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(label)s'  '%(identifier)s' can not be deleted."
+        DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain (s) can not be deleted."
+        DomainsCommand.MSG_RS_UPDATED = "The domain '%(label)s' (%(identifier)s) was successfully updated."
+        DomainsCommand.MSG_RS_CREATED = (
+            "The domain '%(label)s' (%(identifier)s) "
+            "was successfully created. (%(_time)s s)"
+        )
 
     # pylint: disable=no-self-use
     def init_old_language_key(self):
@@ -86,6 +106,8 @@ class DomainsCommand(DefaultCommand):
         super(DomainsCommand, self).__call__(args)
         if self.api_version == 0:
             self.init_old_language_key()
+        elif self.api_version < 5:
+            self.init_old_language_key_before_5()
         json_obj = self.ls.domains.list()
         return (v.get(self.RESOURCE_IDENTIFIER)
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
@@ -141,11 +163,17 @@ class DomainsListCommand(DomainsCommand):
         super(DomainsListCommand, self).__call__(args)
         if self.api_version == 0:
             self.init_old_language_key()
+        elif self.api_version < 5:
+            self.init_old_language_key_before_5()
         endpoint = self.ls.domains
         tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
-        tbu.add_action('delete', DDeleteAction())
+        if self.api_version < 5:
+            # no need to override default DeleteAction for version upper than 5
+            tbu.add_action('delete', DDeleteAction())
         tbu.load_args(args)
-        tbu.add_custom_cell("currentWelcomeMessage", ComplexCellBuilder('{name} ({uuid:.8})'))
+        tbu.add_custom_cell(
+            "currentWelcomeMessage",
+            ComplexCellBuilder('{name} ({uuid:.8})'))
         tbu.add_custom_cell("providers", ProviderCell)
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
@@ -168,8 +196,10 @@ class DomainsCreateCommand(DomainsCommand):
         super(DomainsCreateCommand, self).__call__(args)
         if self.api_version == 0:
             self.init_old_language_key()
-        if not args.description:
-            args.description = args.identifier
+        elif self.api_version < 5:
+            if not args.description:
+                args.description = args.identifier
+            self.init_old_language_key_before_5()
 
         act = CreateAction(self, self.ls.domains)
         if act.load(args).execute():
@@ -288,6 +318,8 @@ class DomainsDeleteCommand(DomainsCommand):
                 args,
                 cli,
                 args.identifier)
+        elif self.api_version < 5:
+            self.init_old_language_key_before_5()
         return self._delete_all(args, cli, args.uuids)
 
 
@@ -458,8 +490,11 @@ def add_parser(subparsers, name, desc, config):
     # command : create
     parser_tmp2 = subparsers2.add_parser(
         'create', help="create domain.")
-    parser_tmp2.add_argument('--label', action="store", help="")
-    parser_tmp2.add_argument('identifier', action="store", help="")
+    if api_version < 5:
+        parser_tmp2.add_argument('--label', action="store", help="")
+        parser_tmp2.add_argument('identifier', action="store", help="")
+    else:
+        parser_tmp2.add_argument('name', action="store", help="")
     parser_tmp2.add_argument(
         '--type', dest="domain_type", action="store", help="",
         required=True).completer = Completer("complete_type")
