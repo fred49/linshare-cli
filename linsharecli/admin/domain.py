@@ -167,18 +167,38 @@ class DomainsListCommand(DomainsCommand):
             self.init_old_language_key_before_5()
         endpoint = self.ls.domains
         tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
+        tbu.load_args(args)
         if self.api_version < 5:
             # no need to override default DeleteAction for version upper than 5
             tbu.add_action('delete', DDeleteAction())
-        tbu.load_args(args)
-        tbu.add_custom_cell(
-            "currentWelcomeMessage",
-            ComplexCellBuilder('{name} ({uuid:.8})'))
+            tbu.add_custom_cell(
+                "currentWelcomeMessage",
+                ComplexCellBuilder('{name} ({uuid:.8})', '{name} ({uuid})'))
+        else:
+            tbu.add_custom_cell(
+                "domainPolicy",
+                ComplexCellBuilder('{name} ({uuid:.8})', '{name} ({uuid})'))
+            tbu.add_custom_cell(
+                "mailConfiguration",
+                ComplexCellBuilder('{name} ({uuid:.8})', '{name} ({uuid})'))
+            tbu.add_custom_cell(
+                "mimePolicy",
+                ComplexCellBuilder('{name} ({uuid:.8})', '{name} ({uuid})'))
+            tbu.add_custom_cell(
+                "welcomeMessage",
+                ComplexCellBuilder('{name} ({uuid:.8})', '{name} ({uuid})'))
         tbu.add_custom_cell("providers", ProviderCell)
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
         )
-        return tbu.build().load_v2(endpoint.list()).render()
+        if args.extended and self.api_version >= 5:
+            table = tbu.build().load_v2(endpoint.list())
+            domains = []
+            for row in table.get_raw():
+                domains.append(endpoint.get(row['uuid']))
+            return tbu.build().load_v2(domains).render()
+        else:
+            return tbu.build().load_v2(endpoint.list()).render()
 
     def complete_fields(self, args, prefix):
         """TODO"""
@@ -303,6 +323,44 @@ class DomainsUpdateCommand(DomainsCommand):
         """ Complete with available language."""
         # pylint: disable=unused-argument
         super(DomainsUpdateCommand, self).__call__(args)
+        return self.ls.domains.options_language()
+
+
+class DomainsUpdateV5Command(DomainsCommand):
+    """ Update a domain."""
+
+    def __call__(self, args):
+        super(DomainsUpdateV5Command, self).__call__(args)
+        domain_uuid = getattr(args, self.RESOURCE_IDENTIFIER)
+        resource = self.ls.domains.get(domain_uuid)
+        if resource is None:
+            raise ValueError("Domain uuid not found")
+        rbu = self.ls.domains.get_rbu()
+        rbu.copy(resource)
+        rbu.load_from_args(args)
+        resource = rbu.to_resource()
+        return self._run(
+            self.ls.domains.update,
+            "The following domain '%(uuid)s' was successfully updated",
+            domain_uuid,
+            resource)
+
+    def complete(self, args, prefix):
+        super(DomainsUpdateV5Command, self).__call__(args)
+        json_obj = self.ls.domains.list()
+        return (v.get('identifier')
+                for v in json_obj if v.get('identifier').startswith(prefix))
+
+    def complete_role(self, args, prefix):
+        """ Complete with available role."""
+        # pylint: disable=unused-argument
+        super(DomainsUpdateV5Command, self).__call__(args)
+        return self.ls.domains.options_role()
+
+    def complete_language(self, args, prefix):
+        """ Complete with available language."""
+        # pylint: disable=unused-argument
+        super(DomainsUpdateV5Command, self).__call__(args)
         return self.ls.domains.options_language()
 
 
@@ -526,8 +584,6 @@ def add_parser(subparsers, name, desc, config):
     # command : update
     parser_tmp2 = subparsers2.add_parser(
         'update', help="update domain.")
-    parser_tmp2.add_argument(
-        'identifier', action="store", help="").completer = Completer()
     parser_tmp2.add_argument('--label', action="store", help="")
     parser_tmp2.add_argument('--description', action="store", help="")
     parser_tmp2.add_argument(
@@ -544,7 +600,14 @@ def add_parser(subparsers, name, desc, config):
         '--welcome', dest="current_welcome_message", action="store",
         help="welcome message identifier").completer = Completer(
             "complete_welcome")
-    parser_tmp2.set_defaults(__func__=DomainsUpdateCommand(config))
+    if api_version < 5:
+        parser_tmp2.add_argument(
+            'identifier', action="store", help="").completer = Completer()
+        parser_tmp2.set_defaults(__func__=DomainsUpdateCommand(config))
+    else:
+        parser_tmp2.add_argument(
+            'uuid', action="store", help="").completer = Completer()
+        parser_tmp2.set_defaults(__func__=DomainsUpdateV5Command(config))
 
     # command : delete
     parser_tmp2 = subparsers2.add_parser(
@@ -558,43 +621,51 @@ def add_parser(subparsers, name, desc, config):
         add_delete_parser_options(parser_tmp2)
     parser_tmp2.set_defaults(__func__=DomainsDeleteCommand(config))
 
-    # command : set provider
-    parser_tmp2 = subparsers2.add_parser(
-        'setup', help="configure user provider.")
-    parser_tmp2.add_argument(
-        'identifier', action="store",
-        help="domain identifier").completer = Completer()
-    parser_tmp2.add_argument('--basedn', action="store", help="",
-                             required=True)
-    parser_tmp2.add_argument(
-        '--ldap', dest="ldap", action="store", help="ldap identifier",
-        required=True).completer = Completer("complete_ldap")
-    parser_tmp2.add_argument(
-        '--dpattern', dest="dpattern", action="store",
-        help="domain pattern identifier",
-        required=True).completer = Completer("complete_dpattern")
-    parser_tmp2.set_defaults(__func__=DomainProvidersCreateCommand(config))
+    def add_cmd_set_provider(subparsers2):
+        """command : set provider"""
+        parser_tmp2 = subparsers2.add_parser(
+            'setup', help="configure user provider.")
+        parser_tmp2.add_argument(
+            'identifier', action="store",
+            help="domain identifier").completer = Completer()
+        parser_tmp2.add_argument('--basedn', action="store", help="",
+                                 required=True)
+        parser_tmp2.add_argument(
+            '--ldap', dest="ldap", action="store", help="ldap identifier",
+            required=True).completer = Completer("complete_ldap")
+        parser_tmp2.add_argument(
+            '--dpattern', dest="dpattern", action="store",
+            help="domain pattern identifier",
+            required=True).completer = Completer("complete_dpattern")
+        parser_tmp2.set_defaults(__func__=DomainProvidersCreateCommand(config))
 
-    # command : update provider
-    parser_tmp2 = subparsers2.add_parser(
-        'updateup', help="update user provider.")
-    parser_tmp2.add_argument(
-        'identifier', action="store",
-        help="domain identifier").completer = Completer()
-    parser_tmp2.add_argument('--basedn', action="store", help="")
-    parser_tmp2.add_argument(
-        '--ldap', dest="ldap", action="store",
-        help="ldap identifier").completer = Completer("complete_ldap")
-    parser_tmp2.add_argument(
-        '--dpattern', dest="dpattern", action="store",
-        help="domain pattern identifier").completer = Completer(
-            "complete_dpattern")
-    parser_tmp2.set_defaults(__func__=DomainProvidersUpdateCommand(config))
+    def add_cmd_update_provider(subparsers2):
+        """command : update provider"""
+        parser_tmp2 = subparsers2.add_parser(
+            'updateup', help="update user provider.")
+        parser_tmp2.add_argument(
+            'identifier', action="store",
+            help="domain identifier").completer = Completer()
+        parser_tmp2.add_argument('--basedn', action="store", help="")
+        parser_tmp2.add_argument(
+            '--ldap', dest="ldap", action="store",
+            help="ldap identifier").completer = Completer("complete_ldap")
+        parser_tmp2.add_argument(
+            '--dpattern', dest="dpattern", action="store",
+            help="domain pattern identifier").completer = Completer(
+                "complete_dpattern")
+        parser_tmp2.set_defaults(__func__=DomainProvidersUpdateCommand(config))
 
-    # command : del provider
-    parser_tmp2 = subparsers2.add_parser(
-        'cleanup', help="clean user provider.")
-    parser_tmp2.add_argument(
-        'identifier', action="store",
-        help="domain identifier").completer = Completer()
-    parser_tmp2.set_defaults(__func__=DomainProvidersDeleteCommand(config))
+    def add_cmd_delete_provider(subparsers2):
+        """command : del provider"""
+        parser_tmp2 = subparsers2.add_parser(
+            'cleanup', help="clean user provider.")
+        parser_tmp2.add_argument(
+            'identifier', action="store",
+            help="domain identifier").completer = Completer()
+        parser_tmp2.set_defaults(__func__=DomainProvidersDeleteCommand(config))
+
+    if api_version < 5:
+        add_cmd_set_provider(subparsers2)
+        add_cmd_update_provider(subparsers2)
+        add_cmd_delete_provider(subparsers2)
