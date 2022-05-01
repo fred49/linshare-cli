@@ -28,6 +28,7 @@
 
 
 import urllib.error
+import logging
 from argparse import ArgumentError
 from argtoolbox import DefaultCompleter as Completer
 from vhatable.filters import PartialOr
@@ -60,6 +61,35 @@ class PolicyCell(ComplexCell):
         return dformat.format(**self.value)
 
 
+class PolicyCell5(ComplexCell):
+    """TODO"""
+
+    def __unicode__(self):
+        if self.raw:
+            return str(self.value)
+        if self.value is None:
+            return self.none
+        if self.value['hidden']:
+            return self.none
+        dformat = (
+                "Enable:         {enable}\n"
+                "Allow Override: {override}\n"
+                "Read Only:      {readonly}\n"
+                "   ---------------   "
+        )
+        if self.vertical:
+            dformat = (
+                    "Enable: {enable} | "
+                    "Allow Override: {override} | "
+                    "Read Only: {readonly}"
+            )
+        return dformat.format(
+            enable=self.value['enable']['value'],
+            override=self.value['allowOverride']['value'],
+            readonly=self.value['readonly'],
+        )
+
+
 class ParameterCell(ComplexCell):
     """TODO"""
 
@@ -85,6 +115,122 @@ class ParameterCell(ComplexCell):
                 dformat = "{string}"
             res.append(dformat.format(**parameter))
         return " | ".join(res)
+
+
+class ParameterCell5(ComplexCell):
+    """TODO"""
+
+    def __unicode__(self):
+        classname = str(self.__class__.__name__.lower())
+        log = logging.getLogger("linsharecli.cell." + classname)
+        if self.raw:
+            return str(self.value)
+        if self.value is None:
+            return self.none
+        if self.value['hidden']:
+            return self.none
+
+        def to_string(param):
+            dformat = (
+                    "*Type:          {type}\n"
+                    "Hidden:         {hidden}\n"
+                    "Read Only:      {readonly}\n"
+                    "   ---------------   "
+            )
+            if self.vertical:
+                dformat = (
+                        "Type: {type} | "
+                        "Hidden: {hidden} | "
+                        "Read Only: {readonly}"
+                )
+            return dformat.format(
+                hidden=param['hidden'],
+                type=param['type'],
+                readonly=param['readonly'],
+            )
+
+        def to_string_default(param):
+            dformat = (
+                    "Type:           {type}\n"
+                    "Default:        {default}\n"
+                    "Hidden:         {hidden}\n"
+                    "Read Only:      {readonly}\n"
+                    "   ---------------   "
+            )
+            if self.vertical:
+                dformat = (
+                        "Type: {type} | "
+                        "Default: {default} | "
+                        "Hidden: {hidden} | "
+                        "Read Only: {readonly}"
+                )
+            return dformat.format(
+                default=param['defaut']['value'],
+                type=param['type'],
+                hidden=param['hidden'],
+                readonly=param['readonly'],
+            )
+
+        def to_string_max(param):
+            dformat = (
+                    "Type:           {type}\n"
+                    "Maximum:        {maximum}\n"
+                    "Hidden:         {hidden}\n"
+                    "Read Only:      {readonly}\n"
+                    "   ---------------   "
+            )
+            if self.vertical:
+                dformat = (
+                        "Type: {type} | "
+                        "Maximum: {maximum} | "
+                        "Hidden: {hidden} | "
+                        "Read Only: {readonly}"
+                )
+            return dformat.format(
+                maximum=param['maximum']['value'],
+                hidden=param['hidden'],
+                type=param['type'],
+                readonly=param['readonly'],
+            )
+
+        def to_string_all(param):
+            dformat = (
+                    "Type:           {type}\n"
+                    "Default:        {default}\n"
+                    "Maximum:        {maximum}\n"
+                    "Hidden:         {hidden}\n"
+                    "Read Only:      {readonly}\n"
+                    "   ---------------   "
+            )
+            if self.vertical:
+                dformat = (
+                        "Type: {type} | "
+                        "Default: {default} | "
+                        "Maximum: {maximum} | "
+                        "Hidden: {hidden} | "
+                        "Read Only: {readonly}"
+                )
+            return dformat.format(
+                default=param['defaut']['value'],
+                maximum=param['maximum']['value'],
+                hidden=param['hidden'],
+                type=param['type'],
+                readonly=param['readonly'],
+            )
+
+        maptypes = {
+            'BOOLEAN': to_string_default,
+            'INTEGER_ALL': to_string_all,
+            'INTEGER_DEFAULT': to_string_default,
+            'LANGUAGE': to_string_default,
+            'STRING': to_string_default,
+            'UNIT_SIZE_ALL': to_string_all,
+            'UNIT_SIZE_MAX': to_string_max,
+            'UNIT_TIME_ALL': to_string_all,
+            'UNIT_TIME_DEFAULT': to_string_default,
+        }
+        log.debug(self.value['type'])
+        return maptypes.get(self.value['type'], to_string)(self.value)
 
 
 class FunctionalityCommand(DefaultCommand):
@@ -270,12 +416,18 @@ class FunctionalityListCommand(FunctionalityCommand):
         endpoint = self.ls.funcs
         tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
-        tbu.add_custom_cell("parameters", ParameterCell)
-        tbu.add_custom_cell("activationPolicy", PolicyCell)
-        tbu.add_custom_cell("configurationPolicy", PolicyCell)
-        tbu.add_custom_cell("delegationPolicy", PolicyCell)
-        tbu.add_action('status', UpdateAction())
-        # tbu.add_action('delete', DeleteAction())
+        if self.api_version < 5:
+            tbu.add_custom_cell("activationPolicy", PolicyCell)
+            tbu.add_custom_cell("configurationPolicy", PolicyCell)
+            tbu.add_custom_cell("delegationPolicy", PolicyCell)
+            tbu.add_action('status', UpdateAction())
+            # tbu.add_action('delete', DeleteAction())
+            tbu.add_custom_cell("parameters", ParameterCell)
+        else:
+            tbu.add_custom_cell("activationPolicy", PolicyCell5)
+            tbu.add_custom_cell("configurationPolicy", PolicyCell5)
+            tbu.add_custom_cell("delegationPolicy", PolicyCell5)
+            tbu.add_custom_cell("parameter", ParameterCell5)
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
             PartialOr("type", args.funct_type, True)
