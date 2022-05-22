@@ -26,7 +26,6 @@
 #
 
 
-
 import urllib.error
 import logging
 from argparse import ArgumentError
@@ -245,8 +244,12 @@ class FunctionalityCommand(DefaultCommand):
         "%(position)s/%(count)s: "
         "The Functionality '%(identifier)s' was updated. (%(time)s s)"
     )
-    MSG_RS_CAN_NOT_BE_UPDATED = "The Functionality '%(identifier)s' can not be updated."
-    MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s Functionality(s) can not be updated."
+    MSG_RS_CAN_NOT_BE_UPDATED = (
+            "The Functionality '%(identifier)s' can not be updated."
+    )
+    MSG_RS_CAN_NOT_BE_UPDATED_M = (
+            "%(count)s Functionality(s) can not be updated."
+    )
 
     def complete(self, args, prefix):
         super(FunctionalityCommand, self).__call__(args)
@@ -269,8 +272,12 @@ class UpdateAction(Action):
         "%(position)s/%(count)s: "
         "The Functionality '%(identifier)s' was updated. (%(time)s s)"
     )
-    MSG_RS_CAN_NOT_BE_UPDATED = "The Functionality '%(identifier)s' can not be updated."
-    MSG_RS_CAN_NOT_BE_UPDATED_M = "%(count)s Functionality(s) can not be updated."
+    MSG_RS_CAN_NOT_BE_UPDATED = (
+        "The Functionality '%(identifier)s' can not be updated."
+    )
+    MSG_RS_CAN_NOT_BE_UPDATED_M = (
+        "%(count)s Functionality(s) can not be updated."
+    )
 
     def __call__(self, args, cli, endpoint, data):
         """TODO"""
@@ -359,8 +366,12 @@ class DeleteAction(DeleteActionTable):
         "%(position)s/%(count)s: "
         "The functionality '%(name)s' (%(uuid)s) was reset. (%(time)s s)"
     )
-    MSG_RS_CAN_NOT_BE_DELETED = "The functionality '%(uuid)s' can not be reset."
-    MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s functionality(s) can not be reset."
+    MSG_RS_CAN_NOT_BE_DELETED = (
+        "The functionality '%(uuid)s' can not be reset."
+    )
+    MSG_RS_CAN_NOT_BE_DELETED_M = (
+        "%(count)s functionality(s) can not be reset."
+    )
 
     def __init__(self):
         super(DeleteAction, self).__init__(
@@ -479,12 +490,13 @@ class FunctionalityUpdateCommand(FunctionalityCommand):
                     "If your using deprecated arguments --ap, --cp or --dp, "
                     "you must also provide the following flags: "
                     "--disable --enable --mandatory --forbidden.\n"
-                    "Please use news flags. Deprecated flags will removed soon."
+                    "Please use news flags. "
+                    "Deprecated flags will removed soon."
                 )
             )
         cli = self.ls
         endpoint = self.ls.funcs
-        data = [endpoint.get(args.identifier),]
+        data = [endpoint.get(args.identifier), ]
         action = UpdateAction()
         return action(args, cli, endpoint, data)
 
@@ -679,21 +691,23 @@ class FunctionalityResetCommand(FunctionalityCommand):
         super(FunctionalityResetCommand, self).__call__(args)
         act = DeleteAction()
         act.init(args, self.ls, self.ls.funcs)
-        return act.delete([args.identifier,])
+        return act.delete([args.identifier, ])
 
     def complete(self, args, prefix):
         """TODO"""
         super(FunctionalityResetCommand, self).__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         return (val.get('identifier')
-                for val in json_obj if val.get('identifier').startswith(prefix))
+                for val in json_obj if val.get(
+                    'identifier').startswith(prefix))
 
     def complete_domain(self, args, prefix):
         """TODO"""
         super(FunctionalityResetCommand, self).__call__(args)
         json_obj = self.ls.domains.list()
         return (val.get('identifier')
-                for val in json_obj if val.get('identifier').startswith(prefix))
+                for val in json_obj if val.get(
+                    'identifier').startswith(prefix))
 
 
 def add_update_parser(actions_group, required=True):
@@ -733,10 +747,11 @@ def add_update_parser(actions_group, required=True):
     add_parser_options(actions_group, "Activation Policy", "ap-")
     add_parser_options(actions_group, "Delegation Policy", "dp-")
 
+
 def add_update_parser_old(parser, required=True):
     """TODO"""
     policy_group = parser.add_argument_group(
-        'Deprecated. Choose the policy to update, default is activation policy')
+        'Deprecated. Choose the policy to update, default is activation')
     group = policy_group.add_mutually_exclusive_group()
     group.add_argument(
         '--ap',
@@ -827,8 +842,9 @@ def add_parser(subparsers, name, desc, config):
         'update', help="update a functionality.")
     parser.add_argument('identifier', action="store",
                         help="").completer = Completer()
-    parser.add_argument('-d', '--domain', action="store",
-                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument(
+        '-d', '--domain', action="store",
+        help="Completion available").completer = Completer('complete_domain')
     parser.add_argument('--dry-run', action="store_true")
     add_update_parser(parser, required=False)
     add_update_parser_old(parser, required=False)
@@ -839,8 +855,9 @@ def add_parser(subparsers, name, desc, config):
         'update-str', help="update STRING functionality.")
     parser.add_argument('identifier', action="store",
                         help="").completer = Completer()
-    parser.add_argument('-d', '--domain', action="store",
-                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument(
+        '-d', '--domain', action="store",
+        help="Completion available").completer = Completer('complete_domain')
     parser.add_argument(
         'string',
         help="string value",
@@ -853,8 +870,9 @@ def add_parser(subparsers, name, desc, config):
         'update-int', help="update INTEGER functionality.")
     parser.add_argument('identifier', action="store",
                         help="").completer = Completer()
-    parser.add_argument('-d', '--domain', action="store",
-                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument(
+        '-d', '--domain', action="store",
+        help="Completion available").completer = Completer('complete_domain')
     parser.add_argument(
         'integer',
         type=int,
@@ -868,8 +886,9 @@ def add_parser(subparsers, name, desc, config):
         'update-bool', help="update BOOLEAN functionality.")
     parser.add_argument('identifier', action="store",
                         help="").completer = Completer()
-    parser.add_argument('-d', '--domain', action="store",
-                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument(
+        '-d', '--domain', action="store",
+        help="Completion available").completer = Completer('complete_domain')
     status_group = parser.add_argument_group('Boolean value')
     group = status_group.add_mutually_exclusive_group(required=True)
     group.add_argument(
@@ -888,8 +907,9 @@ def add_parser(subparsers, name, desc, config):
         'update-lang', help="update language functionality.")
     parser.add_argument('identifier', action="store",
                         help="").completer = Completer()
-    parser.add_argument('-d', '--domain', action="store",
-                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument(
+        '-d', '--domain', action="store",
+        help="Completion available").completer = Completer('complete_domain')
     parser.add_argument(
         '-l',
         '--lang',
@@ -903,8 +923,9 @@ def add_parser(subparsers, name, desc, config):
         'update-time', help="update UNIT functionality.")
     parser.add_argument('identifier', action="store",
                         help="").completer = Completer()
-    parser.add_argument('-d', '--domain', action="store",
-                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument(
+        '-d', '--domain', action="store",
+        help="Completion available").completer = Completer('complete_domain')
     parser.add_argument(
         'value',
         type=int,
@@ -923,8 +944,9 @@ def add_parser(subparsers, name, desc, config):
         'update-size', help="update UNIT functionality.")
     parser.add_argument('identifier', action="store",
                         help="").completer = Completer()
-    parser.add_argument('-d', '--domain', action="store",
-                        help="Completion available").completer = Completer('complete_domain')
+    parser.add_argument(
+        '-d', '--domain', action="store",
+        help="Completion available").completer = Completer('complete_domain')
     parser.add_argument(
         'value',
         type=int,
