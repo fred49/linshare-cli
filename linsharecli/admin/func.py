@@ -252,14 +252,14 @@ class FunctionalityCommand(DefaultCommand):
     )
 
     def complete(self, args, prefix):
-        super(FunctionalityCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_domain(self, args, prefix):
         """TODO"""
-        super(FunctionalityCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
@@ -374,14 +374,14 @@ class DeleteAction(DeleteActionTable):
     )
 
     def __init__(self):
-        super(DeleteAction, self).__init__(
+        super().__init__(
             identifier="name",
             resource_identifier="identifier"
         )
         self.domain = None
 
     def init(self, args, cli, endpoint):
-        super(DeleteAction, self).init(args, cli, endpoint)
+        super().init(args, cli, endpoint)
         self.domain = args.domain
         return self
 
@@ -423,7 +423,7 @@ class FunctionalityListCommand(FunctionalityCommand):
 
     @Time('linsharecli.funcs', label='Global time : %(time)s')
     def __call__(self, args):
-        super(FunctionalityListCommand, self).__call__(args)
+        super().__call__(args)
         endpoint = self.ls.funcs
         tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
@@ -450,14 +450,14 @@ class FunctionalityListCommand(FunctionalityCommand):
 
     def complete(self, args, prefix):
         """TODO"""
-        super(FunctionalityListCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_domain(self, args, prefix):
         """TODO"""
-        super(FunctionalityListCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
@@ -465,7 +465,7 @@ class FunctionalityListCommand(FunctionalityCommand):
     def complete_fields(self, args, prefix):
         """TODO"""
         # pylint: disable=unused-argument
-        super(FunctionalityListCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.funcs
         return cli.get_rbu().get_keys(True)
 
@@ -474,7 +474,7 @@ class FunctionalityUpdateCommand(FunctionalityCommand):
     """ List all functionalities."""
 
     def __call__(self, args):
-        super(FunctionalityUpdateCommand, self).__call__(args)
+        super().__call__(args)
         error = False
         if args.status_deprecated or args.policy_type:
             if args.status_deprecated and not args.policy_type:
@@ -505,7 +505,7 @@ class FunctionalityUpdateStringCommand(FunctionalityCommand):
     """ Update STRING functionalities."""
 
     def __call__(self, args):
-        super(FunctionalityUpdateStringCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.funcs
         resource = cli.get(args.identifier, args.domain)
         if self.debug:
@@ -518,7 +518,7 @@ class FunctionalityUpdateStringCommand(FunctionalityCommand):
 
     def complete(self, args, prefix):
         """TODO"""
-        super(FunctionalityUpdateStringCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier')
@@ -529,7 +529,7 @@ class FunctionalityUpdateTimeCommand(FunctionalityCommand):
     """ Update TIME functionalities."""
 
     def __call__(self, args):
-        super(FunctionalityUpdateTimeCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.funcs
         resource = cli.get(args.identifier, args.domain)
         if self.debug:
@@ -553,7 +553,7 @@ class FunctionalityUpdateTimeCommand(FunctionalityCommand):
 
     def complete(self, args, prefix):
         """TODO"""
-        super(FunctionalityUpdateTimeCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         res = []
         for val in json_obj:
@@ -569,7 +569,7 @@ class FunctionalityUpdateLangCommand(FunctionalityCommand):
     """ Update TIME functionalities."""
 
     def __call__(self, args):
-        super(FunctionalityUpdateLangCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.funcs
         resource = cli.get(args.identifier, args.domain)
         if self.debug:
@@ -583,7 +583,7 @@ class FunctionalityUpdateLangCommand(FunctionalityCommand):
 
     def complete(self, args, prefix):
         """TODO"""
-        super(FunctionalityUpdateLangCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         return (val.get('identifier')
                 for val in json_obj if val.get('identifier')
@@ -594,7 +594,7 @@ class FunctionalityUpdateSizeCommand(FunctionalityCommand):
     """ Update TIME functionalities."""
 
     def __call__(self, args):
-        super(FunctionalityUpdateSizeCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.funcs
         resource = cli.get(args.identifier, args.domain)
         if self.debug:
@@ -611,7 +611,7 @@ class FunctionalityUpdateSizeCommand(FunctionalityCommand):
 
     def complete(self, args, prefix):
         """TODO"""
-        super(FunctionalityUpdateSizeCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         res = []
         for val in json_obj:
@@ -626,7 +626,7 @@ class FunctionalityUpdateIntegerCommand(FunctionalityCommand):
     """ Update INTEGER functionalities."""
 
     def __call__(self, args):
-        super(FunctionalityUpdateIntegerCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.funcs
         resource = cli.get(args.identifier, args.domain)
         if self.debug:
@@ -639,7 +639,7 @@ class FunctionalityUpdateIntegerCommand(FunctionalityCommand):
 
     def complete(self, args, prefix):
         """TODO"""
-        super(FunctionalityUpdateIntegerCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         return (val.get('identifier')
                 for val in json_obj if val.get('identifier')
@@ -650,7 +650,7 @@ class FunctionalityUpdateBooleanCommand(FunctionalityCommand):
     """ Update BOOLEAN functionalities."""
 
     def __call__(self, args):
-        super(FunctionalityUpdateBooleanCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.funcs
         resource = cli.get(args.identifier, args.domain)
         if self.debug:
@@ -672,7 +672,7 @@ class FunctionalityUpdateBooleanCommand(FunctionalityCommand):
 
     def complete(self, args, prefix):
         """TODO"""
-        super(FunctionalityUpdateBooleanCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         res = []
         for val in json_obj:
@@ -688,14 +688,14 @@ class FunctionalityResetCommand(FunctionalityCommand):
     """ Reset a functionality."""
 
     def __call__(self, args):
-        super(FunctionalityResetCommand, self).__call__(args)
+        super().__call__(args)
         act = DeleteAction()
         act.init(args, self.ls, self.ls.funcs)
         return act.delete([args.identifier, ])
 
     def complete(self, args, prefix):
         """TODO"""
-        super(FunctionalityResetCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.funcs.list(args.domain)
         return (val.get('identifier')
                 for val in json_obj if val.get(
@@ -703,7 +703,7 @@ class FunctionalityResetCommand(FunctionalityCommand):
 
     def complete_domain(self, args, prefix):
         """TODO"""
-        super(FunctionalityResetCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.domains.list()
         return (val.get('identifier')
                 for val in json_obj if val.get(
