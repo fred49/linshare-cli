@@ -228,6 +228,7 @@ class ParameterCell5(ComplexCell):
             'UNIT_TIME_ALL': to_string_all,
             'UNIT_TIME_DEFAULT': to_string_default,
         }
+        # todo: unit, unlimited
         log.debug(self.value['type'])
         return maptypes.get(self.value['type'], to_string)(self.value)
 
@@ -520,8 +521,25 @@ class FunctionalityListCommand(FunctionalityCommand):
 class FunctionalityUpdateCommand(FunctionalityCommand):
     """ List all functionalities."""
 
+    def __init__(self, config, gparser):
+        super().__init__(config)
+        self.gparser = gparser
+
     def __call__(self, args):
         super().__call__(args)
+        if self.api_version < 5:
+            return self.__call_v4(args)
+        return self.__call_v5(args)
+
+    def __call_v5(self, args):
+        self.check_required_options_v2(args, self.gparser)
+        cli = self.ls
+        endpoint = self.ls.funcs
+        data = [endpoint.get(args.identifier), ]
+        action = UpdateActionV5()
+        return action(args, cli, endpoint, data)
+
+    def __call_v4(self, args):
         error = False
         if args.status_deprecated or args.policy_type:
             if args.status_deprecated and not args.policy_type:
@@ -943,7 +961,16 @@ def add_parser(subparsers, name, desc, config):
     if api_version < 5:
         add_update_parser(parser, required=False)
         add_update_parser_old(parser, required=False)
-    parser.set_defaults(__func__=FunctionalityUpdateCommand(config))
+        parser.set_defaults(__func__=FunctionalityUpdateCommand(config, None))
+    else:
+        gparser = parser.add_argument_group(
+            "Properties",
+            "You must at least use one of these options")
+        add_update_parser_v5(gparser)
+        gparser.add_argument('--parameter-default', help="TODO")
+        gparser.add_argument('--parameter-maximum', type=float, help="TODO")
+        parser.set_defaults(__func__=FunctionalityUpdateCommand(
+            config, gparser))
 
     # command : update-str
     parser = subparsers2.add_parser(
