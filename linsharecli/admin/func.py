@@ -287,7 +287,7 @@ class UpdateAction(Action):
         res = 0
         for row in data:
             position += 1
-            status = self.update_row(row, position, count, args.status)
+            status = self.update_row(row, position, count, args)
             res += abs(status - 1)
         if res > 0:
             meta = {'count': res}
@@ -295,10 +295,11 @@ class UpdateAction(Action):
             return False
         return True
 
-    def update_row(self, row, position, count, status):
+    def update_row(self, row, position, count, args):
         """TODO"""
         # pylint: disable=too-many-branches
         # pylint: disable=too-many-statements
+        status = args.status
         self.log.debug("row : %s", row)
         meta = {}
         meta.update(row)
@@ -350,6 +351,51 @@ class UpdateAction(Action):
                                 + str(status) + " Did you forget to provide"
                                 + " the value/flag to update ?"
                                 )
+        self.endpoint.update(row)
+        meta['time'] = self.endpoint.core.last_req_time
+        if self.cli_mode:
+            print(row['identifier'])
+        else:
+            self.pprint(self.MSG_RS_UPDATED, meta)
+        return True
+
+
+class UpdateActionV5(UpdateAction):
+    """TODO"""
+
+    def update_row(self, row, position, count, args):
+        """TODO"""
+        self.log.debug("row : %s", row)
+        # self.pretty_json(row)
+        meta = {}
+        meta.update(row)
+        meta['time'] = " -"
+        meta['position'] = position
+        meta['count'] = count
+
+        def getvalue(arg_value, default):
+            if arg_value is None:
+                return default
+            return arg_value
+
+        row['activationPolicy']['enable']['value'] = getvalue(
+                args.AP_enable,
+                row['activationPolicy']['enable']['value'])
+        row['activationPolicy']['allowOverride']['value'] = getvalue(
+                args.AP_allow_override,
+                row['activationPolicy']['allowOverride']['value'])
+        row['configurationPolicy']['enable']['value'] = getvalue(
+                args.CP_enable,
+                row['configurationPolicy']['enable']['value'])
+        row['configurationPolicy']['allowOverride']['value'] = getvalue(
+                args.CP_allow_override,
+                row['configurationPolicy']['allowOverride']['value'])
+        row['delegationPolicy']['enable']['value'] = getvalue(
+                args.DP_enable,
+                row['delegationPolicy']['enable']['value'])
+        row['delegationPolicy']['allowOverride']['value'] = getvalue(
+                args.DP_allow_override,
+                row['delegationPolicy']['allowOverride']['value'])
         self.endpoint.update(row)
         meta['time'] = self.endpoint.core.last_req_time
         if self.cli_mode:
@@ -439,6 +485,7 @@ class FunctionalityListCommand(FunctionalityCommand):
             tbu.add_custom_cell("configurationPolicy", PolicyCell5)
             tbu.add_custom_cell("delegationPolicy", PolicyCell5)
             tbu.add_custom_cell("parameter", ParameterCell5)
+            tbu.add_action("update", UpdateActionV5())
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
             PartialOr("type", args.funct_type, True)
@@ -743,8 +790,46 @@ def add_update_parser(actions_group, required=True):
             const=cst_prefix + "FORBIDDEN",
             dest="status")
 
-    add_parser_options(actions_group, "Configuration Policy", "cp-")
     add_parser_options(actions_group, "Activation Policy", "ap-")
+    add_parser_options(actions_group, "Configuration Policy", "cp-")
+    add_parser_options(actions_group, "Delegation Policy", "dp-")
+
+
+def add_update_parser_v5(actions_group):
+    """TODO"""
+
+    def add_parser_options(status_group, name, prefix):
+        cst_prefix = prefix.upper().replace('-', '_')
+        group = status_group.add_mutually_exclusive_group(required=False)
+        group.add_argument(
+            '--' + prefix + 'disable',
+            default=None,
+            action="store_false",
+            help=f"Disable {name} policy.",
+            dest=cst_prefix + "enable")
+        group.add_argument(
+            '--' + prefix + 'enable',
+            default=None,
+            action="store_true",
+            help=f"Enable {name} policy.",
+            dest=cst_prefix + "enable")
+
+        group = status_group.add_mutually_exclusive_group(required=False)
+        group.add_argument(
+            '--' + prefix + 'disallow-override',
+            default=None,
+            action="store_false",
+            help=f"Disable {name} policy.",
+            dest=cst_prefix + "allow_override")
+        group.add_argument(
+            '--' + prefix + 'allow-override',
+            default=None,
+            action="store_true",
+            help=f"Enable {name} policy.",
+            dest=cst_prefix + "allow_override")
+
+    add_parser_options(actions_group, "Activation Policy", "ap-")
+    add_parser_options(actions_group, "Configuration Policy", "cp-")
     add_parser_options(actions_group, "Delegation Policy", "dp-")
 
 
@@ -813,7 +898,7 @@ def add_parser(subparsers, name, desc, config):
 
     # command : list
     parser = subparsers2.add_parser(
-        'list', help="list functionalities.")
+        'list', aliases=['l'], help="list functionalities.")
     parser.add_argument('identifiers', nargs="*")
     parser.add_argument(
         '-d', '--domain', action="store",
@@ -834,7 +919,15 @@ def add_parser(subparsers, name, desc, config):
     sort_group.add_argument(
         '--sort-type', action="store_true",
         help="Sort functionalities by type")
-    add_update_parser(actions_group, required=False)
+    api_version = config.server.api_version.value
+    if api_version < 5:
+        add_update_parser(actions_group, required=False)
+    else:
+        actions_group.add_argument('--update', action="store_true")
+        update_group = parser.add_argument_group(
+            "Update",
+            "You must use --update flag to enable these option.")
+        add_update_parser_v5(update_group)
     parser.set_defaults(__func__=FunctionalityListCommand(config))
 
     # command : update
@@ -846,8 +939,10 @@ def add_parser(subparsers, name, desc, config):
         '-d', '--domain', action="store",
         help="Completion available").completer = Completer('complete_domain')
     parser.add_argument('--dry-run', action="store_true")
-    add_update_parser(parser, required=False)
-    add_update_parser_old(parser, required=False)
+    api_version = config.server.api_version.value
+    if api_version < 5:
+        add_update_parser(parser, required=False)
+        add_update_parser_old(parser, required=False)
     parser.set_defaults(__func__=FunctionalityUpdateCommand(config))
 
     # command : update-str
