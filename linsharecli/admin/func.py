@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 """TODO"""
+# pylint: disable=too-many-lines
 
 
 # This file is part of Linshare cli.
@@ -42,6 +43,7 @@ from linsharecli.common.tables import DeleteAction as DeleteActionTable
 
 
 class PolicyCell(ComplexCell):
+    # pylint: disable=too-few-public-methods
     """TODO"""
 
     def __unicode__(self):
@@ -62,6 +64,7 @@ class PolicyCell(ComplexCell):
 
 class PolicyCell5(ComplexCell):
     """TODO"""
+    # pylint: disable=too-few-public-methods
 
     def __unicode__(self):
         if self.raw:
@@ -91,6 +94,7 @@ class PolicyCell5(ComplexCell):
 
 class ParameterCell(ComplexCell):
     """TODO"""
+    # pylint: disable=too-few-public-methods
 
     def __unicode__(self):
         if self.raw:
@@ -118,6 +122,7 @@ class ParameterCell(ComplexCell):
 
 class ParameterCell5(ComplexCell):
     """TODO"""
+    # pylint: disable=too-few-public-methods
 
     def __unicode__(self):
         classname = str(self.__class__.__name__.lower())
@@ -363,6 +368,7 @@ class UpdateAction(Action):
 
 class UpdateActionV5(UpdateAction):
     """TODO"""
+    # pylint: disable=too-few-public-methods
 
     def update_row(self, row, position, count, args):
         """TODO"""
@@ -911,6 +917,7 @@ def add_update_parser_old(parser, required=True):
 def add_parser(subparsers, name, desc, config):
     """Add all domain sub commands."""
     # pylint: disable=too-many-statements
+    # pylint: disable=too-many-locals
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
 
