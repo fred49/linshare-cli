@@ -33,6 +33,7 @@ from argparse import ArgumentError
 from argtoolbox import DefaultCompleter as Completer
 from vhatable.filters import PartialOr
 from vhatable.cell import ComplexCell
+from vhatable.cell import ComplexCellBuilder
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
 from linsharecli.common.core import add_list_parser_options
@@ -492,6 +493,9 @@ class FunctionalityListCommand(FunctionalityCommand):
             tbu.add_custom_cell("configurationPolicy", PolicyCell5)
             tbu.add_custom_cell("delegationPolicy", PolicyCell5)
             tbu.add_custom_cell("parameter", ParameterCell5)
+            tbu.add_custom_cell(
+                "domain",
+                ComplexCellBuilder('{name} ({uuid:.8})', '{name} ({uuid})'))
             tbu.add_action("update", UpdateActionV5())
         tbu.add_filters(
             PartialOr(self.IDENTIFIER, args.identifiers, True),
