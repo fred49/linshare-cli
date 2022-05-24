@@ -33,7 +33,7 @@ from vhatable.filters import PartialOr
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
-from linsharecli.common.actions import CreateAction
+from linsharecli.common.actions import CreateOneAction
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.tables import DeleteAction
 
@@ -79,7 +79,7 @@ class ThreadsCreateCommand(ThreadsCommand):
     @Time('linsharecli.threads', label='Global time : %(time)s')
     def __call__(self, args):
         super(ThreadsCreateCommand, self).__call__(args)
-        act = CreateAction(self, self.ls.threads)
+        act = CreateOneAction(self, self.ls.threads)
         return act.load(args).execute()
 
 

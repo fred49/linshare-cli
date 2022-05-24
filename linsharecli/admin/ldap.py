@@ -32,7 +32,7 @@ from vhatable.filters import PartialOr
 from linshareapi.cache import Time
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
-from linsharecli.common.actions import CreateAction
+from linsharecli.common.actions import CreateOneAction
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.tables import TableBuilder
 
@@ -119,7 +119,7 @@ class LdapConnectionsCreateCommand(LdapConnectionsCommand):
         self.log.debug("api_version : " + str(self.api_version))
         if self.api_version == 0:
             self.init_old_language_key()
-        act = CreateAction(self, self.ls.ldap_connections)
+        act = CreateOneAction(self, self.ls.ldap_connections)
         return act.load(args).execute()
 
 class LdapConnectionsUpdateCommand(LdapConnectionsCommand):

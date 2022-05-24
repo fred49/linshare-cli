@@ -33,7 +33,7 @@ from linshareapi.cache import Time
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
-from linsharecli.common.actions import CreateAction
+from linsharecli.common.actions import CreateOneAction
 from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import TableBuilder
 from argtoolbox import DefaultCompleter as Completer
@@ -221,7 +221,7 @@ class DomainsCreateCommand(DomainsCommand):
                 args.description = args.identifier
             self.init_old_language_key_before_5()
 
-        act = CreateAction(self, self.ls.domains)
+        act = CreateOneAction(self, self.ls.domains)
         if act.load(args).execute():
             if not args.domain_policy_auto:
                 return True

@@ -31,7 +31,7 @@ from argparse import RawTextHelpFormatter
 from argtoolbox import DefaultCompleter as Completer
 from vhatable.filters import PartialOr
 from linsharecli.admin.core import DefaultCommand as Command
-from linsharecli.common.actions import UpdateAction
+from linsharecli.common.actions import UpdateOneAction
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.tables import TableBuilder
@@ -123,7 +123,7 @@ class UpdateCommand(DefaultCommand):
             ["--name"])
         endpoint = self.ls.shared_spaces
         node = endpoint.get(args.uuid)
-        act = UpdateAction(self, endpoint)
+        act = UpdateOneAction(self, endpoint)
         rbu = endpoint.get_rbu()
         rbu.copy(node)
         rbu.load_from_args(args)

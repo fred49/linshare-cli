@@ -31,14 +31,14 @@ from linshareapi.cache import Time
 from argtoolbox import DefaultCompleter as Completer
 from vhatable.filters import PartialOr
 from vhatable.cell import ComplexCellBuilder
-from linsharecli.common.actions import CreateAction as CCreateAction
-from linsharecli.common.actions import UpdateAction as UUpdateAction
+from linsharecli.common.actions import CreateOneAction as CCreateOneAction
+from linsharecli.common.actions import UpdateOneAction as UUpdateOneAction
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.tables import TableBuilder
 from linsharecli.admin.core import DefaultCommand
 
 
-class CreateAction(CCreateAction):
+class CreateOneAction(CCreateOneAction):
     """TODO"""
 
     def __init__(self, command, cli):
@@ -60,7 +60,7 @@ class CreateAction(CCreateAction):
         return self.cli.create(self.logo, data, self.name)
 
 
-class UpdateAction(UUpdateAction):
+class UpdateOneAction(UUpdateOneAction):
     """TODO"""
 
     def _execute(self, data):
@@ -147,7 +147,7 @@ class MailAttachmentsCreateCommand(MailAttachmentsCommand):
 
     def __call__(self, args):
         super(MailAttachmentsCreateCommand, self).__call__(args)
-        act = CreateAction(self, self.ls.mail_attachments)
+        act = CreateOneAction(self, self.ls.mail_attachments)
         return act.load(args).execute()
 
 
@@ -162,7 +162,7 @@ class MailAttachmentsUpdateCommand(MailAttachmentsCommand):
         super(MailAttachmentsUpdateCommand, self).__call__(args)
         self.check_required_options_v2(args, self.parser)
         endpoint = self.ls.mail_attachments
-        act = UpdateAction(self, endpoint)
+        act = UpdateOneAction(self, endpoint)
         act.rbu = endpoint.get_rbu()
         act.rbu.copy(endpoint.get(args.uuid))
         return act.load(args).execute()

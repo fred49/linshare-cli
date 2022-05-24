@@ -29,7 +29,7 @@
 
 from linshareapi.cache import Time
 from linsharecli.common.core import add_list_parser_options
-from linsharecli.common.actions import CreateAction
+from linsharecli.common.actions import CreateOneAction
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.tables import TableBuilder
@@ -141,7 +141,7 @@ class WelcomeMessagesCreateCommand(WelcomeMessagesCommand):
         super(WelcomeMessagesCreateCommand, self).__call__(args)
         if args.domain:
             args.domain = {'identifier': args.domain}
-        act = CreateAction(self, self.ls.welcome_messages)
+        act = CreateOneAction(self, self.ls.welcome_messages)
         return act.load(args).execute()
 
 

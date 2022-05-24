@@ -32,8 +32,8 @@ from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
 from vhatable.filters import PartialOr
 from linsharecli.user.core import DefaultCommand as Command
-from linsharecli.common.actions import CreateAction
-from linsharecli.common.actions import UpdateAction
+from linsharecli.common.actions import CreateOneAction
+from linsharecli.common.actions import UpdateOneAction
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.tables import Action
@@ -149,7 +149,7 @@ class UpdateCommand(DefaultCommand):
             ["--name"])
         endpoint = self.ls.shared_spaces
         node = endpoint.get(args.uuid)
-        act = UpdateAction(self, endpoint)
+        act = UpdateOneAction(self, endpoint)
         rbu = endpoint.get_rbu()
         rbu.copy(node)
         rbu.load_from_args(args)
@@ -162,7 +162,7 @@ class CreateCommand(DefaultCommand):
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
         super(CreateCommand, self).__call__(args)
-        act = CreateAction(self, self.ls.shared_spaces)
+        act = CreateOneAction(self, self.ls.shared_spaces)
         act.load(args)
         return act.execute()
 

@@ -34,7 +34,7 @@ import time
 from linshareapi.core import LinShareException
 
 
-class AbstractAction(object):
+class AbstractOneAction(object):
     """TODO"""
 
     MESSAGE_CONFIRM_KEY = None
@@ -118,7 +118,7 @@ class AbstractAction(object):
         raise NotImplementedError()
 
 
-class CreateAction(AbstractAction):
+class CreateOneAction(AbstractOneAction):
     """TODO"""
 
     MESSAGE_CONFIRM_KEY = 'MSG_RS_CREATED'
@@ -131,7 +131,7 @@ class CreateAction(AbstractAction):
         return self.cli.create(data)
 
 
-class UpdateAction(AbstractAction):
+class UpdateOneAction(AbstractOneAction):
     """TODO"""
 
     MESSAGE_CONFIRM_KEY = 'MSG_RS_UPDATED'

@@ -30,7 +30,7 @@
 from linshareapi.cache import Time
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import hook_file_content
-from linsharecli.common.actions import CreateAction
+from linsharecli.common.actions import CreateOneAction
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.tables import TableBuilder
@@ -95,7 +95,7 @@ class PublicKeysCreateCommand(PublicKeysCommand):
 
     def __call__(self, args):
         super(PublicKeysCreateCommand, self).__call__(args)
-        act = CreateAction(self, self.ls.public_keys)
+        act = CreateOneAction(self, self.ls.public_keys)
         act.add_hook("publicKey", hook_file_content)
         return act.load(args).execute()
 

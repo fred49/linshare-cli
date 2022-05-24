@@ -35,7 +35,7 @@ from vhatable.filters import PartialOr
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
-from linsharecli.common.actions import CreateAction
+from linsharecli.common.actions import CreateOneAction
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.tables import DeleteAction
 
@@ -181,7 +181,7 @@ class ThreadMembersCreateCommand(ThreadMembersCommand):
         super(ThreadMembersCreateCommand, self).__call__(args)
         if self.api_version < 2:
             self.init_old_language_key()
-        act = CreateAction(self, self.ls.thread_members)
+        act = CreateOneAction(self, self.ls.thread_members)
         act.add_hook("userMail", self.hook_user_mail)
         return act.load(args).execute()
 

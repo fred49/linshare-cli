@@ -39,8 +39,8 @@ from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.core import add_download_parser_options
 from linsharecli.user.core import DefaultCommand
-from linsharecli.common.actions import CreateAction
-from linsharecli.common.actions import UpdateAction
+from linsharecli.common.actions import CreateOneAction
+from linsharecli.common.actions import UpdateOneAction
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.tables import Action
 from linsharecli.common.tables import DeleteAction
@@ -457,7 +457,7 @@ class FolderCreateCommand(WgNodesCommand):
     def __call__(self, args):
         super(FolderCreateCommand, self).__call__(args)
         cli = self.ls.workgroup_folders
-        act = CreateAction(self, cli)
+        act = CreateOneAction(self, cli)
         rbu = cli.get_rbu()
         rbu.load_from_args(args)
         if args.folders:
@@ -479,7 +479,7 @@ class NodeUpdateCommand(WgNodesCommand):
         cli = self.ls.workgroup_folders
         uuid = get_uuid_from(args.nodes[-1])
         node = cli.get(args.wg_uuid, uuid)
-        act = UpdateAction(self, cli)
+        act = UpdateOneAction(self, cli)
         rbu = cli.get_rbu()
         rbu.copy(node)
         rbu.load_from_args(args)

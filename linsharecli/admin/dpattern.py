@@ -33,7 +33,7 @@ from vhatable.filters import PartialOr
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_delete_parser_options
-from linsharecli.common.actions import CreateAction
+from linsharecli.common.actions import CreateOneAction
 from linsharecli.common.tables import TableBuilder
 
 
@@ -153,7 +153,7 @@ class DomainPatternsCreateCommand(DomainPatternsCommand):
                     rbu.set_value('description', "")
                     break
         rbu.load_from_args(args)
-        act = CreateAction(self, self.ls.domain_patterns)
+        act = CreateOneAction(self, self.ls.domain_patterns)
         return act.load(args).execute(rbu.to_resource())
 
 
@@ -174,7 +174,7 @@ class DomainPatternsCreateCommand2(DomainPatternsCommand):
                     rbu.set_value('description', "")
                     break
         rbu.load_from_args(args)
-        act = CreateAction(self, self.ls.domain_patterns)
+        act = CreateOneAction(self, self.ls.domain_patterns)
         return act.load(args).execute(rbu.to_resource())
 
     def complete(self, args, prefix):

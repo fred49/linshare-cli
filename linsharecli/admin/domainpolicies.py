@@ -29,8 +29,8 @@
 
 from linshareapi.cache import Time
 from linsharecli.admin.core import DefaultCommand
-from linsharecli.common.actions import CreateAction
-from linsharecli.common.actions import UpdateAction
+from linsharecli.common.actions import CreateOneAction
+from linsharecli.common.actions import UpdateOneAction
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import TableBuilder
@@ -154,7 +154,7 @@ class DomainPoliciesCreateCommand(DomainPoliciesCommand):
     @Time('linshareadmcli.domain_policies', label='Global time : %(time)s')
     def __call__(self, args):
         super(DomainPoliciesCreateCommand, self).__call__(args)
-        act = CreateAction(self, self.ls.domain_policies)
+        act = CreateOneAction(self, self.ls.domain_policies)
         return act.load(args).execute()
 
 
@@ -172,7 +172,7 @@ class DomainPoliciesUpdateCommand(DomainPoliciesCommand):
         resource = endpoint.get(args.identifier)
         if resource is None:
             raise ValueError("Domain policy idenfier not found")
-        act = UpdateAction(self, endpoint)
+        act = UpdateOneAction(self, endpoint)
         rbu = endpoint.get_rbu()
         rbu.copy(resource)
         rbu.load_from_args(args)

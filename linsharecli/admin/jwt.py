@@ -34,8 +34,8 @@ from linshareapi.cache import Time
 from linshareapi.core import LinShareException
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
-from linsharecli.common.actions import CreateAction
-from linsharecli.common.actions import UpdateAction
+from linsharecli.common.actions import CreateOneAction
+from linsharecli.common.actions import UpdateOneAction
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.tables import TableBuilder
 from vhatable.filters import PartialOr
@@ -43,7 +43,7 @@ from vhatable.cell import ComplexCellBuilder
 from argtoolbox import DefaultCompleter as Completer
 
 
-class JwtCreateAction(CreateAction):
+class JwtCreateAction(CreateOneAction):
     """TODO"""
 
     MESSAGE_CONFIRM_KEY = 'MSG_RS_CREATED'
@@ -184,7 +184,7 @@ class JwtUpdateCommand(JwtCommand):
             ["--description", "--label"])
         cli = self.ls.jwt
         node = cli.get(args.uuid)
-        act = UpdateAction(self, cli)
+        act = UpdateOneAction(self, cli)
         rbu = cli.get_rbu()
         rbu.copy(node)
         rbu.load_from_args(args)

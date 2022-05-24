@@ -36,7 +36,7 @@ from vhatable.cell import ComplexCell
 from vhatable.cell import ComplexCellBuilder
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
-from linsharecli.common.actions import UpdateAction
+from linsharecli.common.actions import UpdateOneAction
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.tables import TableBuilder
@@ -403,7 +403,7 @@ class UpdateActionV5(UpdateAction):
         row['delegationPolicy']['allowOverride']['value'] = getvalue(
                 args.DP_allow_override,
                 row['delegationPolicy']['allowOverride']['value'])
-        act = UpdateAction(self, self.endpoint)
+        act = UpdateOneAction(self, self.endpoint)
         return act.load(args).execute(row)
 
 

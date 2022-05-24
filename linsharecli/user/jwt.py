@@ -39,8 +39,8 @@ from vhatable.cell import ComplexCell
 from vhatable.cell import ComplexCellBuilder
 from linsharecli.user.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
-from linsharecli.common.actions import CreateAction
-from linsharecli.common.actions import UpdateAction
+from linsharecli.common.actions import CreateOneAction
+from linsharecli.common.actions import UpdateOneAction
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.cell import ActorCell
 from linsharecli.common.cell import AuthUserCell
@@ -48,7 +48,7 @@ from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import TableBuilder
 
 
-class JwtCreateAction(CreateAction):
+class JwtCreateAction(CreateOneAction):
     """TODO"""
 
     MESSAGE_CONFIRM_KEY = 'MSG_RS_CREATED'
@@ -221,7 +221,7 @@ class JwtUpdateCommand(JwtCommand):
             ["--description", "--label"])
         cli = self.ls.jwt
         node = cli.get(args.uuid)
-        act = UpdateAction(self, cli)
+        act = UpdateOneAction(self, cli)
         rbu = cli.get_rbu()
         rbu.copy(node)
         rbu.load_from_args(args)

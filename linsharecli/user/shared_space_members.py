@@ -39,8 +39,8 @@ from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.tables import DeleteAction
-from linsharecli.common.actions import CreateAction
-from linsharecli.common.actions import UpdateAction
+from linsharecli.common.actions import CreateOneAction
+from linsharecli.common.actions import UpdateOneAction
 
 
 class DefaultCommand(Command):
@@ -163,7 +163,7 @@ class CreateCommand(DefaultCommand):
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
         super().__call__(args)
-        act = CreateAction(self, self.ls.shared_spaces.members)
+        act = CreateOneAction(self, self.ls.shared_spaces.members)
         act.load(args)
         act.rbu.set_value('node', {'uuid': args.ss_uuid})
         return act.execute()
@@ -175,7 +175,7 @@ class CreateDriveCommand(DefaultCommand):
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
         super().__call__(args)
-        act = CreateAction(self, self.ls.shared_spaces.members.drives)
+        act = CreateOneAction(self, self.ls.shared_spaces.members.drives)
         act.load(args)
         act.rbu.set_value('node', {'uuid': args.ss_uuid})
         return act.execute()
@@ -207,7 +207,7 @@ class UpdateCommand(DefaultCommand):
             ["--role"])
         endpoint = self.ls.shared_spaces.members
         node = endpoint.get(args.ss_uuid, args.uuid)
-        act = UpdateAction(self, endpoint)
+        act = UpdateOneAction(self, endpoint)
         rbu = endpoint.get_rbu()
         rbu.copy(node)
         rbu.load_from_args(args)
