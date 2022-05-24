@@ -397,12 +397,13 @@ class UpdateActionV5(UpdateAction):
         row['configurationPolicy']['allowOverride']['value'] = getvalue(
                 args.CP_allow_override,
                 row['configurationPolicy']['allowOverride']['value'])
-        row['delegationPolicy']['enable']['value'] = getvalue(
-                args.DP_enable,
-                row['delegationPolicy']['enable']['value'])
-        row['delegationPolicy']['allowOverride']['value'] = getvalue(
-                args.DP_allow_override,
-                row['delegationPolicy']['allowOverride']['value'])
+        if 'delegationPolicy' in row:
+            row['delegationPolicy']['enable']['value'] = getvalue(
+                    args.DP_enable,
+                    row['delegationPolicy']['enable']['value'])
+            row['delegationPolicy']['allowOverride']['value'] = getvalue(
+                    args.DP_allow_override,
+                    row['delegationPolicy']['allowOverride']['value'])
         act = UpdateOneAction(self, self.endpoint)
         return act.load(args).execute(row)
 
@@ -962,6 +963,7 @@ def add_parser(subparsers, name, desc, config):
         '-d', '--domain', action="store",
         help="Completion available").completer = Completer('complete_domain')
     parser.add_argument('--dry-run', action="store_true")
+    parser.add_argument('--cli-mode', action="store_true", help="")
     api_version = config.server.api_version.value
     if api_version < 5:
         add_update_parser(parser, required=False)
