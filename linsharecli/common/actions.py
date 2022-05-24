@@ -84,19 +84,30 @@ class AbstractAction(object):
         try:
             start = time.time()
             json_obj = self._execute(data)
-            self.result = json_obj
             end = time.time()
-            json_obj['_time'] = end - start
+            self.result = json_obj
             if json_obj is None:
                 self.log.error("Missing return statement for _execute method")
                 return False
             if self.debug:
-                self.pretty_json(json_obj, "Json object returned by the server")
+                self.pretty_json(
+                        json_obj, "Json object returned by the server")
             if self.cli_mode:
                 print((json_obj.get(self.command.RESOURCE_IDENTIFIER)))
                 return True
+            meta = {}
+            meta.update(json_obj)
+            meta['time'] = " -"
+            # Workaround ?
+            # Not needed when action is used for uddating one resource
+            # But needed when the updates is not triggered by a 'list command'
+            meta['position'] = 0
+            meta['count'] = 0
+            meta['time'] = end - start
+            # old behavior support.
+            json_obj['_time'] = end - start
             msg = getattr(self.command, self.MESSAGE_CONFIRM_KEY)
-            self.pprint(msg, json_obj)
+            self.pprint(msg, meta)
             return True
         except LinShareException as ex:
             self.log.debug("LinShareException : " + str(ex.args))
