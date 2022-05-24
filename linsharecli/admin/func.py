@@ -36,6 +36,7 @@ from vhatable.cell import ComplexCell
 from vhatable.cell import ComplexCellBuilder
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
+from linsharecli.common.actions import UpdateAction
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.tables import TableBuilder
@@ -275,6 +276,9 @@ class FunctionalityCommand(DefaultCommand):
 class UpdateAction(Action):
     """Update funtionality, is supposed to be used by an action table."""
 
+    IDENTIFIER = "identifier"
+    RESOURCE_IDENTIFIER = "identifier"
+
     MSG_RS_UPDATED = (
         "%(position)s/%(count)s: "
         "The Functionality '%(identifier)s' was updated. (%(time)s s)"
@@ -375,11 +379,6 @@ class UpdateActionV5(UpdateAction):
         """TODO"""
         self.log.debug("row : %s", row)
         # self.pretty_json(row)
-        meta = {}
-        meta.update(row)
-        meta['time'] = " -"
-        meta['position'] = position
-        meta['count'] = count
 
         def getvalue(arg_value, default):
             if arg_value is None:
@@ -404,13 +403,8 @@ class UpdateActionV5(UpdateAction):
         row['delegationPolicy']['allowOverride']['value'] = getvalue(
                 args.DP_allow_override,
                 row['delegationPolicy']['allowOverride']['value'])
-        self.endpoint.update(row)
-        meta['time'] = self.endpoint.core.last_req_time
-        if self.cli_mode:
-            print(row['identifier'])
-        else:
-            self.pprint(self.MSG_RS_UPDATED, meta)
-        return True
+        act = UpdateAction(self, self.endpoint)
+        return act.load(args).execute(row)
 
 
 class DeleteAction(DeleteActionTable):
