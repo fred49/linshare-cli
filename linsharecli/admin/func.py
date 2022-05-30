@@ -177,28 +177,6 @@ class ParameterCell5(ComplexCell):
                 readonly=param['readonly'],
             )
 
-        def to_string_max(param):
-            dformat = (
-                    "Type:           {type}\n"
-                    "Maximum:        {maximum}\n"
-                    "Hidden:         {hidden}\n"
-                    "Read Only:      {readonly}\n"
-                    "   ---------------   "
-            )
-            if self.vertical:
-                dformat = (
-                        "Type: {type} | "
-                        "Maximum: {maximum} | "
-                        "Hidden: {hidden} | "
-                        "Read Only: {readonly}"
-                )
-            return dformat.format(
-                maximum=param['maximum']['value'],
-                hidden=param['hidden'],
-                type=param['type'],
-                readonly=param['readonly'],
-            )
-
         def to_string_all(param):
             dformat = (
                     "Type:           {type}\n"
@@ -224,18 +202,64 @@ class ParameterCell5(ComplexCell):
                 readonly=param['readonly'],
             )
 
+        def to_unit_time(param):
+            p_type = param['type']
+            dformat = ["Type:           {type}"]
+            if self.vertical:
+                dformat = ["Type: {type}"]
+            values = {
+                'hidden': param['hidden'],
+                'type': p_type,
+                'readonly': param['readonly'],
+            }
+            if p_type in ('UNIT_TIME_ALL', 'UNIT_TIME_DEFAULT',
+                          'UNIT_SIZE_ALL', 'UNIT_SIZE_DEFAULT'):
+                if self.vertical:
+                    dformat.append("Default: {default} {d_unit}")
+                else:
+                    dformat.append("Default:        {default} {d_unit}")
+                values['default'] = param['defaut']['value']
+                values['d_unit'] = param['defaut']['unit']
+            if p_type in ('UNIT_TIME_ALL', 'UNIT_TIME_MAX',
+                          'UNIT_SIZE_ALL', 'UNIT_SIZE_MAX'):
+                if self.vertical:
+                    dformat.append("Maximum: {maximum} {m_unit}")
+                    if param['unlimited']['supported']:
+                        dformat.append("Unlimited: {unlimited}")
+                else:
+                    dformat.append("Maximum:        {maximum} {m_unit}")
+                    if param['unlimited']['supported']:
+                        dformat.append("Unlimited:      {unlimited}")
+                if param['unlimited']['supported']:
+                    values['unlimited'] = param['unlimited']['value']
+                values['maximum'] = param['maximum']['value']
+                values['m_unit'] = param['maximum']['unit']
+            if self.vertical:
+                dformat.append("Hidden: {hidden}")
+                dformat.append("Read Only: {readonly}")
+            else:
+                dformat.append("Hidden:         {hidden}")
+                dformat.append("Read Only:      {readonly}")
+                dformat.append("   ---------------   ")
+            if self.vertical:
+                dformat = " | ".join(dformat)
+            else:
+                dformat = "\n".join(dformat)
+            return dformat.format(**values)
+
         maptypes = {
             'BOOLEAN': to_string_default,
             'INTEGER_ALL': to_string_all,
             'INTEGER_DEFAULT': to_string_default,
             'LANGUAGE': to_string_default,
             'STRING': to_string_default,
-            'UNIT_SIZE_ALL': to_string_all,
-            'UNIT_SIZE_MAX': to_string_max,
-            'UNIT_TIME_ALL': to_string_all,
-            'UNIT_TIME_DEFAULT': to_string_default,
+            'UNIT_SIZE_ALL': to_unit_time,
+            'UNIT_SIZE_MAX': to_unit_time,
+            'UNIT_SIZE_DEFAULT': to_unit_time,
+            'UNIT_TIME_ALL': to_unit_time,
+            'UNIT_TIME_MAX': to_unit_time,
+            'UNIT_TIME_DEFAULT': to_unit_time,
         }
-        # todo: unit, unlimited
         log.debug(self.value['type'])
         return maptypes.get(self.value['type'], to_string)(self.value)
 
