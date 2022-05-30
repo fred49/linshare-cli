@@ -31,16 +31,16 @@ import urllib.error
 import logging
 from argparse import ArgumentError
 from argtoolbox import DefaultCompleter as Completer
-from vhatable.filters import PartialOr
+from vhatable.core import Action
 from vhatable.cell import ComplexCell
 from vhatable.cell import ComplexCellBuilder
+from vhatable.filters import PartialOr
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
 from linsharecli.common.actions import UpdateOneAction
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.tables import TableBuilder
-from linsharecli.common.tables import Action
 from linsharecli.common.tables import DeleteAction as DeleteActionTable
 
 
@@ -404,8 +404,18 @@ class UpdateActionV5(UpdateAction):
             row['delegationPolicy']['allowOverride']['value'] = getvalue(
                     args.DP_allow_override,
                     row['delegationPolicy']['allowOverride']['value'])
-        act = UpdateOneAction(self, self.endpoint)
-        return act.load(args).execute(row)
+        meta = {}
+        meta.update(row)
+        meta['time'] = " -"
+        meta['position'] = position
+        meta['count'] = count
+        self.endpoint.update(row)
+        meta['time'] = self.endpoint.core.last_req_time
+        if self.cli_mode:
+            print(row['identifier'])
+        else:
+            self.pprint(self.MSG_RS_UPDATED, meta)
+        return True
 
 
 class DeleteAction(DeleteActionTable):
