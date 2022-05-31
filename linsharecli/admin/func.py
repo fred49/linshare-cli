@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """TODO"""
 # pylint: disable=too-many-lines
+# pylint: disable=import-error
 
 
 # This file is part of Linshare cli.
@@ -126,6 +127,7 @@ class ParameterCell5(ComplexCell):
     # pylint: disable=too-few-public-methods
 
     def __unicode__(self):
+        # pylint: disable=too-many-statements
         classname = str(self.__class__.__name__.lower())
         log = logging.getLogger("linsharecli.cell." + classname)
         if self.raw:
@@ -154,54 +156,9 @@ class ParameterCell5(ComplexCell):
                 readonly=param['readonly'],
             )
 
-        def to_string_default(param):
-            dformat = (
-                    "Type:           {type}\n"
-                    "Default:        {default}\n"
-                    "Hidden:         {hidden}\n"
-                    "Read Only:      {readonly}\n"
-                    "   ---------------   "
-            )
-            if self.vertical:
-                dformat = (
-                        "Type: {type} | "
-                        "Default: {default} | "
-                        "Hidden: {hidden} | "
-                        "Read Only: {readonly}"
-                )
-            return dformat.format(
-                default=param['defaut']['value'],
-                type=param['type'],
-                hidden=param['hidden'],
-                readonly=param['readonly'],
-            )
-
-        def to_string_all(param):
-            dformat = (
-                    "Type:           {type}\n"
-                    "Default:        {default}\n"
-                    "Maximum:        {maximum}\n"
-                    "Hidden:         {hidden}\n"
-                    "Read Only:      {readonly}\n"
-                    "   ---------------   "
-            )
-            if self.vertical:
-                dformat = (
-                        "Type: {type} | "
-                        "Default: {default} | "
-                        "Maximum: {maximum} | "
-                        "Hidden: {hidden} | "
-                        "Read Only: {readonly}"
-                )
-            return dformat.format(
-                default=param['defaut']['value'],
-                maximum=param['maximum']['value'],
-                hidden=param['hidden'],
-                type=param['type'],
-                readonly=param['readonly'],
-            )
-
-        def to_unit_time(param):
+        def default_param_rendering(param):
+            # pylint: disable=too-many-statements
+            # pylint: disable=too-many-branches
             p_type = param['type']
             dformat = ["Type:           {type}"]
             if self.vertical:
@@ -211,8 +168,8 @@ class ParameterCell5(ComplexCell):
                 'type': p_type,
                 'readonly': param['readonly'],
             }
-            if p_type in ('BOOLEAN', 'LANGUAGE',
-                          'STRING', 'UNIT_SIZE_DEFAULT'):
+            if p_type in ('BOOLEAN', 'LANGUAGE', 'STRING', 'UNIT_SIZE_DEFAULT',
+                          'INTEGER_ALL', 'INTEGER_DEFAULT'):
                 if self.vertical:
                     dformat.append("Default: {default}")
                 else:
@@ -226,6 +183,18 @@ class ParameterCell5(ComplexCell):
                     dformat.append("Default:        {default} {d_unit}")
                 values['default'] = param['defaut']['value']
                 values['d_unit'] = param['defaut']['unit']
+            if p_type in ('INTEGER_ALL', 'INTEGER_MAX'):
+                if self.vertical:
+                    dformat.append("Maximum: {maximum}")
+                    if param['unlimited']['supported']:
+                        dformat.append("Unlimited: {unlimited}")
+                else:
+                    dformat.append("Maximum:        {maximum}")
+                    if param['unlimited']['supported']:
+                        dformat.append("Unlimited:      {unlimited}")
+                if param['unlimited']['supported']:
+                    values['unlimited'] = param['unlimited']['value']
+                values['maximum'] = param['maximum']['value']
             if p_type in ('UNIT_TIME_ALL', 'UNIT_TIME_MAX',
                           'UNIT_SIZE_ALL', 'UNIT_SIZE_MAX'):
                 if self.vertical:
@@ -254,17 +223,18 @@ class ParameterCell5(ComplexCell):
             return dformat.format(**values)
 
         maptypes = {
-            'BOOLEAN': to_unit_time,
-            'INTEGER_ALL': to_string_all,
-            'INTEGER_DEFAULT': to_string_default,
-            'LANGUAGE': to_unit_time,
-            'STRING': to_unit_time,
-            'UNIT_SIZE_ALL': to_unit_time,
-            'UNIT_SIZE_MAX': to_unit_time,
-            'UNIT_SIZE_DEFAULT': to_unit_time,
-            'UNIT_TIME_ALL': to_unit_time,
-            'UNIT_TIME_MAX': to_unit_time,
-            'UNIT_TIME_DEFAULT': to_unit_time,
+            'BOOLEAN': default_param_rendering,
+            'INTEGER_ALL': default_param_rendering,
+            'INTEGER_DEFAULT': default_param_rendering,
+            'INTEGER_MAX': default_param_rendering,
+            'LANGUAGE': default_param_rendering,
+            'STRING': default_param_rendering,
+            'UNIT_SIZE_ALL': default_param_rendering,
+            'UNIT_SIZE_MAX': default_param_rendering,
+            'UNIT_SIZE_DEFAULT': default_param_rendering,
+            'UNIT_TIME_ALL': default_param_rendering,
+            'UNIT_TIME_MAX': default_param_rendering,
+            'UNIT_TIME_DEFAULT': default_param_rendering,
         }
         log.debug(self.value['type'])
         return maptypes.get(self.value['type'], to_string)(self.value)
