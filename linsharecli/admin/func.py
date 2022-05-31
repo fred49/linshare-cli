@@ -37,7 +37,6 @@ from vhatable.cell import ComplexCellBuilder
 from vhatable.filters import PartialOr
 from linshareapi.cache import Time
 from linshareapi.core import LinShareException
-from linsharecli.common.actions import UpdateOneAction
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.tables import TableBuilder
@@ -212,6 +211,13 @@ class ParameterCell5(ComplexCell):
                 'type': p_type,
                 'readonly': param['readonly'],
             }
+            if p_type in ('BOOLEAN', 'LANGUAGE',
+                          'STRING', 'UNIT_SIZE_DEFAULT'):
+                if self.vertical:
+                    dformat.append("Default: {default}")
+                else:
+                    dformat.append("Default:        {default}")
+                values['default'] = param['defaut']['value']
             if p_type in ('UNIT_TIME_ALL', 'UNIT_TIME_DEFAULT',
                           'UNIT_SIZE_ALL', 'UNIT_SIZE_DEFAULT'):
                 if self.vertical:
@@ -248,11 +254,11 @@ class ParameterCell5(ComplexCell):
             return dformat.format(**values)
 
         maptypes = {
-            'BOOLEAN': to_string_default,
+            'BOOLEAN': to_unit_time,
             'INTEGER_ALL': to_string_all,
             'INTEGER_DEFAULT': to_string_default,
-            'LANGUAGE': to_string_default,
-            'STRING': to_string_default,
+            'LANGUAGE': to_unit_time,
+            'STRING': to_unit_time,
             'UNIT_SIZE_ALL': to_unit_time,
             'UNIT_SIZE_MAX': to_unit_time,
             'UNIT_SIZE_DEFAULT': to_unit_time,
