@@ -377,6 +377,9 @@ class UpdateActionV5(UpdateAction):
 
     def update_row(self, row, position, count, args):
         """TODO"""
+        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-statements
         self.log.debug("row : %s", row)
         # self.pretty_json(row)
 
@@ -404,6 +407,113 @@ class UpdateActionV5(UpdateAction):
             row['delegationPolicy']['allowOverride']['value'] = getvalue(
                     args.DP_allow_override,
                     row['delegationPolicy']['allowOverride']['value'])
+
+        f_type = row['type']
+        f_identifier = row['identifier']
+        param = row['parameter']
+        p_type = None
+        # DEFAULT does not support any parameter.
+        f_type_set = ('BOOLEAN', 'ENUM_LANG', 'INTEGER', 'STRING', 'UNIT')
+        if param and f_type in f_type_set:
+            p_type = param['type']
+
+        if args.parameter_unlimited is not None:
+            self.log.info("args.parameter_unlimited : %s",
+                          args.parameter_unlimited)
+            unlimiteds = (
+                'INTEGER_MAX', 'INTEGER_ALL', 'UNIT_TIME_MAX', 'UNIT_TIME_ALL',
+                'UNIT_SIZE_MAX', 'UNIT_SIZE_ALL'
+            )
+            if p_type not in unlimiteds or not param['unlimited']['supported']:
+                msg = f"Unsupported unlimited flag for {f_identifier}"
+                raise ArgumentError(None, msg)
+            param['unlimited']['value'] = args.parameter_unlimited
+
+        if args.parameter_default is not None:
+            value = args.parameter_default
+            self.log.debug("args.parameter_default : %s", value)
+            defaults = (
+                'BOOLEAN', 'LANGUAGE', 'STRING',
+                'INTEGER_DEFAULT', 'INTEGER_ALL',
+                'UNIT_TIME_DEFAULT', 'UNIT_TIME_ALL',
+                'UNIT_SIZE_DEFAULT', 'UNIT_SIZE_ALL'
+            )
+            if p_type not in defaults:
+                msg = f"Unsupported default value for {f_identifier}"
+                raise ArgumentError(None, msg)
+            if p_type == 'BOOLEAN':
+                defaults = ('true', 'True', 'false', 'False')
+                if value not in defaults:
+                    msg = f"Supported value are: {defaults}"
+                    raise ArgumentError(None, msg)
+                # pylint: disable=simplifiable-if-statement
+                if value in ('true', 'True'):
+                    value = True
+                else:
+                    value = False
+            defaults = (
+                'INTEGER_DEFAULT', 'INTEGER_ALL',
+                'UNIT_TIME_DEFAULT', 'UNIT_TIME_ALL',
+                'UNIT_SIZE_DEFAULT', 'UNIT_SIZE_ALL'
+            )
+            if p_type in defaults:
+                value = int(value)
+            if p_type == 'LANGUAGE':
+                defaults = param['defaut']['languages']
+                if value not in defaults:
+                    msg = f"Supported value are: {defaults}"
+                    raise ArgumentError(None, msg)
+            self.log.info("args.parameter_default : %s", value)
+            param['defaut']['value'] = value
+
+        if args.parameter_maximum is not None:
+            value = args.parameter_maximum
+            self.log.debug("args.parameter_maximum : %s", value)
+            maximums = (
+                'INTEGER_MAX', 'INTEGER_ALL',
+                'UNIT_TIME_MAX', 'UNIT_TIME_ALL',
+                'UNIT_SIZE_MAX', 'UNIT_SIZE_ALL'
+            )
+            if p_type not in maximums:
+                msg = f"Unsupported maximum value for {f_identifier}"
+                raise ArgumentError(None, msg)
+            value = int(value)
+            self.log.info("args.parameter_maximum : %s", value)
+            param['maximum']['value'] = value
+
+        if args.parameter_default_unit is not None:
+            value = args.parameter_default_unit
+            self.log.debug("args.parameter_default_unit : %s", value)
+            defaults = (
+                'UNIT_TIME_DEFAULT', 'UNIT_TIME_ALL',
+                'UNIT_SIZE_DEFAULT', 'UNIT_SIZE_ALL'
+            )
+            if p_type not in defaults:
+                msg = f"Unsupported default unit value for {f_identifier}"
+                raise ArgumentError(None, msg)
+            defaults = param['defaut']['units']
+            if value not in defaults:
+                msg = f"Supported value are: {defaults}"
+                raise ArgumentError(None, msg)
+            self.log.info("args.parameter_default_unit : %s", value)
+            param['defaut']['unit'] = value
+
+        if args.parameter_maximum_unit is not None:
+            value = args.parameter_maximum_unit
+            self.log.debug("args.parameter_maximum_unit : %s", value)
+            maximums = (
+                'UNIT_TIME_MAX', 'UNIT_TIME_ALL',
+                'UNIT_SIZE_MAX', 'UNIT_SIZE_ALL'
+            )
+            if p_type not in maximums:
+                msg = f"Unsupported maximum unit value for {f_identifier}"
+                raise ArgumentError(None, msg)
+            defaults = param['maximum']['units']
+            if value not in defaults:
+                msg = f"Supported value are: {defaults}"
+                raise ArgumentError(None, msg)
+            self.log.info("args.parameter_maximum_unit : %s", value)
+            param['maximum']['unit'] = value
         meta = {}
         meta.update(row)
         meta['time'] = " -"
@@ -865,6 +975,34 @@ def add_update_parser_v5(actions_group):
     add_parser_options(actions_group, "Configuration Policy", "cp-")
     add_parser_options(actions_group, "Delegation Policy", "dp-")
 
+    choices = ('DAY', 'WEEK', 'MONTH', 'KILO', 'MEGA', 'GIGA')
+    actions_group.add_argument(
+            '--set-parameter-default',
+            dest='parameter_default',
+            help="TODO")
+    actions_group.add_argument(
+            '--set-parameter-default-unit',
+            dest='parameter_default_unit',
+            choices=choices,
+            help="TODO")
+    actions_group.add_argument(
+            '--set-parameter-maximum',
+            dest='parameter_maximum',
+            help="TODO")
+    actions_group.add_argument(
+            '--set-parameter-maximum-unit',
+            dest='parameter_maximum_unit',
+            choices=choices,
+            help="TODO")
+    actions_group.add_argument(
+            '--set-parameter-unlimited-on', action='store_true',
+            dest='parameter_unlimited', default=None,
+            help="TODO")
+    actions_group.add_argument(
+            '--set-parameter-unlimited-off', action='store_false',
+            dest='parameter_unlimited', default=None,
+            help="TODO")
+
 
 def add_update_parser_old(parser, required=True):
     """TODO"""
@@ -927,6 +1065,7 @@ def add_parser(subparsers, name, desc, config):
     """Add all domain sub commands."""
     # pylint: disable=too-many-statements
     # pylint: disable=too-many-locals
+    api_version = config.server.api_version.value
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
 
@@ -953,7 +1092,6 @@ def add_parser(subparsers, name, desc, config):
     sort_group.add_argument(
         '--sort-type', action="store_true",
         help="Sort functionalities by type")
-    api_version = config.server.api_version.value
     if api_version < 5:
         add_update_parser(actions_group, required=False)
     else:
@@ -974,7 +1112,6 @@ def add_parser(subparsers, name, desc, config):
         help="Completion available").completer = Completer('complete_domain')
     parser.add_argument('--dry-run', action="store_true")
     parser.add_argument('--cli-mode', action="store_true", help="")
-    api_version = config.server.api_version.value
     if api_version < 5:
         add_update_parser(parser, required=False)
         add_update_parser_old(parser, required=False)
@@ -984,8 +1121,6 @@ def add_parser(subparsers, name, desc, config):
             "Properties",
             "You must at least use one of these options")
         add_update_parser_v5(gparser)
-        gparser.add_argument('--parameter-default', help="TODO")
-        gparser.add_argument('--parameter-maximum', type=float, help="TODO")
         parser.set_defaults(__func__=FunctionalityUpdateCommand(
             config, gparser))
 
