@@ -26,10 +26,10 @@
 #
 
 
-
 import base64
 import json
 import datetime
+import logging
 import argtoolbox
 from requests import Request
 
@@ -38,7 +38,6 @@ from linshareapi.core import trace_session
 from linshareapi.core import trace_request
 from linshareapi.core import LinShareException
 import linsharecli.common.core as common
-
 
 
 class DefaultCommand(common.DefaultCommand):
@@ -55,13 +54,14 @@ class DefaultCommand(common.DefaultCommand):
         self.log.debug("password: %s...", password[0:2])
         if auth_type == "plain-b64":
             if password:
-                self.log.debug("converting base64 encoded password to plain text.")
+                self.log.debug(
+                        "converting base64 encoded password to plain text.")
                 password = base64.b64decode(password).decode('utf-8')
             auth_type = "plain"
         cli = AdminCli(args.host, args.user, password, args.verbose,
                        args.debug, api_version=api_version,
                        verify=getattr(args, 'verify', True),
-                      auth_type=auth_type)
+                       auth_type=auth_type)
         if args.base_url:
             cli.base_url = args.base_url
         return cli
@@ -113,6 +113,8 @@ class RawCommand(DefaultCommand):
         super(RawCommand, self).__call__(args)
         self.verbose = args.verbose
         self.debug = args.debug
+        if args.jq:
+            self.log.setLevel(logging.ERROR)
         self.log.info("Begin of raw command.")
         core = self.ls.raw.core
         trace_session(core.session)
@@ -164,6 +166,8 @@ class RawCommand(DefaultCommand):
                     self.log.info("result: %s",
                                   json.dumps(res, sort_keys=True, indent=2,
                                              ensure_ascii=False))
+                if args.jq:
+                    print(json.dumps(res, sort_keys=True, ensure_ascii=False))
                 if args.verbose:
                     self.log.info("Count: %s", len(res))
             else:
@@ -173,7 +177,9 @@ class RawCommand(DefaultCommand):
                             if line:
                                 file_stream.write(line)
                 else:
-                    self.log.warning("Can not process this query, unhandled result content type: %s", content_type)
+                    self.log.warning("Can not process this query !")
+                    self.log.warning(
+                            "Unhandled result content type: %s", content_type)
                     self.log.warning("data: %s", request.text)
             self.log.info(
                 "url:%(cpt)s:%(url)s:request time: %(time)s",
@@ -226,7 +232,12 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('--data')
     parser.add_argument('-H', '--header', action="append", dest="headers")
     parser.add_argument('--output')
-    parser.add_argument('-s', '--silent', action="store_true")
+    parser.add_argument(
+            '-s', '--silent', action="store_true",
+            help="Do not display the payload")
+    parser.add_argument(
+            '--jq', action="store_true",
+            help="pure json only")
     parser.set_defaults(__func__=RawCommand(config))
 
     parser = subparsers.add_parser('list')
