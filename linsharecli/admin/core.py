@@ -150,6 +150,8 @@ class RawCommand(DefaultCommand):
                 else:
                     self.log.info("result: %s",
                                   json.dumps(res, sort_keys=True, indent=2, ensure_ascii=False))
+                if args.verbose:
+                    self.log.info("Count: %s", len(res))
             else:
                 if args.output:
                     with open(args.output, 'wb') as file_stream:
