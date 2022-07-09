@@ -141,6 +141,18 @@ class RawCommand(DefaultCommand):
             trace_request(request)
             last_req_time = str(endtime - starttime)
             content_type = request.headers.get('Content-Type')
+            headers = [
+                'Total-Elements',
+                'Total-Pages',
+                'Current-Page',
+                'Current-Page-Size',
+                'First',
+                'Last'
+            ]
+            for header in headers:
+                value = request.headers.get(header)
+                if value:
+                    self.log.info(header + ": " + str(value))
             if content_type == 'application/json':
                 res = core.process_request(request, url)
                 self.log.debug("res: %s", res)
