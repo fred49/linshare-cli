@@ -146,10 +146,12 @@ class RawCommand(DefaultCommand):
                 self.log.debug("res: %s", res)
                 if args.output:
                     with open(args.output, 'w') as file_stream:
-                        json.dump(res, file_stream, sort_keys=True, indent=2, ensure_ascii=False)
-                else:
+                        json.dump(res, file_stream, sort_keys=True, indent=2,
+                                  ensure_ascii=False)
+                elif not args.silent:
                     self.log.info("result: %s",
-                                  json.dumps(res, sort_keys=True, indent=2, ensure_ascii=False))
+                                  json.dumps(res, sort_keys=True, indent=2,
+                                             ensure_ascii=False))
                 if args.verbose:
                     self.log.info("Count: %s", len(res))
             else:
@@ -203,13 +205,16 @@ def add_parser(subparsers, name, desc, config):
 
     parser = subparsers.add_parser('raw', add_help=True)
     parser.add_argument('url')
-    parser.add_argument('-r', '--repeat', default=1, help="default=1", type=int)
+    parser.add_argument(
+            '-r', '--repeat', default=1,
+            help="default=1", type=int)
     parser.add_argument(
         '-m', '--method',
         choices=["GET", "POST", "DELETE", "HEAD", "OPTIONS", "PUT"])
     parser.add_argument('--data')
     parser.add_argument('-H', '--header', action="append", dest="headers")
     parser.add_argument('--output')
+    parser.add_argument('-s', '--silent', action="store_true")
     parser.set_defaults(__func__=RawCommand(config))
 
     parser = subparsers.add_parser('list')
