@@ -26,10 +26,10 @@
 #
 
 
-
 from argparse import RawTextHelpFormatter
 from argtoolbox import DefaultCompleter as Completer
 from linshareapi.cache import Time
+# pylint: disable=import-error
 from vhatable.filters import PartialOr
 from linsharecli.user.core import DefaultCommand as Command
 from linsharecli.common.actions import CreateOneAction
@@ -46,14 +46,19 @@ class DefaultCommand(Command):
 
     IDENTIFIER = "name"
 
-    MSG_RS_UPDATED = "The shared space '%(name)s' (%(uuid)s) was successfully updated."
-    MSG_RS_CREATED = "The shared space '%(name)s' (%(uuid)s) was successfully created."
+    MSG_RS_UPDATED = (
+        "The shared space '%(name)s' (%(uuid)s) was successfully updated."
+    )
+    MSG_RS_CREATED = (
+        "The shared space '%(name)s' (%(uuid)s) was successfully created."
+    )
 
     def complete(self, args, prefix):
-        super(DefaultCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.shared_spaces.list()
         return (v.get(self.RESOURCE_IDENTIFIER)
-                for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
+                for v in json_obj if v.get(
+                    self.RESOURCE_IDENTIFIER).startswith(prefix))
 
 
 class Breadcrumb(Action):
@@ -62,7 +67,8 @@ class Breadcrumb(Action):
     display = True
 
     def init(self, args, cli, endpoint):
-        super(Breadcrumb, self).init(args, cli, endpoint)
+        """TODO"""
+        super().init(args, cli, endpoint)
         self.display = not getattr(args, 'no_breadcrumb', False)
 
     def __call__(self, args, cli, endpoint, data):
@@ -81,7 +87,7 @@ class ListCommand(DefaultCommand):
 
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
-        super(ListCommand, self).__call__(args)
+        super().__call__(args)
         endpoint = self.ls.shared_spaces
         tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
@@ -91,15 +97,15 @@ class ListCommand(DefaultCommand):
         )
         tbu.add_pre_render_class(Breadcrumb())
         if self.config.server.api_version.value >= 4.2:
-            return tbu.build().load_v2(endpoint.list(
-                drive=args.drive)).render()
-        else:
-            return tbu.build().load_v2(endpoint.list()).render()
+            # pylint: disable=unexpected-keyword-arg
+            return tbu.build().load_v2(
+                    endpoint.list(drive=args.drive)).render()
+        return tbu.build().load_v2(endpoint.list()).render()
 
     def complete_fields(self, args, prefix):
         """TODO"""
         # pylint: disable=unused-argument
-        super(ListCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.shared_spaces
         return cli.get_rbu().get_keys(True)
 
@@ -109,7 +115,7 @@ class DetailCommand(DefaultCommand):
 
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
-        super(DetailCommand, self).__call__(args)
+        super().__call__(args)
         endpoint = self.ls.shared_spaces
         tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
@@ -121,7 +127,7 @@ class DetailCommand(DefaultCommand):
     def complete_fields(self, args, prefix):
         """TODO"""
         # pylint: disable=unused-argument
-        super(DetailCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.shared_spaces
         return cli.get_rbu().get_keys(True)
 
@@ -131,7 +137,7 @@ class DeleteCommand(DefaultCommand):
 
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
-        super(DeleteCommand, self).__call__(args)
+        super().__call__(args)
         act = DeleteAction()
         act.init(args, self.ls, self.ls.shared_spaces)
         return act.delete(args.uuids)
@@ -142,7 +148,7 @@ class UpdateCommand(DefaultCommand):
 
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
-        super(UpdateCommand, self).__call__(args)
+        super().__call__(args)
         self.check_required_options(
             args,
             ['name'],
@@ -161,7 +167,7 @@ class CreateCommand(DefaultCommand):
 
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
-        super(CreateCommand, self).__call__(args)
+        super().__call__(args)
         act = CreateOneAction(self, self.ls.shared_spaces)
         act.load(args)
         return act.execute()
@@ -222,6 +228,8 @@ def add_parser(subparsers, name, desc, config):
         'update', help="update shared space.")
     parser.add_argument(
         'uuid', action="store", help="").completer = Completer()
-    parser.add_argument('--name', action="store", help="Filter by name (partial)")
+    parser.add_argument(
+            '--name', action="store",
+            help="Filter by name (partial)")
     parser.add_argument('--cli-mode', action="store_true", help="")
     parser.set_defaults(__func__=UpdateCommand(config))
