@@ -60,6 +60,26 @@ class DefaultCommand(Command):
                 for v in json_obj if v.get(
                     self.RESOURCE_IDENTIFIER).startswith(prefix))
 
+    def complete_drive(self, args, prefix):
+        """TODO"""
+        super().__call__(args)
+        json_obj = self.ls.shared_spaces.list()
+
+        def cond(node):
+            start_with = node.get(self.RESOURCE_IDENTIFIER).startswith(prefix)
+            return start_with and node['nodeType'] == "DRIVE"
+        return (v.get(self.RESOURCE_IDENTIFIER) for v in json_obj if cond(v))
+
+    def complete_workspace(self, args, prefix):
+        """TODO"""
+        super().__call__(args)
+        json_obj = self.ls.shared_spaces.list()
+
+        def cond(node):
+            start_with = node.get(self.RESOURCE_IDENTIFIER).startswith(prefix)
+            return start_with and node['nodeType'] == "WORK_SPACE"
+        return (v.get(self.RESOURCE_IDENTIFIER) for v in json_obj if cond(v))
+
 
 class Breadcrumb(Action):
     """TODO"""
@@ -96,10 +116,14 @@ class ListCommand(DefaultCommand):
             PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True)
         )
         tbu.add_pre_render_class(Breadcrumb())
-        if self.config.server.api_version.value >= 4.2:
+        if self.config.server.api_version.value == 4.2:
             # pylint: disable=unexpected-keyword-arg
             return tbu.build().load_v2(
                     endpoint.list(drive=args.drive)).render()
+        if self.config.server.api_version.value >= 5:
+            # pylint: disable=unexpected-keyword-arg
+            return tbu.build().load_v2(
+                    endpoint.list(workspace=args.workspace)).render()
         return tbu.build().load_v2(endpoint.list()).render()
 
     def complete_fields(self, args, prefix):
@@ -186,12 +210,14 @@ def add_parser(subparsers, name, desc, config):
         help="list shared space from linshare")
     parser.add_argument('names', nargs="*",
                         help="Filter shared spaces by uuid")
-    if api_version >= 4.2:
+    if api_version == 4.2:
         parser.add_argument(
-            '-d', '--drive', help="Filter shared spaces by uuid")
+            '-d', '--drive', help="Filter shared spaces by uuid"
+        ).completer = Completer('complete_drive')
+    if api_version >= 5:
         parser.add_argument(
-            '--no-breadcrumb', action="store_true",
-            help="Do not display breadcrumb.")
+            '-w', '--workspace', help="Filter shared spaces by uuid",
+        ).completer = Completer('complete_workspace')
     parser.add_argument(
         '-u', '--uuids', nargs="*", help="Filter shared spaces by uuid")
     add_list_parser_options(parser, delete=True, cdate=True)
@@ -217,9 +243,14 @@ def add_parser(subparsers, name, desc, config):
     parser = subparsers2.add_parser(
         'create', help="create shared space.")
     parser.add_argument('name', action="store", help="shared space name")
-    parser.add_argument('--type', dest="node_type", action="store",
-                        choices=['WORK_GROUP', 'DRIVE'],
-                        help="")
+    if api_version == 4.2:
+        parser.add_argument('--type', dest="node_type", action="store",
+                            choices=['WORK_GROUP', 'DRIVE'],
+                            help="")
+    if api_version >= 5:
+        parser.add_argument('--type', dest="node_type", action="store",
+                            choices=['WORK_GROUP', 'WORK_SPACE'],
+                            help="")
     parser.add_argument('--cli-mode', action="store_true", help="")
     parser.set_defaults(__func__=CreateCommand(config))
 
