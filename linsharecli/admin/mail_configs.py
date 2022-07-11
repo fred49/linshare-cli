@@ -53,7 +53,7 @@ class MailConfigsCommand(DefaultCommand):
 
     def complete(self, args, prefix):
         super(MailConfigsCommand, self).__call__(args)
-        json_obj = self.ls.public_keys.list()
+        json_obj = self.ls.mail_configs.list()
         return (v.get(self.RESOURCE_IDENTIFIER)
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
@@ -61,7 +61,7 @@ class MailConfigsCommand(DefaultCommand):
     def complete_fields(self, args, prefix):
         """TODO"""
         super(MailConfigsCommand, self).__call__(args)
-        cli = self.ls.public_keys
+        cli = self.ls.mail_configs
         return cli.get_rbu().get_keys(True)
 
     def complete_domain(self, args, prefix):

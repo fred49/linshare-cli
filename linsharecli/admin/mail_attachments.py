@@ -93,7 +93,7 @@ class MailAttachmentsCommand(DefaultCommand):
 
     def complete(self, args, prefix):
         super(MailAttachmentsCommand, self).__call__(args)
-        json_obj = self.ls.public_keys.list()
+        json_obj = self.ls.mail_attachments.list()
         return (v.get(self.RESOURCE_IDENTIFIER)
                 for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
 
@@ -101,7 +101,7 @@ class MailAttachmentsCommand(DefaultCommand):
     def complete_fields(self, args, prefix):
         """TODO"""
         super(MailAttachmentsCommand, self).__call__(args)
-        cli = self.ls.public_keys
+        cli = self.ls.mail_attachments
         return cli.get_rbu().get_keys(True)
 
     def complete_domain(self, args, prefix):
