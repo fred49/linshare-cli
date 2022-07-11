@@ -212,11 +212,11 @@ def add_parser(subparsers, name, desc, config):
                         help="Filter shared spaces by uuid")
     if api_version == 4.2:
         parser.add_argument(
-            '-d', '--drive', help="Filter shared spaces by uuid"
+            '-d', '--drive', help="See the content of a drive.",
         ).completer = Completer('complete_drive')
     if api_version >= 5:
         parser.add_argument(
-            '-w', '--workspace', help="Filter shared spaces by uuid",
+            '-w', '--workspace', help="See the content of a workspace.",
         ).completer = Completer('complete_workspace')
     parser.add_argument(
         '-u', '--uuids', nargs="*", help="Filter shared spaces by uuid")

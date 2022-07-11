@@ -71,10 +71,13 @@ class ListCommand(DefaultCommand):
         endpoint = self.ls.shared_spaces
         tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
-        tbu.add_filters(
-            PartialOr(self.IDENTIFIER, args.names, True),
-            PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True)
-        )
+        tbu.add_filters(PartialOr(self.RESOURCE_IDENTIFIER, args.uuids, True))
+        if self.config.server.api_version.value >= 5:
+            # pylint: disable=unexpected-keyword-arg
+            return tbu.build().load_v2(
+                endpoint.list(name=args.names, node_type=args.node_type)
+            ).render()
+        tbu.add_filters(PartialOr(self.IDENTIFIER, args.names, True))
         return tbu.build().load_v2(endpoint.list()).render()
 
     def complete_fields(self, args, prefix):
@@ -141,14 +144,26 @@ def add_parser(subparsers, name, desc, config):
     """TODO"""
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
+    api_version = config.server.api_version.value
 
     # command : list
     parser = subparsers2.add_parser(
         'list',
         formatter_class=RawTextHelpFormatter,
         help="list shared space from linshare")
-    parser.add_argument('names', nargs="*", help="")
     parser.add_argument('-u', '--uuids', nargs="*", help="")
+    if api_version >= 5:
+        parser.add_argument(
+            'names', nargs="?",
+            help="Filter shared spaces by name")
+        parser.add_argument(
+                '--type', dest="node_type", action="store",
+                choices=['WORK_GROUP', 'WORK_SPACE'],
+                help="Filter by node type.")
+    else:
+        parser.add_argument(
+            'names', nargs="*",
+            help="Filter shared spaces by name")
     add_list_parser_options(parser, delete=True, cdate=True)
     parser.set_defaults(__func__=ListCommand(config))
 
