@@ -26,17 +26,17 @@
 #
 
 
-
 from argparse import RawTextHelpFormatter
 from argtoolbox import DefaultCompleter as Completer
+# pylint: disable=import-error
 from vhatable.filters import PartialOr
+from linshareapi.cache import Time
 from linsharecli.admin.core import DefaultCommand as Command
 from linsharecli.common.actions import UpdateOneAction
 from linsharecli.common.core import add_list_parser_options
 from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.tables import TableBuilder
 from linsharecli.common.tables import DeleteAction
-from linshareapi.cache import Time
 
 
 class DefaultCommand(Command):
@@ -45,14 +45,21 @@ class DefaultCommand(Command):
     IDENTIFIER = "name"
     DEFAULT_SORT = "name"
 
-    MSG_RS_UPDATED = "The shared space '%(name)s' (%(uuid)s) was successfully updated."
-    MSG_RS_CREATED = "The shared space '%(name)s' (%(uuid)s) was successfully created."
+    MSG_RS_UPDATED = (
+        "The shared space '%(name)s' (%(uuid)s) was successfully updated."
+    )
+    MSG_RS_CREATED = (
+        "The shared space '%(name)s' (%(uuid)s) was successfully created."
+    )
 
     def complete(self, args, prefix):
-        super(DefaultCommand, self).__call__(args)
+        """TODO"""
+        super().__call__(args)
         json_obj = self.ls.shared_spaces.list()
-        return (v.get(self.RESOURCE_IDENTIFIER)
-                for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
+
+        def cond(node):
+            return node.get(self.RESOURCE_IDENTIFIER).startswith(prefix)
+        return (v.get(self.RESOURCE_IDENTIFIER) for v in json_obj if cond(v))
 
 
 class ListCommand(DefaultCommand):
@@ -60,7 +67,7 @@ class ListCommand(DefaultCommand):
 
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
-        super(ListCommand, self).__call__(args)
+        super().__call__(args)
         endpoint = self.ls.shared_spaces
         tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
@@ -73,7 +80,7 @@ class ListCommand(DefaultCommand):
     def complete_fields(self, args, prefix):
         """TODO"""
         # pylint: disable=unused-argument
-        super(ListCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.shared_spaces
         return cli.get_rbu().get_keys(True)
 
@@ -83,7 +90,7 @@ class DetailCommand(DefaultCommand):
 
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
-        super(DetailCommand, self).__call__(args)
+        super().__call__(args)
         endpoint = self.ls.shared_spaces
         tbu = TableBuilder(self.ls, endpoint, self.DEFAULT_SORT)
         tbu.load_args(args)
@@ -95,7 +102,7 @@ class DetailCommand(DefaultCommand):
     def complete_fields(self, args, prefix):
         """TODO"""
         # pylint: disable=unused-argument
-        super(DetailCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.shared_spaces
         return cli.get_rbu().get_keys(True)
 
@@ -105,7 +112,7 @@ class DeleteCommand(DefaultCommand):
 
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
-        super(DeleteCommand, self).__call__(args)
+        super().__call__(args)
         act = DeleteAction()
         act.init(args, self.ls, self.ls.shared_spaces)
         return act.delete(args.uuids)
@@ -116,7 +123,7 @@ class UpdateCommand(DefaultCommand):
 
     @Time('linsharecli.shared_spaces', label='Global time : %(time)s')
     def __call__(self, args):
-        super(UpdateCommand, self).__call__(args)
+        super().__call__(args)
         self.check_required_options(
             args,
             ['name'],
@@ -166,6 +173,7 @@ def add_parser(subparsers, name, desc, config):
         'update', help="update shared space.")
     parser.add_argument(
         'uuid', action="store", help="").completer = Completer()
-    parser.add_argument('--name', action="store", help="Filter by name (partial)")
+    parser.add_argument(
+            '--name', action="store", help="Filter by name (partial)")
     parser.add_argument('--cli-mode', action="store_true", help="")
     parser.set_defaults(__func__=UpdateCommand(config))
