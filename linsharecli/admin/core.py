@@ -37,7 +37,9 @@ from linshareapi.admin import AdminCli
 from linshareapi.core import trace_session
 from linshareapi.core import trace_request
 from linshareapi.core import LinShareException
+from linsharecli.common.core import add_list_parser_options
 import linsharecli.common.core as common
+from vhatable.core import TableFactory
 
 
 class DefaultCommand(common.DefaultCommand):
@@ -196,6 +198,31 @@ class RawCommand(DefaultCommand):
         return True
 
 
+class AutoDiscoveryCommand(DefaultCommand):
+    """Just call raw http urls"""
+    # pylint: disable=too-few-public-methods
+
+    def __call__(self, args):
+        super().__call__(args)
+        self.verbose = args.verbose
+        self.debug = args.debug
+        endpoint = self.ls.raw.core
+        trace_session(endpoint.session)
+        url = endpoint.get_full_url(args.url)
+        request = endpoint.session.get(url)
+        trace_request(request)
+        res = endpoint.process_request(request, url)
+        self.log.debug("res: %s", res)
+        tbu = TableFactory(self.ls, endpoint)
+        tbu.load_args(args)
+        if len(res) == 0:
+            print("No data to display")
+            return True
+        tbu.columns = res[0].keys()
+        # tbu.add_filters(PartialOr(self.IDENTIFIER, args.names, True))
+        return tbu.build().load_v2(res).render()
+
+
 class ListConfigCommand(DefaultCommand):
     """TODO"""
 
@@ -242,6 +269,11 @@ def add_parser(subparsers, name, desc, config):
             '--jq', action="store_true",
             help="pure json only")
     parser.set_defaults(__func__=RawCommand(config))
+
+    parser = subparsers.add_parser('auto')
+    parser.add_argument('url')
+    add_list_parser_options(parser)
+    parser.set_defaults(__func__=AutoDiscoveryCommand(config))
 
     parser = subparsers.add_parser('list')
     parser.set_defaults(__func__=ListConfigCommand(config))
