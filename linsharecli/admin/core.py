@@ -33,6 +33,7 @@ import logging
 import argtoolbox
 from requests import Request
 
+from argtoolbox import DefaultCompleter as Completer
 from linshareapi.admin import AdminCli
 from linshareapi.core import trace_session
 from linshareapi.core import trace_request
@@ -40,6 +41,9 @@ from linshareapi.core import LinShareException
 from linsharecli.common.core import add_list_parser_options
 import linsharecli.common.core as common
 from vhatable.core import TableFactory
+from vhatable.cell import DateCell
+from vhatable.cell import SizeCell
+from vhatable.cell import ComplexCellBuilder
 
 
 class DefaultCommand(common.DefaultCommand):
@@ -218,8 +222,22 @@ class AutoDiscoveryCommand(DefaultCommand):
         if len(res) == 0:
             print("No data to display")
             return True
-        tbu.columns = res[0].keys()
+        tbu.columns = list(res[0].keys())
+        tbu.columns.sort()
+        self.log.debug("colums: %s", tbu.columns)
+        if "uuid" in tbu.columns:
+            tbu.columns.remove("uuid")
+            tbu.columns.insert(0, "uuid")
         # tbu.add_filters(PartialOr(self.IDENTIFIER, args.names, True))
+        for cell in args.complex_cells:
+            tbu.add_custom_cell(
+                cell,
+                ComplexCellBuilder('{name} ({uuid:.8})', '{name} ({uuid})')
+            )
+        for cell in args.date_cells:
+            tbu.add_custom_cell(cell, DateCell)
+        for cell in args.size_cells:
+            tbu.add_custom_cell(cell, SizeCell)
         return tbu.build().load_v2(res).render()
 
 
@@ -272,6 +290,24 @@ def add_parser(subparsers, name, desc, config):
 
     parser = subparsers.add_parser('auto')
     parser.add_argument('url')
+    parser.add_argument(
+        '-x', '--complex-cells', action="append",
+        default=[],
+        help=(
+            "Wil try to format these cells with default complex cell"
+            " formatter: {name} ({uuid})"
+        )
+    ).completer = Completer("complete_fields")
+    parser.add_argument(
+        '-z', '--size-cells', action="append",
+        default=[],
+        help="Will try to format these cells with default size cell formatter"
+    ).completer = Completer("complete_fields")
+    parser.add_argument(
+        '-a', '--date-cells', action="append",
+        default=[],
+        help="Will try to format these cells with default size cell formatter"
+    ).completer = Completer("complete_fields")
     add_list_parser_options(parser)
     parser.set_defaults(__func__=AutoDiscoveryCommand(config))
 
