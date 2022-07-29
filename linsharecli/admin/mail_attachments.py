@@ -89,7 +89,7 @@ class MailAttachmentsCommand(DefaultCommand):
     MSG_RS_CAN_NOT_BE_DELETED = "The mail attachment '%(cid)s'  '%(uuid)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s mail attachment(s) can not be deleted."
     MSG_RS_UPDATED = "The mail attachment '%(name)s - %(cid)s' (%(uuid)s) was successfully updated."
-    MSG_RS_CREATED = "The mail attachment '%(name)s - %(cid)s' (%(uuid)s) was successfully created. (%(_time)s s)"
+    MSG_RS_CREATED = "The mail attachment '%(name)s - %(cid)s' (%(uuid)s) was successfully created. (%(time)s s)"
 
     def complete(self, args, prefix):
         super(MailAttachmentsCommand, self).__call__(args)

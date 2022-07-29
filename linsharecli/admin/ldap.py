@@ -56,7 +56,7 @@ class LdapConnectionsCommand(DefaultCommand):
     MSG_RS_UPDATED = "The Ldap connection '%(label)s' (%(uuid)s) was successfully updated."
     MSG_RS_CREATED = (
         "The Ldap connection '%(label)s' (%(uuid)s) was "
-        "successfully created. (%(_time)s s)"
+        "successfully created. (%(time)s s)"
     )
 
     # pylint: disable=invalid-name

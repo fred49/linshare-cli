@@ -60,7 +60,7 @@ class DomainsCommand(DefaultCommand):
     MSG_RS_UPDATED = "The domain '%(name)s' (%(uuid)s) was successfully updated."
     MSG_RS_CREATED = (
         "The domain '%(name)s' (%(uuid)s) "
-        "was successfully created. (%(_time)s s)"
+        "was successfully created. (%(time)s s)"
     )
 
     # pylint: disable=no-self-use
@@ -80,7 +80,7 @@ class DomainsCommand(DefaultCommand):
         DomainsCommand.MSG_RS_UPDATED = "The domain '%(label)s' (%(identifier)s) was successfully updated."
         DomainsCommand.MSG_RS_CREATED = (
             "The domain '%(label)s' (%(identifier)s) "
-            "was successfully created. (%(_time)s s)"
+            "was successfully created. (%(time)s s)"
         )
 
     # pylint: disable=no-self-use

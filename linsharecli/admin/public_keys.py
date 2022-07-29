@@ -52,7 +52,7 @@ class PublicKeysCommand(DefaultCommand):
     MSG_RS_CAN_NOT_BE_DELETED = "The public key '%(issuer)s'  '%(uuid)s' can not be deleted."
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s public key(s) can not be deleted."
     MSG_RS_UPDATED = "The public key '%(issuer)s' (%(uuid)s) was successfully updated."
-    MSG_RS_CREATED = "The public key '%(issuer)s' (%(uuid)s) was successfully created. (%(_time)s s)"
+    MSG_RS_CREATED = "The public key '%(issuer)s' (%(uuid)s) was successfully created. (%(time)s s)"
 
     def complete(self, args, prefix):
         super(PublicKeysCommand, self).__call__(args)

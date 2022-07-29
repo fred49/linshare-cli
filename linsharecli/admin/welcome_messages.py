@@ -60,7 +60,7 @@ class WelcomeMessagesCommand(DefaultCommand):
     MSG_RS_UPDATED = "The welcome message '%(name)s' (%(uuid)s) was successfully updated."
     MSG_RS_CREATED = (
         "The welcome message '%(name)s' (%(uuid)s) was "
-        "successfully created. (%(_time)s s)"
+        "successfully created. (%(time)s s)"
     )
 
     def complete(self, args, prefix):

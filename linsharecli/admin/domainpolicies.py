@@ -61,7 +61,7 @@ class DomainPoliciesCommand(DefaultCommand):
     MSG_RS_CAN_NOT_BE_DOWNLOADED_M = "%s domain policies can not be downloaded."
     MSG_RS_CREATED = (
         "The domain policy '%(label)s' (%(identifier)s) was "
-        "successfully created. (%(_time)s s)"
+        "successfully created. (%(time)s s)"
     )
     MSG_RS_UPDATED = "The resource '%(label)s' (%(identifier)s) was successfully updated."
 

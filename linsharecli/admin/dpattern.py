@@ -55,7 +55,7 @@ class DomainPatternsCommand(DefaultCommand):
     MSG_RS_UPDATED = "The domain pattern '%(label)s' (%(uuid)s) was successfully updated."
     MSG_RS_CREATED = (
         "The domain pattern '%(label)s' (%(uuid)s) "
-        "was successfully created. (%(_time)s s)"
+        "was successfully created. (%(time)s s)"
     )
 
     def init_old_language_key(self):
