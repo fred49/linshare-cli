@@ -122,7 +122,7 @@ class DomainsCommand(DefaultCommand):
         )
 
     def complete(self, args, prefix):
-        super(DomainsCommand, self).__call__(args)
+        super().__call__(args)
         if self.api_version == 0:
             self.init_old_language_key()
         elif self.api_version < 5:
@@ -134,7 +134,7 @@ class DomainsCommand(DefaultCommand):
 
     def complete_welcome(self, args, prefix):
         """TODO"""
-        super(DomainsCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.welcome_messages.list(args.identifier)
         return (v.get('uuid')
                 for v in json_obj if v.get('uuid').startswith(prefix))
@@ -170,7 +170,7 @@ class DDeleteAction(DeleteAction):
     )
 
     def __init__(self):
-        super(DDeleteAction, self).__init__(
+        super().__init__(
             mode=0,
             identifier="label",
             resource_identifier="identifier",
@@ -182,7 +182,7 @@ class DomainsListCommand(DomainsCommand):
 
     @Time('linsharecli.domains', label='Global time : %(time)s')
     def __call__(self, args):
-        super(DomainsListCommand, self).__call__(args)
+        super().__call__(args)
         if self.api_version == 0:
             self.init_old_language_key()
         elif self.api_version < 5:
@@ -225,7 +225,7 @@ class DomainsListCommand(DomainsCommand):
     def complete_fields(self, args, prefix):
         """TODO"""
         # pylint: disable=unused-argument
-        super(DomainsListCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.domains
         return cli.get_rbu().get_keys(True)
 
@@ -235,7 +235,7 @@ class DomainsCreateCommand(DomainsCommand):
     # pylint: disable=unused-argument
 
     def __call__(self, args):
-        super(DomainsCreateCommand, self).__call__(args)
+        super().__call__(args)
         if self.api_version == 0:
             self.init_old_language_key()
         elif self.api_version < 5:
@@ -276,29 +276,29 @@ class DomainsCreateCommand(DomainsCommand):
             return False
 
     def complete(self, args, prefix):
-        super(DomainsCreateCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_type(self, args, prefix):
         """ Complete with available domain type."""
-        super(DomainsCreateCommand, self).__call__(args)
+        super().__call__(args)
         return self.ls.domains.options_type()
 
     def complete_role(self, args, prefix):
         """ Complete with available role."""
-        super(DomainsCreateCommand, self).__call__(args)
+        super().__call__(args)
         return self.ls.domains.options_role()
 
     def complete_language(self, args, prefix):
         """ Complete with available language."""
-        super(DomainsCreateCommand, self).__call__(args)
+        super().__call__(args)
         return self.ls.domains.options_language()
 
     def complete_mail_language(self, args, prefix):
         """ Complete with available external mail language."""
-        super(DomainsCreateCommand, self).__call__(args)
+        super().__call__(args)
         return self.ls.domains.options_mail_language()
 
 
@@ -306,7 +306,7 @@ class DomainsUpdateCommand(DomainsCommand):
     """ Update a domain."""
 
     def __call__(self, args):
-        super(DomainsUpdateCommand, self).__call__(args)
+        super().__call__(args)
         resource = None
         for model in self.ls.domains.list():
             if model.get('identifier') == args.identifier:
@@ -330,7 +330,7 @@ class DomainsUpdateCommand(DomainsCommand):
             resource)
 
     def complete(self, args, prefix):
-        super(DomainsUpdateCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
@@ -338,13 +338,13 @@ class DomainsUpdateCommand(DomainsCommand):
     def complete_role(self, args, prefix):
         """ Complete with available role."""
         # pylint: disable=unused-argument
-        super(DomainsUpdateCommand, self).__call__(args)
+        super().__call__(args)
         return self.ls.domains.options_role()
 
     def complete_language(self, args, prefix):
         """ Complete with available language."""
         # pylint: disable=unused-argument
-        super(DomainsUpdateCommand, self).__call__(args)
+        super().__call__(args)
         return self.ls.domains.options_language()
 
 
@@ -352,7 +352,7 @@ class DomainsUpdateV5Command(DomainsCommand):
     """ Update a domain."""
 
     def __call__(self, args):
-        super(DomainsUpdateV5Command, self).__call__(args)
+        super().__call__(args)
         domain_uuid = getattr(args, self.RESOURCE_IDENTIFIER)
         resource = self.ls.domains.get(domain_uuid)
         if resource is None:
@@ -368,7 +368,7 @@ class DomainsUpdateV5Command(DomainsCommand):
             resource)
 
     def complete(self, args, prefix):
-        super(DomainsUpdateV5Command, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
@@ -376,13 +376,13 @@ class DomainsUpdateV5Command(DomainsCommand):
     def complete_role(self, args, prefix):
         """ Complete with available role."""
         # pylint: disable=unused-argument
-        super(DomainsUpdateV5Command, self).__call__(args)
+        super().__call__(args)
         return self.ls.domains.options_role()
 
     def complete_language(self, args, prefix):
         """ Complete with available language."""
         # pylint: disable=unused-argument
-        super(DomainsUpdateV5Command, self).__call__(args)
+        super().__call__(args)
         return self.ls.domains.options_language()
 
 
@@ -390,7 +390,7 @@ class DomainsDeleteCommand(DomainsCommand):
     """ List all domains."""
 
     def __call__(self, args):
-        super(DomainsDeleteCommand, self).__call__(args)
+        super().__call__(args)
         cli = self.ls.domains
         if self.api_version == 0:
             self.init_old_language_key()
@@ -407,7 +407,7 @@ class DomainProvidersCreateCommand(DomainsCommand):
     """ Update a domain."""
 
     def __call__(self, args):
-        super(DomainProvidersCreateCommand, self).__call__(args)
+        super().__call__(args)
         resource = None
         for model in self.ls.domains.list():
             if model.get('identifier') == args.identifier:
@@ -438,21 +438,21 @@ successfully created",
             rbu.to_resource())
 
     def complete(self, args, prefix):
-        super(DomainProvidersCreateCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_ldap(self, args, prefix):
         """TODO"""
-        super(DomainProvidersCreateCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.ldap_connections.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_dpattern(self, args, prefix):
         """TODO"""
-        super(DomainProvidersCreateCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.domain_patterns.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
@@ -462,7 +462,7 @@ class DomainProvidersDeleteCommand(DomainsCommand):
     """ List all domains."""
 
     def __call__(self, args):
-        super(DomainProvidersDeleteCommand, self).__call__(args)
+        super().__call__(args)
         resource = None
         for model in self.ls.domains.list():
             if model.get('identifier') == args.identifier:
@@ -483,7 +483,7 @@ deleted",
             rbu.to_resource())
 
     def complete(self, args, prefix):
-        super(DomainProvidersDeleteCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
@@ -493,7 +493,7 @@ class DomainProvidersUpdateCommand(DomainsCommand):
     """ Update a user provider."""
 
     def __call__(self, args):
-        super(DomainProvidersUpdateCommand, self).__call__(args)
+        super().__call__(args)
         resource = None
         for model in self.ls.domains.list():
             if model.get('identifier') == args.identifier:
@@ -525,21 +525,21 @@ updated",
             rbu.to_resource())
 
     def complete(self, args, prefix):
-        super(DomainProvidersUpdateCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.domains.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_ldap(self, args, prefix):
         """TODO"""
-        super(DomainProvidersUpdateCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.ldap_connections.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
 
     def complete_dpattern(self, args, prefix):
         """TODO"""
-        super(DomainProvidersUpdateCommand, self).__call__(args)
+        super().__call__(args)
         json_obj = self.ls.domain_patterns.list()
         return (v.get('identifier')
                 for v in json_obj if v.get('identifier').startswith(prefix))
