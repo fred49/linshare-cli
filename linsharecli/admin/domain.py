@@ -28,6 +28,10 @@
 
 import json
 
+from argtoolbox import DefaultCompleter as Completer
+from vhatable.cell import ComplexCell
+from vhatable.cell import ComplexCellBuilder
+from vhatable.filters import PartialOr
 from linshareapi.cache import Time
 from linsharecli.admin.core import DefaultCommand
 from linsharecli.common.core import add_list_parser_options
@@ -35,10 +39,6 @@ from linsharecli.common.core import add_delete_parser_options
 from linsharecli.common.actions import CreateOneAction
 from linsharecli.common.tables import DeleteAction
 from linsharecli.common.tables import TableBuilder
-from argtoolbox import DefaultCompleter as Completer
-from vhatable.cell import ComplexCell
-from vhatable.cell import ComplexCellBuilder
-from vhatable.filters import PartialOr
 
 
 class DomainsCommand(DefaultCommand):
@@ -66,8 +66,8 @@ class DomainsCommand(DefaultCommand):
         "was successfully created. (%(time)s s)"
     )
 
-    # pylint: disable=no-self-use
     def init_old_language_key_before_5(self):
+        """TODO"""
         DomainsCommand.IDENTIFIER = "label"
         DomainsCommand.DEFAULT_SORT = "label"
         DomainsCommand.RESOURCE_IDENTIFIER = "identifier"
@@ -92,7 +92,6 @@ class DomainsCommand(DefaultCommand):
             "was successfully created. (%(time)s s)"
         )
 
-    # pylint: disable=no-self-use
     def init_old_language_key(self):
         """For  api >= 1.6 and api <= 1.8"""
         DomainsCommand.IDENTIFIER = "identifier"
@@ -219,8 +218,7 @@ class DomainsListCommand(DomainsCommand):
             for row in table.get_raw():
                 domains.append(endpoint.get(row['uuid']))
             return tbu.build().load_v2(domains).render()
-        else:
-            return tbu.build().load_v2(endpoint.list()).render()
+        return tbu.build().load_v2(endpoint.list()).render()
 
     def complete_fields(self, args, prefix):
         """TODO"""
@@ -247,33 +245,31 @@ class DomainsCreateCommand(DomainsCommand):
         if act.load(args).execute():
             if not args.domain_policy_auto:
                 return True
-            else:
-                domain_uuid = act.result.get('identifier')
-                policy = {
-                    "accessPolicy": {
-                        "rules": [
-                            {
-                                "domain": {
-                                    "identifier": domain_uuid,
-                                },
-                                "type": "ALLOW"
+            domain_uuid = act.result.get('identifier')
+            policy = {
+                "accessPolicy": {
+                    "rules": [
+                        {
+                            "domain": {
+                                "identifier": domain_uuid,
                             },
-                            {
-                                "type": "DENY_ALL"
-                            }
-                        ]
-                    },
-                    "label": args.identifier,
-                }
-                self.log.debug(json.dumps(policy, sort_keys=True, indent=2))
-                policy = self.ls.domain_policies.create(policy)
-                self.log.debug(json.dumps(policy, sort_keys=True, indent=2))
-                domain = self.ls.domains.get(domain_uuid)
-                domain['policy'] = policy
-                self.ls.domains.update(domain)
+                            "type": "ALLOW"
+                        },
+                        {
+                            "type": "DENY_ALL"
+                        }
+                    ]
+                },
+                "label": args.identifier,
+            }
+            self.log.debug(json.dumps(policy, sort_keys=True, indent=2))
+            policy = self.ls.domain_policies.create(policy)
+            self.log.debug(json.dumps(policy, sort_keys=True, indent=2))
+            domain = self.ls.domains.get(domain_uuid)
+            domain['policy'] = policy
+            self.ls.domains.update(domain)
             return True
-        else:
-            return False
+        return False
 
     def complete(self, args, prefix):
         super().__call__(args)
@@ -398,7 +394,7 @@ class DomainsDeleteCommand(DomainsCommand):
                 args,
                 cli,
                 args.identifier)
-        elif self.api_version < 5:
+        if self.api_version < 5:
             self.init_old_language_key_before_5()
         return self._delete_all(args, cli, args.uuids)
 
