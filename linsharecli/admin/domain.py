@@ -26,7 +26,6 @@
 #
 
 
-
 import json
 
 from linshareapi.cache import Time
@@ -55,9 +54,13 @@ class DomainsCommand(DefaultCommand):
         "%(position)s/%(count)s: "
         "The domain '%(name)s' (%(uuid)s) was deleted. (%(time)s s)"
     )
-    MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(name)s'  '%(uuid)s' can not be deleted."
+    MSG_RS_CAN_NOT_BE_DELETED = (
+        "The domain '%(name)s'  '%(uuid)s' can not be deleted."
+    )
     MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain (s) can not be deleted."
-    MSG_RS_UPDATED = "The domain '%(name)s' (%(uuid)s) was successfully updated."
+    MSG_RS_UPDATED = (
+        "The domain '%(name)s' (%(uuid)s) was successfully updated."
+        )
     MSG_RS_CREATED = (
         "The domain '%(name)s' (%(uuid)s) "
         "was successfully created. (%(time)s s)"
@@ -75,9 +78,15 @@ class DomainsCommand(DefaultCommand):
             "%(position)s/%(count)s: "
             "The domain '%(label)s' (%(identifier)s) was deleted. (%(time)s s)"
         )
-        DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(label)s'  '%(identifier)s' can not be deleted."
-        DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain (s) can not be deleted."
-        DomainsCommand.MSG_RS_UPDATED = "The domain '%(label)s' (%(identifier)s) was successfully updated."
+        DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED = (
+            "The domain '%(label)s'  '%(identifier)s' can not be deleted."
+        )
+        DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED_M = (
+            "%(count)s domain (s) can not be deleted."
+        )
+        DomainsCommand.MSG_RS_UPDATED = (
+            "The domain '%(label)s' (%(identifier)s) was successfully updated."
+        )
         DomainsCommand.MSG_RS_CREATED = (
             "The domain '%(label)s' (%(identifier)s) "
             "was successfully created. (%(time)s s)"
@@ -92,15 +101,25 @@ class DomainsCommand(DefaultCommand):
 
         DomainsCommand.DEFAULT_TOTAL = "Domain found : %(count)s"
         DomainsCommand.MSG_RS_NOT_FOUND = "No domain could be found."
-        DomainsCommand.MSG_RS_DELETED = "The domain '%(identifier)s' was deleted. (%(time)s s)"
+        DomainsCommand.MSG_RS_DELETED = (
+            "The domain '%(identifier)s' was deleted. (%(time)s s)"
+        )
         DomainsCommand.MSG_RS_DELETED = (
             "%(position)s/%(count)s: "
             "The domain '%(identifier)s' was deleted. (%(time)s s)"
         )
-        DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(identifier)s' can not be deleted."
-        DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED_M = "%(count)s domain (s) can not be deleted."
-        DomainsCommand.MSG_RS_UPDATED = "The domain '%(identifier)s' was successfully updated."
-        DomainsCommand.MSG_RS_CREATED = "The domain '%(identifier)s' was successfully created."
+        DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED = (
+            "The domain '%(identifier)s' can not be deleted."
+        )
+        DomainsCommand.MSG_RS_CAN_NOT_BE_DELETED_M = (
+            "%(count)s domain (s) can not be deleted."
+        )
+        DomainsCommand.MSG_RS_UPDATED = (
+            "The domain '%(identifier)s' was successfully updated."
+        )
+        DomainsCommand.MSG_RS_CREATED = (
+            "The domain '%(identifier)s' was successfully created."
+        )
 
     def complete(self, args, prefix):
         super(DomainsCommand, self).__call__(args)
@@ -110,7 +129,8 @@ class DomainsCommand(DefaultCommand):
             self.init_old_language_key_before_5()
         json_obj = self.ls.domains.list()
         return (v.get(self.RESOURCE_IDENTIFIER)
-                for v in json_obj if v.get(self.RESOURCE_IDENTIFIER).startswith(prefix))
+                for v in json_obj if v.get(
+                    self.RESOURCE_IDENTIFIER).startswith(prefix))
 
     def complete_welcome(self, args, prefix):
         """TODO"""
@@ -145,7 +165,9 @@ class DDeleteAction(DeleteAction):
         "%(position)s/%(count)s: "
         "The domain '%(label)s' (%(identifier)s) was deleted. (%(time)s s)"
     )
-    MSG_RS_CAN_NOT_BE_DELETED = "The domain '%(identifier)s' can not be deleted."
+    MSG_RS_CAN_NOT_BE_DELETED = (
+        "The domain '%(identifier)s' can not be deleted."
+    )
 
     def __init__(self):
         super(DDeleteAction, self).__init__(
