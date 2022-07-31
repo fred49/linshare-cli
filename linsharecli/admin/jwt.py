@@ -203,6 +203,8 @@ class JwtDeleteCommand(JwtCommand):
 
 def add_parser(subparsers, name, desc, config):
     """Add all Jwt token sub commands."""
+    if config.server.api_version.value >= 5:
+        return
     parser = subparsers.add_parser(name, help=desc)
     subparsers2 = parser.add_subparsers()
 

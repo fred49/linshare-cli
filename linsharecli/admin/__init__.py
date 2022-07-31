@@ -61,7 +61,8 @@ from .. import __version__
 
 PARSERS = []
 
-def _add_parser(name=None, description=None, parsers=None):
+
+def _add_parser(name="", description=None, parsers=None):
     PARSERS.append(
         {
             'name': name,
@@ -260,7 +261,8 @@ class LinShareCliProgram(BasicProgram):
 
         # Adding all others parsers.
         subparsers = self.parser.add_subparsers()
-        for parser in PARSERS:
+        parsers = sorted(PARSERS, key=lambda d: d['name'])
+        for parser in parsers:
             name = parser.get('name')
             description = parser.get('description')
             func = parser.get('parsers')

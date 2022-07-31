@@ -361,6 +361,8 @@ def add_update_parser(actions_group, required=True):
 def add_parser(subparsers, name, desc, config):
     """Add all domain sub commands."""
     # pylint: disable=too-many-statements
+    if config.server.api_version.value >= 5:
+        return
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
 

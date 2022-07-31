@@ -158,6 +158,8 @@ class LdapConnectionsDeleteCommand(LdapConnectionsCommand):
 
 def add_parser(subparsers, name, desc, config):
     """Add all ldap connections sub commands."""
+    if config.server.api_version.value >= 5:
+        return
     api_version = config.server.api_version.value
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()

@@ -111,6 +111,8 @@ class PublicKeyDeleteCommand(PublicKeysCommand):
 
 def add_parser(subparsers, name, desc, config):
     """Add all public key sub commands."""
+    if config.server.api_version.value >= 5:
+        return
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
 

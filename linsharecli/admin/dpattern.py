@@ -209,6 +209,8 @@ class DomainPatternsDeleteCommand(DomainPatternsCommand):
 
 def add_parser(subparsers, name, desc, config):
     """Add all domain pattern sub commands."""
+    if config.server.api_version.value >= 5:
+        return
     # pylint: disable=too-many-statements
     api_version = config.server.api_version.value
     parser_tmp = subparsers.add_parser(name, help=desc)

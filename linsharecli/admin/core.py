@@ -269,7 +269,13 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument('files', nargs='*')
     parser.set_defaults(__func__=TestCommand(config))
 
-    parser = subparsers.add_parser('raw', add_help=True)
+    parser = subparsers.add_parser(
+        'raw',
+        help=(
+            "Retrieve json data from URL. Authentication is handled liek any"
+            " other commands."
+        )
+    )
     parser.add_argument('url')
     parser.add_argument(
             '-r', '--repeat', default=1,
@@ -288,7 +294,13 @@ def add_parser(subparsers, name, desc, config):
             help="pure json only")
     parser.set_defaults(__func__=RawCommand(config))
 
-    parser = subparsers.add_parser('auto')
+    parser = subparsers.add_parser(
+        'auto',
+        help=(
+            "Try to build dynamically a pretty table from data retieved from"
+            " the provide url as positional argument."
+        )
+    )
     parser.add_argument('url')
     parser.add_argument(
         '-x', '--complex-cells', action="append",

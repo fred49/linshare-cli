@@ -142,7 +142,8 @@ class UpgradeTasksTriggerCommand(UpgradeTasksCommand):
 
 def add_parser(subparsers, name, desc, config):
     """Add all upgrade tasks sub commands."""
-    # api_version = config.server.api_version.value
+    if config.server.api_version.value >= 5:
+        return
     parser_tmp = subparsers.add_parser(name, help=desc)
     subparsers2 = parser_tmp.add_subparsers()
 
