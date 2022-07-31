@@ -555,8 +555,6 @@ def add_parser(subparsers, name, desc, config):
     parser.add_argument(
         'identifiers', nargs="*",
         help="Filter domains by their identifiers")
-    parser.add_argument('-n', '--label', action="store_true",
-                        help="sort by domain label")
     if api_version == 0:
         add_list_parser_options(parser, delete=True, cdate=False)
     else:
@@ -564,68 +562,71 @@ def add_parser(subparsers, name, desc, config):
     parser.set_defaults(__func__=DomainsListCommand(config))
 
     # command : create
-    parser_tmp2 = subparsers2.add_parser(
-        'create', help="create domain.")
-    if api_version < 5:
-        parser_tmp2.add_argument('--label', action="store", help="")
-        parser_tmp2.add_argument('identifier', action="store", help="")
-    else:
-        parser_tmp2.add_argument('name', action="store", help="")
-    parser_tmp2.add_argument(
-        '--type', dest="domain_type", action="store", help="",
-        required=True).completer = Completer("complete_type")
-    parser_tmp2.add_argument('--description', action="store", help="")
-    parser_tmp2.add_argument(
-        '--role', dest="role", action="store",
-        help="").completer = Completer("complete_role")
-    parser_tmp2.add_argument(
-        '--language', dest="language", action="store",
-        help="").completer = Completer("complete_language")
-    parser_tmp2.add_argument(
-        '--parent', dest="parent_id", action="store",
-        help="TODO").completer = Completer()
-    parser_tmp2.add_argument(
-        '--mime-policy', dest="mime_policy", action="store",
-        help="TODO").completer = Completer("complete_mime")
-    parser_tmp2.add_argument(
-        '--domain-policy', dest="domain_policy", action="store",
-        help="TODO").completer = Completer("complete_policy")
-    parser_tmp2.add_argument(
-        '--domain-policy-auto', dest="domain_policy_auto", action="store_true",
-        help="TODO")
-    parser_tmp2.add_argument(
-        '--mail-config', dest="mail_config", action="store",
-        help="TODO").completer = Completer("complete_mail")
-    parser_tmp2.add_argument('--cli-mode', action="store_true", help="")
-    parser_tmp2.set_defaults(__func__=DomainsCreateCommand(config))
+    def add_cmd_create_domain(subparsers2):
+        parser_tmp2 = subparsers2.add_parser(
+            'create', help="create domain.")
+        if api_version < 5:
+            parser_tmp2.add_argument('--label', action="store", help="")
+            parser_tmp2.add_argument('identifier', action="store", help="")
+        else:
+            parser_tmp2.add_argument('name', action="store", help="")
+        parser_tmp2.add_argument(
+            '--type', dest="domain_type", action="store", help="",
+            required=True).completer = Completer("complete_type")
+        parser_tmp2.add_argument('--description', action="store", help="")
+        parser_tmp2.add_argument(
+            '--role', dest="role", action="store",
+            help="").completer = Completer("complete_role")
+        parser_tmp2.add_argument(
+            '--language', dest="language", action="store",
+            help="").completer = Completer("complete_language")
+        parser_tmp2.add_argument(
+            '--parent', dest="parent_id", action="store",
+            help="TODO").completer = Completer()
+        parser_tmp2.add_argument(
+            '--mime-policy', dest="mime_policy", action="store",
+            help="TODO").completer = Completer("complete_mime")
+        parser_tmp2.add_argument(
+            '--domain-policy', dest="domain_policy", action="store",
+            help="TODO").completer = Completer("complete_policy")
+        parser_tmp2.add_argument(
+            '--domain-policy-auto', dest="domain_policy_auto",
+            action="store_true",
+            help="TODO")
+        parser_tmp2.add_argument(
+            '--mail-config', dest="mail_config", action="store",
+            help="TODO").completer = Completer("complete_mail")
+        parser_tmp2.add_argument('--cli-mode', action="store_true", help="")
+        parser_tmp2.set_defaults(__func__=DomainsCreateCommand(config))
 
     # command : update
-    parser_tmp2 = subparsers2.add_parser(
-        'update', help="update domain.")
-    parser_tmp2.add_argument('--label', action="store", help="")
-    parser_tmp2.add_argument('--description', action="store", help="")
-    parser_tmp2.add_argument(
-        '--role', dest="role", action="store",
-        help="").completer = Completer("complete_role")
-    parser_tmp2.add_argument(
-        '--language', dest="language", action="store",
-        help="").completer = Completer("complete_language")
-    if api_version >= 1:
+    def add_cmd_update_domain(subparsers2):
+        parser_tmp2 = subparsers2.add_parser(
+            'update', help="update domain.")
+        parser_tmp2.add_argument('--label', action="store", help="")
+        parser_tmp2.add_argument('--description', action="store", help="")
         parser_tmp2.add_argument(
-            '--mail-language', dest="external_mail_locale", action="store",
-            help="").completer = Completer("complete_mail_language")
-    parser_tmp2.add_argument(
-        '--welcome', dest="current_welcome_message", action="store",
-        help="welcome message identifier").completer = Completer(
-            "complete_welcome")
-    if api_version < 5:
+            '--role', dest="role", action="store",
+            help="").completer = Completer("complete_role")
         parser_tmp2.add_argument(
-            'identifier', action="store", help="").completer = Completer()
-        parser_tmp2.set_defaults(__func__=DomainsUpdateCommand(config))
-    else:
+            '--language', dest="language", action="store",
+            help="").completer = Completer("complete_language")
+        if api_version >= 1:
+            parser_tmp2.add_argument(
+                '--mail-language', dest="external_mail_locale", action="store",
+                help="").completer = Completer("complete_mail_language")
         parser_tmp2.add_argument(
-            'uuid', action="store", help="").completer = Completer()
-        parser_tmp2.set_defaults(__func__=DomainsUpdateV5Command(config))
+            '--welcome', dest="current_welcome_message", action="store",
+            help="welcome message identifier").completer = Completer(
+                "complete_welcome")
+        if api_version < 5:
+            parser_tmp2.add_argument(
+                'identifier', action="store", help="").completer = Completer()
+            parser_tmp2.set_defaults(__func__=DomainsUpdateCommand(config))
+        else:
+            parser_tmp2.add_argument(
+                'uuid', action="store", help="").completer = Completer()
+            parser_tmp2.set_defaults(__func__=DomainsUpdateV5Command(config))
 
     # command : delete
     parser_tmp2 = subparsers2.add_parser(
@@ -684,6 +685,8 @@ def add_parser(subparsers, name, desc, config):
         parser_tmp2.set_defaults(__func__=DomainProvidersDeleteCommand(config))
 
     if api_version < 5:
+        add_cmd_create_domain(subparsers2)
+        add_cmd_update_domain(subparsers2)
         add_cmd_set_provider(subparsers2)
         add_cmd_update_provider(subparsers2)
         add_cmd_delete_provider(subparsers2)
