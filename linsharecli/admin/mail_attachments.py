@@ -42,12 +42,12 @@ class CreateOneAction(CCreateOneAction):
     """TODO"""
 
     def __init__(self, command, cli):
-        super(CreateAction, self).__init__(command, cli)
+        super(CCreateOneAction, self).__init__(command, cli)
         self.logo = None
         self.name = None
 
     def load(self, args):
-        super(CreateAction, self).load(args)
+        super(CCreateOneAction, self).load(args)
         self.logo = args.logo
         self.name = args.name
         return self
