@@ -94,4 +94,12 @@ setup(
         'vhatable>=1.0.0,<1.2.0',
         'mock==2.0.0',
     ],
+    extras_require={
+        'DEV': [
+            'flake8',
+            'tox',
+            'twine',
+            'pylint',
+        ]
+    },
 )
